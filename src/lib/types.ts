@@ -9,6 +9,7 @@ export interface CardSet {
   symbol_url: string | null;
   snkrdunk_box_price: number | null;
   snkrdunk_box_title: string | null;
+  region: string | null;
   updated_at: string | null;
 }
 

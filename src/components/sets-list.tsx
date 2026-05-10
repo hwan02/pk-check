@@ -18,7 +18,7 @@ export default function SetsList({ sets }: { sets: CardSet[] }) {
 
   let filtered = sets;
   if (region) {
-    filtered = filtered.filter((s) => (s as Record<string, unknown>).region === region);
+    filtered = filtered.filter((s) => (s.region ?? "en") === region);
   }
   if (query) {
     filtered = filtered.filter(
