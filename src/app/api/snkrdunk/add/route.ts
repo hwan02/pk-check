@@ -57,7 +57,7 @@ export async function POST(request: NextRequest) {
   }
 
   // 가격 upsert
-  const { error: priceErr } = await supabase.from("prices").upsert({
+  const priceData: Record<string, unknown> = {
     card_id: cardId,
     tcg_market: null,
     tcg_low: null,
@@ -65,9 +65,12 @@ export async function POST(request: NextRequest) {
     tcg_high: null,
     snkrdunk_price: price,
     snkrdunk_title: title,
-    snkrdunk_url: url || null,
     fetched_at: new Date().toISOString(),
-  }, { onConflict: "card_id" });
+  };
+  // snkrdunk_url 컬럼이 있으면 추가
+  if (url) priceData.snkrdunk_url = url;
+
+  const { error: priceErr } = await supabase.from("prices").upsert(priceData, { onConflict: "card_id" });
 
   if (priceErr) {
     return NextResponse.json({ error: priceErr.message }, { status: 500 });

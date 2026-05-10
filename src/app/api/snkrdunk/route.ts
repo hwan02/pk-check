@@ -20,37 +20,68 @@ export async function GET(request: NextRequest) {
 
     const text = await resp.text();
 
-    // href + aria-label + price 추출
+    // 상품 블록 단위로 파싱: 이미지 + href + title + price
     const items: { url: string; title: string; price: number; image: string }[] = [];
-    const regex = /href="(https:\/\/snkrdunk\.com\/apparels\/\d+)"[^>]*?aria-label="([^"]+?)\s*-\s*¥([\d,]+)"/g;
+
+    // 각 상품 링크 블록에서 이미지, href, title, price 추출
+    // 패턴: <a href="...apparels/ID" ... aria-label="TITLE - ¥PRICE">
+    const blockRegex = /href="(https:\/\/snkrdunk\.com\/apparels\/\d+)"[^>]*?aria-label="([^"]+?)\s*-\s*¥([\d,]+)"/g;
     let match;
-    while ((match = regex.exec(text)) !== null) {
-      items.push({
-        url: match[1],
+    const hrefPositions: { href: string; title: string; price: number; pos: number }[] = [];
+
+    while ((match = blockRegex.exec(text)) !== null) {
+      hrefPositions.push({
+        href: match[1],
         title: match[2],
         price: parseInt(match[3].replace(/,/g, "")),
-        image: "",
+        pos: match.index,
       });
     }
 
-    // 이미지 URL도 추출 시도
-    const imgRegex = /src="(https:\/\/cdn\.snkrdunk\.com\/[^"]+\.webp)"/g;
-    let imgIdx = 0;
-    while ((match = imgRegex.exec(text)) !== null && imgIdx < items.length) {
-      items[imgIdx].image = match[1];
-      imgIdx++;
+    // CDN 이미지 위치 수집
+    const imgRegex = /src="(https:\/\/cdn\.snkrdunk\.com\/upload_bg_removed\/[^"]+)"/g;
+    const imgPositions: { url: string; pos: number }[] = [];
+    while ((match = imgRegex.exec(text)) !== null) {
+      imgPositions.push({ url: match[1], pos: match.index });
     }
 
-    // 포켓몬 관련 상품만 필터
-    const pokemonKeywords = ["ポケモン", "ポケカ", "ピカチュウ", "リザードン", "ミュウ", "イーブイ",
-      "ブイズ", "Pokemon", "pokemon", "マクドナルド", "ハッピーセット",
-      "ex ", "EX ", "SAR", "SR ", "UR ", "AR ", "VSTAR", "VMAX", " V ",
-      "プロモ", "パック", "ボックス", "デッキ", "拡張"];
-    const filtered = items.filter((item) =>
-      pokemonKeywords.some((kw) => item.title.includes(kw))
+    // 각 상품에 가장 가까운 이전 이미지 매칭
+    for (const item of hrefPositions) {
+      let bestImg = "";
+      for (const img of imgPositions) {
+        if (img.pos < item.pos) {
+          bestImg = img.url;
+        } else {
+          break;
+        }
+      }
+      items.push({
+        url: item.href,
+        title: item.title,
+        price: item.price,
+        image: bestImg,
+      });
+    }
+
+    // 검색어 키워드로 관련성 필터링
+    const queryParts = q.split(/\s+/).filter(Boolean);
+    const relevant = items.filter((item) =>
+      queryParts.some((part) => item.title.includes(part))
     );
 
-    return NextResponse.json({ items: (filtered.length > 0 ? filtered : items).slice(0, 30) });
+    // 관련 결과가 있으면 그것만, 없으면 포켓몬 필터
+    let result;
+    if (relevant.length > 0) {
+      result = relevant;
+    } else {
+      const pokemonKeywords = ["ポケモン", "ポケカ", "ピカチュウ", "リザードン", "ミュウ", "イーブイ",
+        "ex ", "SAR", "SR ", "UR ", "AR ", "VSTAR", "VMAX", "プロモ", "パック", "ボックス"];
+      result = items.filter((item) =>
+        pokemonKeywords.some((kw) => item.title.includes(kw))
+      );
+    }
+
+    return NextResponse.json({ items: (result.length > 0 ? result : items).slice(0, 30) });
   } catch {
     return NextResponse.json({ items: [] });
   }

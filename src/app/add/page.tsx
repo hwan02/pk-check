@@ -15,6 +15,7 @@ export default function AddPage() {
   const [items, setItems] = useState<SnkrItem[]>([]);
   const [loading, setLoading] = useState(false);
   const [added, setAdded] = useState<Set<string>>(new Set());
+  const [error, setError] = useState("");
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -32,6 +33,7 @@ export default function AddPage() {
   }
 
   async function handleAdd(item: SnkrItem) {
+    setError("");
     try {
       const resp = await fetch("/api/snkrdunk/add", {
         method: "POST",
@@ -39,10 +41,13 @@ export default function AddPage() {
         body: JSON.stringify(item),
       });
       if (resp.ok) {
-        setAdded((prev) => new Set(prev).add(item.url));
+        setAdded((prev) => new Set(prev).add(item.url || item.title));
+      } else {
+        const data = await resp.json();
+        setError(data.error || "추가 실패");
       }
     } catch {
-      // error
+      setError("네트워크 오류");
     }
   }
 
@@ -67,13 +72,17 @@ export default function AddPage() {
         </button>
       </form>
 
+      {error && (
+        <p className="text-sm text-red-500 mb-3">{error}</p>
+      )}
+
       {items.length > 0 && (
         <p className="text-sm opacity-60 mb-3">{items.length}개 결과</p>
       )}
 
       <div className="flex flex-col gap-3">
         {items.map((item) => {
-          const isAdded = added.has(item.url);
+          const isAdded = added.has(item.url || item.title);
           return (
             <div
               key={item.url || item.title}
