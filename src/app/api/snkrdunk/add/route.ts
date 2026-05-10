@@ -1,9 +1,27 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createServerClient } from "@/lib/supabase/server";
 
+async function fetchProductImage(productUrl: string): Promise<string> {
+  try {
+    const resp = await fetch(productUrl, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+        "Accept-Language": "ja,en;q=0.9",
+      },
+      signal: AbortSignal.timeout(8000),
+    });
+    if (!resp.ok) return "";
+    const text = await resp.text();
+    const match = text.match(/https:\/\/cdn\.snkrdunk\.com\/upload_bg_removed\/[^"?\s]+/);
+    return match ? match[0] : "";
+  } catch {
+    return "";
+  }
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.json();
-  const { title, price, url, image } = body as {
+  const { title, price, url } = body as {
     title: string;
     price: number;
     url: string;
@@ -16,18 +34,17 @@ export async function POST(request: NextRequest) {
 
   const supabase = createServerClient();
 
-  // 고유 ID 생성: snkrdunk URL에서 ID 추출 또는 타이틀 기반
   const snkrId = url.match(/\/apparels\/(\d+)/)?.[1] ?? "";
   const cardId = `snkr-${snkrId || Date.now()}`;
-
-  // 타이틀에서 카드 이름 추출 (괄호 앞부분)
   const name = title.split("(")[0].trim();
 
+  // 상품 페이지에서 정확한 이미지 가져오기
+  const correctImage = url ? await fetchProductImage(url) : "";
+
   // custom 세트가 없으면 생성
-  const { error: setErr } = await supabase
+  await supabase
     .from("sets")
     .upsert({ id: "custom", name: "수동 추가", name_ja: "手動追加", series: "Custom" }, { onConflict: "id" });
-  if (setErr) console.error("set upsert error:", setErr.message);
 
   // 카드 upsert
   const { error: cardErr } = await supabase.from("cards").upsert({
@@ -47,8 +64,8 @@ export async function POST(request: NextRequest) {
     weaknesses: null,
     resistances: null,
     retreat_cost: null,
-    image_small: image || null,
-    image_large: image || null,
+    image_small: correctImage || null,
+    image_large: correctImage || null,
     updated_at: new Date().toISOString(),
   }, { onConflict: "id" });
 
@@ -67,7 +84,6 @@ export async function POST(request: NextRequest) {
     snkrdunk_title: title,
     fetched_at: new Date().toISOString(),
   };
-  // snkrdunk_url 컬럼이 있으면 추가
   if (url) priceData.snkrdunk_url = url;
 
   const { error: priceErr } = await supabase.from("prices").upsert(priceData, { onConflict: "card_id" });
