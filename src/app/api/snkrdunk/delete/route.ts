@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
   if (!cardId) {
     return NextResponse.json({ error: "cardId required" }, { status: 400 });
   }
-  if (password !== "포포123") {
+  if (password !== "vhvh123") {
     return NextResponse.json({ error: "비밀번호가 틀립니다" }, { status: 403 });
   }
 
