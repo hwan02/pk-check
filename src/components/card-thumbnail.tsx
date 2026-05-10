@@ -12,6 +12,13 @@ export default function CardThumbnail({ card }: { card: CardWithPrice }) {
       className="group block rounded-lg border border-[var(--border)] bg-[var(--card-bg)] overflow-hidden card-glow transition relative holo-shimmer"
     >
       <div className="aspect-[2.5/3.5] relative bg-gray-100">
+        {card.region && card.region !== "en" && (
+          <span className={`absolute top-1.5 left-1.5 z-10 px-1.5 py-0.5 rounded text-[10px] font-bold text-white ${
+            card.region === "jp" ? "bg-red-500" : "bg-blue-500"
+          }`}>
+            {card.region === "jp" ? "JP" : card.region === "kr" ? "KR" : card.region.toUpperCase()}
+          </span>
+        )}
         {card.image_small ? (
           <Image
             src={card.image_small}

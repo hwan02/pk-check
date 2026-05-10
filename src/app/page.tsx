@@ -21,10 +21,11 @@ export default async function HomePage({ searchParams }: Props) {
   const type = params.type ?? "";
   const supertype = params.supertype ?? "";
   const priced = params.priced ?? "";
+  const region = params.region ?? "";
   const sort = params.sort ?? "";
   const page = Math.max(1, parseInt(params.page ?? "1", 10));
 
-  const hasSearch = q || rarity || type || supertype || priced || sort;
+  const hasSearch = q || rarity || type || supertype || priced || region || sort;
 
   const supabase = createServerClient();
 
@@ -44,6 +45,7 @@ export default async function HomePage({ searchParams }: Props) {
     if (rarity) query = query.eq("rarity", rarity);
     if (type) query = query.contains("types", [type]);
     if (supertype) query = query.eq("supertype", supertype);
+    if (region) query = query.eq("region", region);
     if (priced === "snkrdunk") query = query.not("prices.snkrdunk_price", "is", null);
     else if (priced === "tcg") query = query.not("prices.tcg_market", "is", null);
     else if (priced === "both") query = query.not("prices.snkrdunk_price", "is", null).not("prices.tcg_market", "is", null);
@@ -81,6 +83,7 @@ export default async function HomePage({ searchParams }: Props) {
     if (type) baseParams.set("type", type);
     if (supertype) baseParams.set("supertype", supertype);
     if (priced) baseParams.set("priced", priced);
+    if (region) baseParams.set("region", region);
     if (sort) baseParams.set("sort", sort);
     const baseUrl = `/?${baseParams.toString()}`;
 

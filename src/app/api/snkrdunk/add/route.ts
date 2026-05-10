@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
     name,
     name_ja: name,
     supertype: "Pokémon",
+    region: "jp",
     types: null,
     subtypes: null,
     hp: null,

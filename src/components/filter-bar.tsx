@@ -64,7 +64,8 @@ export default function FilterBar() {
     searchParams.get("rarity") ||
     searchParams.get("type") ||
     searchParams.get("supertype") ||
-    searchParams.get("priced");
+    searchParams.get("priced") ||
+    searchParams.get("region");
 
   function clearAll() {
     const params = new URLSearchParams();
@@ -75,6 +76,17 @@ export default function FilterBar() {
 
   return (
     <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
+      <select
+        value={searchParams.get("region") ?? ""}
+        onChange={(e) => update("region", e.target.value)}
+        className="px-3 py-1.5 rounded border border-[var(--border)] bg-[var(--card-bg)] text-sm"
+      >
+        <option value="">에디션 전체</option>
+        <option value="en">북미판</option>
+        <option value="jp">일본판</option>
+        <option value="kr">한국판</option>
+      </select>
+
       <select
         value={searchParams.get("supertype") ?? ""}
         onChange={(e) => update("supertype", e.target.value)}

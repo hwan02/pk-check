@@ -29,6 +29,7 @@ export interface Card {
   weaknesses: TypeValue[] | null;
   resistances: TypeValue[] | null;
   retreat_cost: string[] | null;
+  region: string | null; // "en" = 북미판, "jp" = 일본판, "kr" = 한국판
   image_small: string | null;
   image_large: string | null;
   updated_at: string | null;
