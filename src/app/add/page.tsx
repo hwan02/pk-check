@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 
 interface SnkrItem {
   url: string;
@@ -14,7 +13,8 @@ export default function AddPage() {
   const [query, setQuery] = useState("");
   const [items, setItems] = useState<SnkrItem[]>([]);
   const [loading, setLoading] = useState(false);
-  const [added, setAdded] = useState<Set<string>>(new Set());
+  const [addingIdx, setAddingIdx] = useState<number | null>(null);
+  const [added, setAdded] = useState<Set<number>>(new Set());
   const [error, setError] = useState("");
 
   async function handleSearch(e: React.FormEvent) {
@@ -22,6 +22,8 @@ export default function AddPage() {
     if (!query.trim()) return;
     setLoading(true);
     setItems([]);
+    setAdded(new Set());
+    setError("");
     try {
       const resp = await fetch(`/api/snkrdunk?q=${encodeURIComponent(query.trim())}`, { cache: "no-store" });
       const data = await resp.json();
@@ -32,8 +34,9 @@ export default function AddPage() {
     setLoading(false);
   }
 
-  async function handleAdd(item: SnkrItem) {
+  async function handleAdd(item: SnkrItem, idx: number) {
     setError("");
+    setAddingIdx(idx);
     try {
       const resp = await fetch("/api/snkrdunk/add", {
         method: "POST",
@@ -41,7 +44,7 @@ export default function AddPage() {
         body: JSON.stringify(item),
       });
       if (resp.ok) {
-        setAdded((prev) => new Set(prev).add(item.url || item.title));
+        setAdded((prev) => new Set(prev).add(idx));
       } else {
         const data = await resp.json();
         setError(data.error || "추가 실패");
@@ -49,6 +52,7 @@ export default function AddPage() {
     } catch {
       setError("네트워크 오류");
     }
+    setAddingIdx(null);
   }
 
   return (
@@ -80,50 +84,45 @@ export default function AddPage() {
         <p className="text-sm opacity-60 mb-3">{items.length}개 결과</p>
       )}
 
-      <div className="flex flex-col gap-3">
-        {items.map((item) => {
-          const isAdded = added.has(item.url || item.title);
+      <div className="flex flex-col gap-2">
+        {items.map((item, idx) => {
+          const isAdded = added.has(idx);
+          const isAdding = addingIdx === idx;
           return (
             <div
-              key={item.url || item.title}
-              className="flex items-center gap-4 rounded-lg border border-[var(--border)] bg-[var(--card-bg)] p-3"
+              key={`${idx}-${item.url}`}
+              className="flex items-center gap-3 rounded-lg border border-[var(--border)] bg-[var(--card-bg)] p-3"
             >
-              {item.image && (
-                <Image
-                  src={item.image}
-                  alt=""
-                  width={60}
-                  height={60}
-                  className="rounded object-cover flex-shrink-0"
-                  unoptimized
-                />
-              )}
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium truncate">{item.title}</p>
-                <p className="text-lg font-bold text-blue-600">
-                  ¥{item.price.toLocaleString()}
-                </p>
-                {item.url && (
-                  <a
-                    href={item.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-[var(--primary)] hover:underline"
-                  >
-                    snkrdunk에서 보기
-                  </a>
-                )}
+                <p className="text-sm font-medium">{item.title}</p>
+                <div className="flex items-center gap-3 mt-1">
+                  <span className="text-lg font-bold text-blue-600">
+                    ¥{item.price.toLocaleString()}
+                  </span>
+                  {item.url && (
+                    <a
+                      href={item.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-[var(--primary)] hover:underline"
+                    >
+                      snkrdunk에서 보기
+                    </a>
+                  )}
+                </div>
               </div>
               <button
-                onClick={() => handleAdd(item)}
-                disabled={isAdded}
+                onClick={() => handleAdd(item, idx)}
+                disabled={isAdded || isAdding}
                 className={`px-4 py-2 rounded-lg text-sm font-medium transition flex-shrink-0 cursor-pointer ${
                   isAdded
                     ? "bg-green-100 text-green-700"
+                    : isAdding
+                    ? "bg-gray-200 text-gray-500"
                     : "bg-[var(--primary)] text-white hover:opacity-90"
                 }`}
               >
-                {isAdded ? "추가됨" : "추가"}
+                {isAdded ? "추가됨" : isAdding ? "추가 중..." : "추가"}
               </button>
             </div>
           );
