@@ -5,17 +5,29 @@ import Image from "next/image";
 import Link from "next/link";
 import type { CardSet } from "@/lib/types";
 
+const REGION_TABS = [
+  { value: "", label: "전체" },
+  { value: "en", label: "북미판" },
+  { value: "jp", label: "일본판" },
+  { value: "kr", label: "한국판" },
+];
+
 export default function SetsList({ sets }: { sets: CardSet[] }) {
   const [query, setQuery] = useState("");
+  const [region, setRegion] = useState("");
 
-  const filtered = query
-    ? sets.filter(
-        (s) =>
-          s.name.toLowerCase().includes(query.toLowerCase()) ||
-          (s.name_ja ?? "").includes(query) ||
-          (s.series ?? "").toLowerCase().includes(query.toLowerCase())
-      )
-    : sets;
+  let filtered = sets;
+  if (region) {
+    filtered = filtered.filter((s) => (s as Record<string, unknown>).region === region);
+  }
+  if (query) {
+    filtered = filtered.filter(
+      (s) =>
+        s.name.toLowerCase().includes(query.toLowerCase()) ||
+        (s.name_ja ?? "").includes(query) ||
+        (s.series ?? "").toLowerCase().includes(query.toLowerCase())
+    );
+  }
 
   // Group by series
   const seriesMap = new Map<string, CardSet[]>();
@@ -27,6 +39,22 @@ export default function SetsList({ sets }: { sets: CardSet[] }) {
 
   return (
     <>
+      <div className="flex flex-wrap items-center gap-2 mb-4">
+        {REGION_TABS.map((tab) => (
+          <button
+            key={tab.value}
+            onClick={() => setRegion(tab.value)}
+            className={`px-3 py-1.5 rounded-full text-xs transition cursor-pointer ${
+              region === tab.value
+                ? "bg-[var(--primary)] text-white"
+                : "border border-[var(--border)] hover:border-[var(--primary)]"
+            }`}
+          >
+            {tab.label}
+          </button>
+        ))}
+      </div>
+
       <input
         type="text"
         value={query}
