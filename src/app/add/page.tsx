@@ -20,8 +20,9 @@ export default function AddPage() {
     e.preventDefault();
     if (!query.trim()) return;
     setLoading(true);
+    setItems([]);
     try {
-      const resp = await fetch(`/api/snkrdunk?q=${encodeURIComponent(query.trim())}`);
+      const resp = await fetch(`/api/snkrdunk?q=${encodeURIComponent(query.trim())}`, { cache: "no-store" });
       const data = await resp.json();
       setItems(data.items ?? []);
     } catch {

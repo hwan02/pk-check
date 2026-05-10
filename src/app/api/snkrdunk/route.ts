@@ -41,7 +41,16 @@ export async function GET(request: NextRequest) {
       imgIdx++;
     }
 
-    return NextResponse.json({ items: items.slice(0, 30) });
+    // 포켓몬 관련 상품만 필터
+    const pokemonKeywords = ["ポケモン", "ポケカ", "ピカチュウ", "リザードン", "ミュウ", "イーブイ",
+      "ブイズ", "Pokemon", "pokemon", "マクドナルド", "ハッピーセット",
+      "ex ", "EX ", "SAR", "SR ", "UR ", "AR ", "VSTAR", "VMAX", " V ",
+      "プロモ", "パック", "ボックス", "デッキ", "拡張"];
+    const filtered = items.filter((item) =>
+      pokemonKeywords.some((kw) => item.title.includes(kw))
+    );
+
+    return NextResponse.json({ items: (filtered.length > 0 ? filtered : items).slice(0, 30) });
   } catch {
     return NextResponse.json({ items: [] });
   }
