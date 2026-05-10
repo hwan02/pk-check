@@ -1,0 +1,85 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f0eef6;
+  --foreground: #1a1a2e;
+  --card-bg: #ffffff;
+  --border: #d8d5e4;
+  --primary: #6c5ce7;
+  --primary-dark: #5a4bd1;
+  --accent: #fd79a8;
+  --surface: #f0eef6;
+  --gradient-start: #a29bfe;
+  --gradient-end: #fd79a8;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--surface);
+  color: var(--foreground);
+  font-family: var(--font-sans, Arial, Helvetica, sans-serif);
+}
+
+/* Logo gradient */
+.logo-text {
+  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Card hover */
+.card-glow {
+  background: var(--card-bg);
+  border: 1px solid var(--border);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.card-glow:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 10px 30px -8px rgba(108, 92, 231, 0.18),
+    0 4px 12px -4px rgba(0, 0, 0, 0.06);
+}
+
+/* Holographic shimmer */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.holo-shimmer {
+  position: relative;
+  overflow: hidden;
+}
+.holo-shimmer:hover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    105deg,
+    transparent 40%,
+    rgba(255, 255, 255, 0.35) 45%,
+    rgba(255, 255, 255, 0.1) 50%,
+    transparent 55%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.2s ease-in-out infinite;
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Smooth fade in */
+main {
+  animation: fadeIn 0.25s ease-out;
+}
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

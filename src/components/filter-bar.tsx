@@ -1,0 +1,149 @@
+"use client";
+
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
+
+const RARITIES = [
+  "Common",
+  "Uncommon",
+  "Rare",
+  "Double Rare",
+  "Illustration Rare",
+  "Special Illustration Rare",
+  "Hyper Rare",
+  "Ultra Rare",
+  "Secret Rare",
+  "ACE SPEC Rare",
+];
+
+const TYPES = [
+  "Colorless",
+  "Darkness",
+  "Dragon",
+  "Fairy",
+  "Fighting",
+  "Fire",
+  "Grass",
+  "Lightning",
+  "Metal",
+  "Psychic",
+  "Water",
+];
+
+const SUPERTYPES = [
+  { value: "", label: "전체" },
+  { value: "Pokémon", label: "포켓몬" },
+  { value: "Trainer", label: "트레이너" },
+  { value: "Energy", label: "에너지" },
+];
+
+const SORT_OPTIONS = [
+  { value: "name", label: "이름순" },
+  { value: "price_desc", label: "가격 높은순" },
+  { value: "price_asc", label: "가격 낮은순" },
+  { value: "newest", label: "최신순" },
+];
+
+export default function FilterBar() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const base = pathname === "/" ? "/" : "/search";
+
+  function update(key: string, value: string) {
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
+    params.delete("page");
+    router.push(`${base}?${params.toString()}`);
+  }
+
+  const hasFilters =
+    searchParams.get("rarity") ||
+    searchParams.get("type") ||
+    searchParams.get("supertype") ||
+    searchParams.get("priced");
+
+  function clearAll() {
+    const params = new URLSearchParams();
+    const q = searchParams.get("q");
+    if (q) params.set("q", q);
+    router.push(`${base}?${params.toString()}`);
+  }
+
+  return (
+    <div className="flex flex-wrap items-center justify-center gap-2 mb-4">
+      <select
+        value={searchParams.get("supertype") ?? ""}
+        onChange={(e) => update("supertype", e.target.value)}
+        className="px-3 py-1.5 rounded border border-[var(--border)] bg-[var(--card-bg)] text-sm"
+      >
+        {SUPERTYPES.map((s) => (
+          <option key={s.value} value={s.value}>
+            {s.label}
+          </option>
+        ))}
+      </select>
+
+      <select
+        value={searchParams.get("type") ?? ""}
+        onChange={(e) => update("type", e.target.value)}
+        className="px-3 py-1.5 rounded border border-[var(--border)] bg-[var(--card-bg)] text-sm"
+      >
+        <option value="">타입 전체</option>
+        {TYPES.map((t) => (
+          <option key={t} value={t}>
+            {t}
+          </option>
+        ))}
+      </select>
+
+      <select
+        value={searchParams.get("rarity") ?? ""}
+        onChange={(e) => update("rarity", e.target.value)}
+        className="px-3 py-1.5 rounded border border-[var(--border)] bg-[var(--card-bg)] text-sm"
+      >
+        <option value="">레어리티 전체</option>
+        {RARITIES.map((r) => (
+          <option key={r} value={r}>
+            {r}
+          </option>
+        ))}
+      </select>
+
+      <select
+        value={searchParams.get("priced") ?? ""}
+        onChange={(e) => update("priced", e.target.value)}
+        className="px-3 py-1.5 rounded border border-[var(--border)] bg-[var(--card-bg)] text-sm"
+      >
+        <option value="">시세 전체</option>
+        <option value="snkrdunk">snkrdunk 시세 있는 것</option>
+        <option value="tcg">TCGPlayer 시세 있는 것</option>
+        <option value="both">둘 다 있는 것</option>
+      </select>
+
+      <select
+        value={searchParams.get("sort") ?? "name"}
+        onChange={(e) => update("sort", e.target.value)}
+        className="px-3 py-1.5 rounded border border-[var(--border)] bg-[var(--card-bg)] text-sm"
+      >
+        {SORT_OPTIONS.map((o) => (
+          <option key={o.value} value={o.value}>
+            {o.label}
+          </option>
+        ))}
+      </select>
+
+      {hasFilters && (
+        <button
+          onClick={clearAll}
+          className="px-3 py-1.5 rounded text-sm text-[var(--primary)] hover:underline cursor-pointer"
+        >
+          필터 초기화
+        </button>
+      )}
+    </div>
+  );
+}
