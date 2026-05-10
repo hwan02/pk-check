@@ -1,5 +1,6 @@
 /**
- * 한국 공식 사이트(pokemoncard.co.kr)에서 카드 정보 스크래핑 → Supabase 저장
+ * 한국 공식 사이트(pokemoncard.co.kr)에서 전체 카드 스크래핑 → Supabase 저장
+ * ID 패턴: BS + YYYY + SSS + NNN (년도 + 세트번호 + 카드번호)
  *
  * 사용법: npx tsx scripts/seed-kr.ts
  */
@@ -8,7 +9,6 @@ import { createClient } from "@supabase/supabase-js";
 import { readFileSync } from "fs";
 import { resolve } from "path";
 
-// Load .env.local
 const envPath = resolve(process.cwd(), ".env.local");
 const envContent = readFileSync(envPath, "utf-8");
 for (const line of envContent.split("\n")) {
@@ -27,61 +27,33 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const BASE_URL = "https://pokemoncard.co.kr";
-const HEADERS = {
-  "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
-};
+const BASE = "https://pokemoncard.co.kr/cards/detail";
+const HEADERS = { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" };
 
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
 
-async function fetchCardIds(): Promise<string[]> {
-  const resp = await fetch(`${BASE_URL}/cards`, { headers: HEADERS });
-  const text = await resp.text();
-  const ids = [...text.matchAll(/\/cards\/detail\/([A-Za-z0-9]+)/g)].map((m) => m[1]);
-  return [...new Set(ids)];
-}
-
-interface KrCard {
-  krId: string;
-  name: string;
-  number: string;
-  rarity: string;
-  hp: string;
-  artist: string;
-  cardType: string;
-  imageUrl: string;
-}
-
-async function fetchCardDetail(krId: string): Promise<KrCard | null> {
+async function fetchCard(krId: string) {
   try {
-    const resp = await fetch(`${BASE_URL}/cards/detail/${krId}`, { headers: HEADERS });
+    const resp = await fetch(`${BASE}/${krId}`, { headers: HEADERS, signal: AbortSignal.timeout(8000) });
     if (!resp.ok) return null;
     const text = await resp.text();
+    if (!text.includes("feature_image")) return null;
 
-    const imgMatch = text.match(
-      /https:\/\/cards\.image\.pokemonkorea\.co\.kr\/data\/wmimages\/[^"?]+/
-    );
+    const imgMatch = text.match(/https:\/\/cards\.image\.pokemonkorea\.co\.kr\/data\/wmimages\/[^"?]+/);
     const imageUrl = imgMatch ? imgMatch[0] : "";
 
     const idx = text.indexOf("feature_image");
-    if (idx < 0) return null;
-
     const chunk = text.slice(idx, idx + 3000);
-    const texts = [...chunk.matchAll(/>([^<]{1,200})</g)]
-      .map((m) => m[1].trim())
-      .filter(Boolean);
+    const texts = [...chunk.matchAll(/>([^<]{1,200})</g)].map((m) => m[1].trim()).filter(Boolean);
 
     let number = "", rarity = "", artist = "", name = "", hp = "", cardType = "";
-
     for (let i = 0; i < texts.length; i++) {
       const t = texts[i];
       if (/^\d{3}\/\d{3}$/.test(t)) {
         number = t;
-        if (i + 1 < texts.length && /^[A-Z]{1,4}$/.test(texts[i + 1])) {
-          rarity = texts[i + 1];
-        }
+        if (i + 1 < texts.length && /^[A-Z]{1,4}$/.test(texts[i + 1])) rarity = texts[i + 1];
       }
       if (t === "일러스트" && i + 1 < texts.length) {
         artist = texts[i + 1];
@@ -92,7 +64,12 @@ async function fetchCardDetail(krId: string): Promise<KrCard | null> {
     }
 
     if (!name) return null;
-    return { krId, name, number, rarity, hp, artist, cardType, imageUrl };
+
+    let supertype = "Trainer";
+    if (cardType.includes("포켓몬")) supertype = "Pokémon";
+    else if (cardType.includes("에너지")) supertype = "Energy";
+
+    return { krId, name, number, rarity, hp, artist, supertype, imageUrl };
   } catch {
     return null;
   }
@@ -100,7 +77,7 @@ async function fetchCardDetail(krId: string): Promise<KrCard | null> {
 
 async function main() {
   console.log("=".repeat(50));
-  console.log("  한국판 카드 데이터 시드");
+  console.log("  한국판 카드 전체 시드");
   console.log("=".repeat(50));
 
   // kr-cards 세트 생성
@@ -112,62 +89,83 @@ async function main() {
     updated_at: new Date().toISOString(),
   }, { onConflict: "id" });
 
-  // 카드 목록 가져오기
-  console.log("\n[1/2] 카드 목록 가져오는 중...");
-  const ids = await fetchCardIds();
-  console.log(`  ${ids.length}개 카드 ID 발견`);
+  let totalSaved = 0;
+  let totalFailed = 0;
+  const batch: Record<string, unknown>[] = [];
 
-  // 상세 가져오기
-  console.log("\n[2/2] 카드 상세 스크래핑 중...");
-  let saved = 0;
-  let failed = 0;
+  // 년도: 2023~2026, 세트: 001~020, 카드: 001~350
+  for (let year = 2023; year <= 2026; year++) {
+    for (let set = 1; set <= 20; set++) {
+      // 세트 존재 여부 확인
+      const testId = `BS${year}${String(set).padStart(3, "0")}001`;
+      const testCard = await fetchCard(testId);
+      if (!testCard) {
+        console.log(`  ${year}-${String(set).padStart(3, "0")}: 없음 (스킵)`);
+        break; // 이 년도의 다음 세트도 없을 가능성 높음
+      }
 
-  for (let i = 0; i < ids.length; i++) {
-    const card = await fetchCardDetail(ids[i]);
-    if (!card) {
-      failed++;
-      continue;
-    }
+      console.log(`  ${year}-${String(set).padStart(3, "0")}: 스캔 중...`);
+      let consecutive_misses = 0;
 
-    const cardId = `kr-${card.krId}`;
+      for (let card = 1; card <= 350; card++) {
+        const krId = `BS${year}${String(set).padStart(3, "0")}${String(card).padStart(3, "0")}`;
+        const data = await fetchCard(krId);
 
-    const { error: cardErr } = await supabase.from("cards").upsert({
-      id: cardId,
-      name: card.name,
-      name_ja: card.name, // 한국어 이름을 name_ja에도 저장 (검색용)
-      supertype: card.cardType.includes("포켓몬") ? "Pokémon" : card.cardType.includes("에너지") ? "Energy" : "Trainer",
-      types: null,
-      subtypes: null,
-      hp: card.hp || null,
-      rarity: card.rarity || null,
-      rarity_ja: card.rarity || null,
-      set_id: "kr-cards",
-      number: card.number || null,
-      artist: card.artist || null,
-      attacks: null,
-      weaknesses: null,
-      resistances: null,
-      retreat_cost: null,
-      region: "kr",
-      image_small: card.imageUrl ? `${card.imageUrl}?w=256` : null,
-      image_large: card.imageUrl ? `${card.imageUrl}?w=512` : null,
-      updated_at: new Date().toISOString(),
-    }, { onConflict: "id" });
+        if (!data) {
+          consecutive_misses++;
+          if (consecutive_misses >= 5) break; // 5연속 없으면 세트 끝
+          continue;
+        }
+        consecutive_misses = 0;
 
-    if (cardErr) {
-      console.error(`  에러 (${cardId}):`, cardErr.message);
-      failed++;
-    } else {
-      saved++;
-    }
+        batch.push({
+          id: `kr-${krId}`,
+          name: data.name,
+          name_ja: data.name,
+          supertype: data.supertype,
+          types: null,
+          subtypes: null,
+          hp: data.hp || null,
+          rarity: data.rarity || null,
+          rarity_ja: data.rarity || null,
+          set_id: "kr-cards",
+          number: data.number || null,
+          artist: data.artist || null,
+          attacks: null,
+          weaknesses: null,
+          resistances: null,
+          retreat_cost: null,
+          region: "kr",
+          image_small: data.imageUrl ? `${data.imageUrl}?w=256` : null,
+          image_large: data.imageUrl ? `${data.imageUrl}?w=512` : null,
+          updated_at: new Date().toISOString(),
+        });
 
-    if ((i + 1) % 10 === 0) {
-      console.log(`  -> ${i + 1}/${ids.length} (저장: ${saved}, 실패: ${failed})`);
-      await sleep(500);
+        // 100개씩 배치 저장
+        if (batch.length >= 100) {
+          const { error } = await supabase.from("cards").upsert(batch, { onConflict: "id" });
+          if (error) console.error(`  upsert error: ${error.message}`);
+          else totalSaved += batch.length;
+          batch.length = 0;
+          console.log(`    -> 누적 저장: ${totalSaved}장`);
+        }
+
+        // Rate limit
+        if (card % 10 === 0) await sleep(200);
+      }
     }
   }
 
-  console.log(`\n  완료! 저장: ${saved}, 실패: ${failed}`);
+  // 남은 배치 저장
+  if (batch.length > 0) {
+    const { error } = await supabase.from("cards").upsert(batch, { onConflict: "id" });
+    if (error) console.error(`  upsert error: ${error.message}`);
+    else totalSaved += batch.length;
+  }
+
+  console.log(`\n${"=".repeat(50)}`);
+  console.log(`  완료! 총 ${totalSaved}장 저장`);
+  console.log("=".repeat(50));
 }
 
 main().catch(console.error);
