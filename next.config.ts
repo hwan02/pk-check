@@ -15,6 +15,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "cdn.snkrdunk.com",
       },
+      {
+        protocol: "https",
+        hostname: "cards.image.pokemonkorea.co.kr",
+      },
     ],
   },
 };
