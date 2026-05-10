@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import PriceChart from "@/components/price-chart";
+import DeleteButton from "@/components/delete-button";
 import { createServerClient } from "@/lib/supabase/server";
 import type { Metadata } from "next";
 
@@ -191,6 +192,13 @@ export default async function CardDetailPage({ params }: Props) {
           )}
         </div>
       </div>
+
+      {/* Delete button for custom cards */}
+      {card.id.startsWith("snkr-") && (
+        <div className="mt-6">
+          <DeleteButton cardId={card.id} />
+        </div>
+      )}
 
       {/* Price History Chart */}
       <section className="mt-10">
