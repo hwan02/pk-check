@@ -16,17 +16,17 @@ const RARITIES = [
 ];
 
 const TYPES = [
-  "Colorless",
-  "Darkness",
-  "Dragon",
-  "Fairy",
-  "Fighting",
-  "Fire",
-  "Grass",
-  "Lightning",
-  "Metal",
-  "Psychic",
-  "Water",
+  { value: "Colorless", label: "무색" },
+  { value: "Darkness", label: "악" },
+  { value: "Dragon", label: "드래곤" },
+  { value: "Fairy", label: "페어리" },
+  { value: "Fighting", label: "격투" },
+  { value: "Fire", label: "불꽃" },
+  { value: "Grass", label: "풀" },
+  { value: "Lightning", label: "번개" },
+  { value: "Metal", label: "강철" },
+  { value: "Psychic", label: "초" },
+  { value: "Water", label: "물" },
 ];
 
 const SUPERTYPES = [
@@ -106,8 +106,8 @@ export default function FilterBar() {
       >
         <option value="">타입 전체</option>
         {TYPES.map((t) => (
-          <option key={t} value={t}>
-            {t}
+          <option key={t.value} value={t.value}>
+            {t.label}
           </option>
         ))}
       </select>

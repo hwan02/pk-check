@@ -12,7 +12,7 @@ interface Props {
 }
 
 // 스니덩 검색용 키워드: 일본어/한글 카드명만 남기고 특수문자 제거
-function buildSnkrdunkSearchName(card: { name: string; name_ja: string | null; region: string | null; rarity?: string | null }): string {
+function buildSnkrdunkSearchName(card: { name: string; name_ja: string | null; region: string | null; rarity?: string | null; rarity_ja?: string | null }): string {
   const base = card.name_ja ?? card.name;
   // 특수문자, 밑줄, 영숫자 제거 → 일본어/한글만 남김
   const cleaned = base
