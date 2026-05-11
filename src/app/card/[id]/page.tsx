@@ -10,6 +10,16 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
+// 스니덩 검색용 키워드: jp 카드의 영문/라틴 문자를 제거해 일본어/CJK만 남김.
+// 결과가 너무 짧으면(노이즈만 남으면) 원본으로 fallback.
+function buildSnkrdunkSearchName(card: { name: string; name_ja: string | null; region: string | null }): string {
+  const base = card.name_ja ?? card.name;
+  if (card.region !== "jp") return base;
+  const stripped = base.replace(/[A-Za-z0-9]+/g, "").trim();
+  const meaningful = stripped.replace(/[（）()・〜~ー\s]/g, "");
+  return meaningful.length >= 2 ? stripped : base;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const supabase = createServerClient();
@@ -81,8 +91,8 @@ export default async function CardDetailPage({ params }: Props) {
 
         {/* Info + Prices */}
         <div>
-          <h1 className="text-2xl font-bold">{card.name}</h1>
-          {card.name_ja && (
+          <h1 className="text-2xl font-bold">{card.region === "jp" ? (card.name_ja ?? card.name) : card.name}</h1>
+          {card.name_ja && card.name_ja !== card.name && card.region !== "jp" && (
             <p className="text-base opacity-60 mt-1">{card.name_ja}</p>
           )}
 
@@ -159,20 +169,20 @@ export default async function CardDetailPage({ params }: Props) {
           {/* External Links */}
           <div className="flex flex-wrap gap-2 mt-4">
             <a
-              href={`https://snkrdunk.com/search?keyword=${encodeURIComponent(card.name_ja ?? card.name)}&searchCategoryIds=6`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90 transition"
-            >
-              스니덩 검색하기 &rarr;
-            </a>
-            <a
               href={`https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(card.name)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:opacity-90 transition"
             >
               TCG 검색하기 &rarr;
+            </a>
+            <a
+              href={`https://snkrdunk.com/search?keyword=${encodeURIComponent(buildSnkrdunkSearchName(card))}&searchCategoryIds=6`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90 transition"
+            >
+              스니덩 검색하기 &rarr;
             </a>
             {prices?.snkrdunk_url && (
               <a
