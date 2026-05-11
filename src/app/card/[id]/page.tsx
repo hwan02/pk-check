@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import PriceChart from "@/components/price-chart";
 import DeleteButton from "@/components/delete-button";
 import { createServerClient } from "@/lib/supabase/server";
+import { USD_TO_KRW, JPY_TO_KRW, formatKRW } from "@/lib/constants";
 import type { Metadata } from "next";
 
 interface Props {
@@ -112,20 +113,16 @@ export default async function CardDetailPage({ params }: Props) {
             )}
           </div>
 
-          {/* Current Prices */}
+          {/* Current Prices (모두 KRW 환산) */}
           <div className="grid grid-cols-2 lg:grid-cols-3 gap-4 mt-6">
             <div className="rounded-lg border border-[var(--border)] p-4">
-              <p className="text-xs opacity-50 mb-1">TCGPlayer (USD)</p>
+              <p className="text-xs opacity-50 mb-1">TCGPlayer (원화 환산)</p>
               {prices?.tcg_market != null ? (
                 <>
                   <p className="text-2xl font-bold text-green-600">
-                    ${prices.tcg_market.toFixed(2)}
+                    {formatKRW(Math.round(prices.tcg_market * USD_TO_KRW))}
                   </p>
-                  <div className="flex gap-3 mt-1 text-xs opacity-60">
-                    {prices.tcg_low != null && <span>Low ${prices.tcg_low.toFixed(2)}</span>}
-                    {prices.tcg_mid != null && <span>Mid ${prices.tcg_mid.toFixed(2)}</span>}
-                    {prices.tcg_high != null && <span>High ${prices.tcg_high.toFixed(2)}</span>}
-                  </div>
+                  <p className="text-xs opacity-60 mt-1">${prices.tcg_market.toFixed(2)} USD</p>
                 </>
               ) : (
                 <p className="text-sm opacity-40">-</p>
@@ -133,12 +130,13 @@ export default async function CardDetailPage({ params }: Props) {
             </div>
 
             <div className="rounded-lg border border-[var(--border)] p-4">
-              <p className="text-xs opacity-50 mb-1">snkrdunk (JPY)</p>
+              <p className="text-xs opacity-50 mb-1">snkrdunk (원화 환산)</p>
               {prices?.snkrdunk_price != null ? (
                 <>
                   <p className="text-2xl font-bold text-blue-600">
-                    ¥{prices.snkrdunk_price.toLocaleString()}
+                    {formatKRW(Math.round(prices.snkrdunk_price * JPY_TO_KRW))}
                   </p>
+                  <p className="text-xs opacity-60 mt-1">¥{prices.snkrdunk_price.toLocaleString()} JPY</p>
                   {prices.snkrdunk_title && (
                     <p className="text-xs opacity-50 mt-1 truncate" title={prices.snkrdunk_title}>
                       {prices.snkrdunk_title}
@@ -153,10 +151,11 @@ export default async function CardDetailPage({ params }: Props) {
             {/* Box Price */}
             {set?.snkrdunk_box_price != null && (
               <div className="rounded-lg border border-[var(--border)] p-4">
-                <p className="text-xs opacity-50 mb-1">박스 시세 (snkrdunk)</p>
+                <p className="text-xs opacity-50 mb-1">박스 시세 (원화 환산)</p>
                 <p className="text-2xl font-bold text-purple-600">
-                  ¥{set.snkrdunk_box_price.toLocaleString()}
+                  {formatKRW(Math.round(set.snkrdunk_box_price * JPY_TO_KRW))}
                 </p>
+                <p className="text-xs opacity-60 mt-1">¥{set.snkrdunk_box_price.toLocaleString()} JPY</p>
                 {set.snkrdunk_box_title && (
                   <p className="text-xs opacity-50 mt-1 truncate" title={set.snkrdunk_box_title}>
                     {set.snkrdunk_box_title}

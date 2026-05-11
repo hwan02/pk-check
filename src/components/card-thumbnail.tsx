@@ -1,10 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import type { CardWithPrice } from "@/lib/types";
+import { toKRW, formatKRW } from "@/lib/constants";
 
 export default function CardThumbnail({ card }: { card: CardWithPrice }) {
-  const tcgPrice = card.prices?.tcg_market;
-  const snkrPrice = card.prices?.snkrdunk_price;
+  const krw = toKRW(card.prices);
 
   return (
     <Link
@@ -39,16 +39,11 @@ export default function CardThumbnail({ card }: { card: CardWithPrice }) {
           <p className="text-xs opacity-60 truncate">{card.name_ja}</p>
         )}
         <p className="text-xs opacity-50 mt-0.5">{(card.region === "kr" ? card.rarity_ja : null) ?? card.rarity ?? ""}</p>
-        <div className="flex gap-3 mt-1.5 text-xs">
-          {tcgPrice != null && (
-            <span className="text-green-600 font-medium">
-              ${tcgPrice.toFixed(2)}
-            </span>
-          )}
-          {snkrPrice != null && (
-            <span className="text-blue-600 font-medium">
-              ¥{snkrPrice.toLocaleString()}
-            </span>
+        <div className="mt-1.5 text-xs">
+          {krw != null ? (
+            <span className="text-[var(--primary)] font-medium">{formatKRW(krw)}</span>
+          ) : (
+            <span className="opacity-30">시세 없음</span>
           )}
         </div>
       </div>

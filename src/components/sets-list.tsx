@@ -4,6 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { CardSet } from "@/lib/types";
+import { JPY_TO_KRW, formatKRW } from "@/lib/constants";
 
 const REGION_TABS = [
   { value: "", label: "전체" },
@@ -109,7 +110,7 @@ export default function SetsList({ sets }: { sets: CardSet[] }) {
                   </p>
                   {set.snkrdunk_box_price != null && (
                     <p className="text-xs text-blue-600 font-medium mt-1">
-                      박스 ¥{set.snkrdunk_box_price.toLocaleString()}
+                      박스 {formatKRW(Math.round(set.snkrdunk_box_price * JPY_TO_KRW))}
                     </p>
                   )}
                 </div>

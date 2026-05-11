@@ -82,7 +82,7 @@ export default function ScanPage() {
     <div className="max-w-4xl mx-auto px-4 py-6">
       <h1 className="text-2xl font-bold mb-2">카드 스캔</h1>
       <p className="text-sm opacity-60 mb-6">
-        카드 사진을 찍거나 업로드하면 번호로 후보를 찾아드려요. 좌하단의 카드 번호(예: 045/198)가 선명하게 보이게 찍어주세요.
+        카드를 찍으면 번호로 후보를 찾아드려요. 좌하단의 카드 번호(예: 045/198)가 선명하게 보이게 찍어주세요.
       </p>
 
       <input
@@ -103,7 +103,7 @@ export default function ScanPage() {
           disabled={loading}
           className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white font-medium hover:opacity-90 disabled:opacity-50"
         >
-          사진 찍기 / 업로드
+          사진 찍기
         </button>
         {(preview || candidates.length > 0) && (
           <button

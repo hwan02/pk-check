@@ -4,7 +4,7 @@ import CardGrid from "@/components/card-grid";
 import Pagination from "@/components/pagination";
 import SetRarityFilter from "@/components/set-rarity-filter";
 import { createServerClient } from "@/lib/supabase/server";
-import { ITEMS_PER_PAGE } from "@/lib/constants";
+import { ITEMS_PER_PAGE, JPY_TO_KRW, formatKRW } from "@/lib/constants";
 import type { Metadata } from "next";
 
 interface Props {
@@ -121,10 +121,11 @@ export default async function SetDetailPage({ params, searchParams }: Props) {
 
         {set.snkrdunk_box_price != null && (
           <div className="mt-3 inline-flex items-center gap-2 rounded-lg border border-[var(--border)] bg-[var(--card-bg)] px-4 py-2">
-            <span className="text-xs opacity-50">박스 시세 (snkrdunk)</span>
+            <span className="text-xs opacity-50">박스 시세 (원화 환산)</span>
             <span className="text-lg font-bold text-blue-600">
-              ¥{set.snkrdunk_box_price.toLocaleString()}
+              {formatKRW(Math.round(set.snkrdunk_box_price * JPY_TO_KRW))}
             </span>
+            <span className="text-xs opacity-50">¥{set.snkrdunk_box_price.toLocaleString()}</span>
           </div>
         )}
       </div>
