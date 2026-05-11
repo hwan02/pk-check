@@ -183,7 +183,7 @@ export default function ScanPage() {
                     </span>
                   )}
                   {c.image_small ? (
-                    <Image src={c.image_small} alt={c.name} fill sizes="(max-width: 640px) 50vw, 25vw" className="object-contain" />
+                    <Image src={c.image_small} alt={c.name} fill sizes="(max-width: 640px) 50vw, 25vw" className={c.image_small.includes("snkrdunk.com") ? "object-cover" : "object-contain"} />
                   ) : (
                     <div className="flex items-center justify-center h-full text-xs opacity-30">No Image</div>
                   )}

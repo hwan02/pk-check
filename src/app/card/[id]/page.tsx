@@ -79,7 +79,7 @@ export default async function CardDetailPage({ params }: Props) {
                 alt={card.name}
                 fill
                 sizes="280px"
-                className="object-contain"
+                className={card.image_large.includes("snkrdunk.com") ? "object-cover" : "object-contain"}
                 priority
               />
             ) : (

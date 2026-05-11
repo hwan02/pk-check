@@ -25,7 +25,7 @@ export default function CardThumbnail({ card }: { card: CardWithPrice }) {
             alt={card.name}
             fill
             sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
-            className="object-contain group-hover:scale-105 transition-transform"
+            className={`${card.image_small.includes("snkrdunk.com") ? "object-cover" : "object-contain"} group-hover:scale-105 transition-transform`}
           />
         ) : (
           <div className="flex items-center justify-center h-full text-xs opacity-30">
