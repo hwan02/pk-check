@@ -3,6 +3,42 @@
 import { useState, useRef } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import type { Worker } from "tesseract.js";
+
+// 페이지 단위로 워커 1개 재사용 (첫 호출 후 init 비용 회피)
+let workerPromise: Promise<Worker> | null = null;
+async function getWorker(onProgress: (msg: string) => void): Promise<Worker> {
+  if (workerPromise) return workerPromise;
+  workerPromise = (async () => {
+    const Tesseract = await import("tesseract.js");
+    onProgress("OCR 엔진 초기화 중...");
+    const w = await Tesseract.createWorker(["eng", "jpn"], 1, {
+      logger: (m: { status: string; progress: number }) => {
+        if (m.status === "loading language traineddata") {
+          onProgress(`언어 데이터 로딩 ${Math.round(m.progress * 100)}%`);
+        }
+      },
+    });
+    return w;
+  })();
+  return workerPromise;
+}
+
+// 카드 사진을 OCR 전에 적당히 축소 (긴 변 1280px). 카메라 원본은 4000px+라 느림.
+async function resizeImage(file: File, maxDim = 1280): Promise<Blob> {
+  const bitmap = await createImageBitmap(file);
+  const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+  const w = Math.round(bitmap.width * scale);
+  const h = Math.round(bitmap.height * scale);
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(bitmap, 0, 0, w, h);
+  return new Promise((resolve) =>
+    canvas.toBlob((b) => resolve(b!), "image/jpeg", 0.9)
+  );
+}
 
 interface Candidate {
   id: string;
@@ -19,30 +55,30 @@ interface Candidate {
 export default function ScanPage() {
   const [preview, setPreview] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("");
-  const [detectedNumber, setDetectedNumber] = useState<string>("");
+  const [detectedInfo, setDetectedInfo] = useState<string>("");
   const [candidates, setCandidates] = useState<Candidate[]>([]);
   const [loading, setLoading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const lastFileRef = useRef<File | null>(null);
 
   async function handleFile(file: File) {
+    lastFileRef.current = file;
     setLoading(true);
     setCandidates([]);
-    setDetectedNumber("");
+    setDetectedInfo("");
     setStatus("이미지 분석 중 (다국어 OCR 로딩, 첫 실행은 30초+)...");
     setPreview(URL.createObjectURL(file));
 
     try {
-      const Tesseract = (await import("tesseract.js")).default;
-      // 다국어 인식: 영문(숫자), 일본어, 한국어
-      const { data } = await Tesseract.recognize(file, "eng+jpn+kor", {
-        logger: (m) => {
-          if (m.status === "recognizing text") {
-            setStatus(`텍스트 인식 중... ${Math.round(m.progress * 100)}%`);
-          } else if (m.status === "loading language traineddata") {
-            setStatus(`언어 데이터 로딩 중... ${Math.round(m.progress * 100)}%`);
-          }
-        },
-      });
+      // 1) 이미지 리사이즈 (긴 변 1280px) — OCR 속도 크게 향상
+      setStatus("이미지 전처리 중...");
+      const resized = await resizeImage(file, 1280);
+
+      // 2) 워커 재사용 (eng+jpn). 처음만 30초 정도, 이후 즉시
+      const worker = await getWorker((m) => setStatus(m));
+
+      setStatus("텍스트 인식 중...");
+      const { data } = await worker.recognize(resized);
 
       const text = data.text;
 
@@ -88,7 +124,7 @@ export default function ScanPage() {
       }
 
       const detected = [number && `번호 ${number}`, name && `이름 "${name}"`, rarity && `등급 ${rarity}`].filter(Boolean).join(" · ");
-      setDetectedNumber(detected);
+      setDetectedInfo(detected);
       setStatus(`검색 중...`);
 
       const params = new URLSearchParams();
@@ -116,7 +152,7 @@ export default function ScanPage() {
     <div className="max-w-4xl mx-auto px-4 py-6">
       <h1 className="text-2xl font-bold mb-2">카드 스캔</h1>
       <p className="text-sm opacity-60 mb-6">
-        카드를 찍으면 번호로 후보를 찾아드려요. 좌하단의 카드 번호(예: 045/198)가 선명하게 보이게 찍어주세요.
+        카드 사진을 찍으면 카드 이름·번호·등급을 인식해서 후보를 찾아드려요. 카드 전체가 잘 보이게 찍어주세요.
       </p>
 
       <input
@@ -139,17 +175,27 @@ export default function ScanPage() {
         >
           사진 찍기
         </button>
+        {lastFileRef.current && (
+          <button
+            onClick={() => lastFileRef.current && handleFile(lastFileRef.current)}
+            disabled={loading}
+            className="px-4 py-2 rounded-lg border border-[var(--border)] hover:bg-[var(--border)] disabled:opacity-50"
+          >
+            같은 사진 다시 인식
+          </button>
+        )}
         {(preview || candidates.length > 0) && (
           <button
             onClick={() => {
               setPreview(null);
               setCandidates([]);
-              setDetectedNumber("");
+              setDetectedInfo("");
               setStatus("");
+              lastFileRef.current = null;
             }}
             className="px-4 py-2 rounded-lg border border-[var(--border)] hover:bg-[var(--border)]"
           >
-            다시 하기
+            초기화
           </button>
         )}
       </div>
@@ -164,7 +210,7 @@ export default function ScanPage() {
       {status && (
         <p className="text-sm mb-4 opacity-70">
           {status}
-          {detectedNumber && <> · 인식된 번호: <strong>{detectedNumber}</strong></>}
+          {detectedInfo && <> · 인식: <strong>{detectedInfo}</strong></>}
         </p>
       )}
 
