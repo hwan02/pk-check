@@ -44,8 +44,10 @@ export async function GET(request: NextRequest) {
   //   en: "1", "45", "199" (패딩 없음)
   //   jp: "001", "045" (3자리 패딩, 슬래시 없음)
   //   kr: "013/053" (full)
+  //   jp promo: "260/SV-P" (슬래시 + 알파벳 세트코드)
   // 추가로 일부 jp 카드는 number 컬럼이 snkrdunk product id로 저장 + 실제 번호는 name 안에 들어있음
-  const numMatch = number.match(/^(\d{1,3})\s*\/\s*(\d{1,3})$/);
+  const numFullDigits = number.match(/^(\d{1,3})\s*\/\s*(\d{1,3})$/);
+  const numPromo = number.match(/^(\d{1,3})\s*\/\s*([A-Z][A-Z0-9-]*)$/);
   const localOnly = number.match(/^(\d{1,3})$/);
 
   let query = supabase
@@ -60,20 +62,29 @@ export async function GET(request: NextRequest) {
   };
 
   const conds: string[] = [];
-  if (numMatch) {
-    const locals = buildCandidates(numMatch[1]);
-    const totals = buildCandidates(numMatch[2]);
+  if (numFullDigits) {
+    const locals = buildCandidates(numFullDigits[1]);
+    const totals = buildCandidates(numFullDigits[2]);
     for (const l of locals) {
       conds.push(`number.eq.${l}`);
       for (const t of totals) conds.push(`number.eq.${l}/${t}`);
       conds.push(`number.like.${l}/%`);
+    }
+  } else if (numPromo) {
+    // "260/SV-P" → 번호 260 + 세트코드 SV-P. number는 보통 "260"만, 세트는 이름/set_id에서 추정
+    const locals = buildCandidates(numPromo[1]);
+    const setCode = numPromo[2];
+    for (const l of locals) {
+      conds.push(`number.eq.${l}`);
+      conds.push(`number.eq.${l}/${setCode}`);
+      conds.push(`name.ilike.%${l}%${setCode}%`);
+      conds.push(`name.ilike.%${setCode}%${l}%`);
     }
   } else if (localOnly) {
     const cands = buildCandidates(localOnly[1]);
     for (const l of cands) {
       conds.push(`number.eq.${l}`);
       conds.push(`number.like.${l}/%`);
-      // 일부 jp 카드는 이름 안에 번호가 들어있음 (예: "토우호쿠 P [SV-P 260]")
       conds.push(`name.ilike.%${l}]%`);
       conds.push(`name.ilike.%${l} %`);
     }
