@@ -68,6 +68,18 @@ export interface PriceHistory {
   recorded_at: string;
 }
 
+export interface GradedPrice {
+  id: number;
+  card_id: string;
+  company: string; // PSA / BGS / CGC / SGC ...
+  grade: string;   // "10", "9.5", "9" ...
+  price: number;
+  currency: string; // KRW / JPY / USD
+  recorded_at: string;
+  note: string | null;
+  created_at: string | null;
+}
+
 export interface CardWithPrice extends Card {
   prices: Price | null;
   set: CardSet | null;

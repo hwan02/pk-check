@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import PriceChart from "@/components/price-chart";
 import DeleteButton from "@/components/delete-button";
 import UpdateImageButton from "@/components/update-image-button";
+import GradedPrices from "@/components/graded-prices";
 import { createServerClient } from "@/lib/supabase/server";
 import { USD_TO_KRW, JPY_TO_KRW, formatKRW } from "@/lib/constants";
 import type { Metadata } from "next";
@@ -224,6 +225,9 @@ export default async function CardDetailPage({ params }: Props) {
           <DeleteButton cardId={card.id} />
         </div>
       )}
+
+      {/* 등급별 시세 (수동 입력) */}
+      <GradedPrices cardId={card.id} />
 
       {/* Price History Chart */}
       <section className="mt-10">
