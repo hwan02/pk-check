@@ -185,6 +185,17 @@ async function main() {
     else totalSaved += batch.length;
   }
 
+  // 빈 prices row 생성 (cron이 시세 채울 수 있도록)
+  console.log("\n빈 prices row 생성...");
+  const { data: krCards } = await supabase.from("cards").select("id").eq("region", "kr");
+  if (krCards) {
+    const priceRows = krCards.map((c) => ({ card_id: c.id, fetched_at: new Date().toISOString() }));
+    for (let i = 0; i < priceRows.length; i += 500) {
+      await supabase.from("prices").upsert(priceRows.slice(i, i + 500), { onConflict: "card_id" });
+    }
+    console.log(`  → ${priceRows.length}개 prices row 보장`);
+  }
+
   console.log(`\n${"=".repeat(50)}`);
   console.log(`  완료! 총 ${totalSaved}장 저장`);
   console.log("=".repeat(50));

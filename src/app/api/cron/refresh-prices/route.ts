@@ -88,29 +88,47 @@ export async function GET(request: NextRequest) {
     }
 
     // 2) Refresh snkrdunk prices for Pokemon cards without snkrdunk data
+    //   - en: name이 영문 → PokeAPI로 일본어 변환 후 키워드 빌드
+    //   - jp/kr: name_ja(또는 name)에 이미 CJK 포함 → 그대로 키워드 사용
     const { data: cardsToScrape } = await supabase
       .from("cards")
-      .select("id, name, rarity, prices(snkrdunk_price)")
+      .select("id, name, name_ja, rarity, region, prices(snkrdunk_price)")
       .eq("supertype", "Pokémon")
       .is("prices.snkrdunk_price", null)
       .limit(100);
 
     for (const card of cardsToScrape ?? []) {
-      const jaName = await getJapaneseName(card.name);
-      if (!jaName) continue;
+      let keyword: string;
+      if (card.region === "jp" || card.region === "kr") {
+        // 한국판 이름은 일본어 시장에 없으니 name_ja(있으면)나 name 그대로
+        const base = card.name_ja ?? card.name;
+        if (!base || !/[぀-ゟ゠-ヿ一-鿿]/.test(base)) continue; // 일본어 없으면 검색 의미 없음
+        // 영문/괄호 부분 제거 (예: "quagsire（デルタ種）" → "（デルタ種）"는 부족하니 fallback은 원본)
+        const stripped = base.replace(/[A-Za-z0-9]+/g, "").trim();
+        const meaningful = stripped.replace(/[（）()・〜~ー\s]/g, "");
+        keyword = meaningful.length >= 2 ? stripped : base;
+      } else {
+        // en 카드: PokeAPI로 변환
+        const jaName = await getJapaneseName(card.name);
+        if (!jaName) continue;
+        keyword = buildSnkrdunkKeyword(jaName, card.name, card.rarity);
+      }
 
-      const keyword = buildSnkrdunkKeyword(jaName, card.name, card.rarity);
       const result = await searchSnkrdunk(keyword);
 
       if (result.price != null) {
+        // upsert: prices row가 없는 카드도 새로 생성
         await supabase
           .from("prices")
-          .update({
-            snkrdunk_price: result.price,
-            snkrdunk_title: result.title,
-            fetched_at: new Date().toISOString(),
-          })
-          .eq("card_id", card.id);
+          .upsert(
+            {
+              card_id: card.id,
+              snkrdunk_price: result.price,
+              snkrdunk_title: result.title,
+              fetched_at: new Date().toISOString(),
+            },
+            { onConflict: "card_id" }
+          );
 
         results.snkrdunkUpdated++;
       }
@@ -118,10 +136,11 @@ export async function GET(request: NextRequest) {
       await sleep(2000); // Rate limit for snkrdunk
     }
 
-    // 3) Refresh box prices for sets without box price
+    // 3) Refresh box prices for jp sets without box price (snkrdunk = 일본 시장)
     const { data: setsToScrape } = await supabase
       .from("sets")
       .select("id, name")
+      .eq("region", "jp")
       .is("snkrdunk_box_price", null)
       .limit(30);
 
