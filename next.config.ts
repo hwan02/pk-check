@@ -19,6 +19,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "cards.image.pokemonkorea.co.kr",
       },
+      {
+        protocol: "https",
+        hostname: "assets.tcgdex.net",
+      },
     ],
   },
 };
