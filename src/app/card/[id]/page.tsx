@@ -87,8 +87,10 @@ export default async function CardDetailPage({ params }: Props) {
           )}
 
           <div className="flex flex-wrap gap-2 mt-3 text-xs">
-            {card.rarity && (
-              <span className="px-2 py-1 rounded bg-[var(--border)]">{card.rarity}</span>
+            {(card.rarity || card.rarity_ja) && (
+              <span className="px-2 py-1 rounded bg-[var(--border)]">
+                {card.region === "kr" ? (card.rarity_ja ?? card.rarity) : card.rarity}
+              </span>
             )}
             {set && (
               <Link href={`/sets/${set.id}`} className="px-2 py-1 rounded bg-[var(--border)] hover:opacity-80">

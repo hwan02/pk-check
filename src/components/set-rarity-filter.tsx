@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 
 interface Props {
   setId: string;
-  rarities: { rarity: string; count: number }[];
+  rarities: { rarity: string; count: number; label?: string }[];
 }
 
 export default function SetRarityFilter({ setId, rarities }: Props) {
@@ -24,7 +24,7 @@ export default function SetRarityFilter({ setId, rarities }: Props) {
       >
         전체
       </Link>
-      {rarities.map(({ rarity, count }) => (
+      {rarities.map(({ rarity, count, label }) => (
         <Link
           key={rarity}
           href={`/sets/${setId}?rarity=${encodeURIComponent(rarity)}`}
@@ -34,7 +34,7 @@ export default function SetRarityFilter({ setId, rarities }: Props) {
               : "border border-[var(--border)] hover:bg-[var(--border)]"
           }`}
         >
-          {rarity} ({count})
+          {label ?? rarity} ({count})
         </Link>
       ))}
     </div>

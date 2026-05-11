@@ -38,7 +38,7 @@ export default function CardThumbnail({ card }: { card: CardWithPrice }) {
         {card.name_ja && (
           <p className="text-xs opacity-60 truncate">{card.name_ja}</p>
         )}
-        <p className="text-xs opacity-50 mt-0.5">{card.rarity ?? ""}</p>
+        <p className="text-xs opacity-50 mt-0.5">{(card.region === "kr" ? card.rarity_ja : null) ?? card.rarity ?? ""}</p>
         <div className="flex gap-3 mt-1.5 text-xs">
           {tcgPrice != null && (
             <span className="text-green-600 font-medium">

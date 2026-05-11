@@ -64,7 +64,7 @@ export async function fetchKrCardDetail(krId: string): Promise<KrCard | null> {
 
     for (let i = 0; i < texts.length; i++) {
       const t = texts[i];
-      if (/^\d{3}\/\d{3}$/.test(t)) {
+      if (/^\d{1,3}\/\d{1,3}$/.test(t)) {
         number = t;
         // 다음은 레어리티
         if (i + 1 < texts.length && /^[A-Z]{1,4}$/.test(texts[i + 1])) {

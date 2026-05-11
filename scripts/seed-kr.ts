@@ -30,6 +30,26 @@ const supabase = createClient(
 const BASE = "https://pokemoncard.co.kr/cards/detail";
 const HEADERS = { "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36" };
 
+// 한국판 약자 → 영문 정규 명칭 (필터/검색은 영문 기준)
+const KR_RARITY_MAP: Record<string, string> = {
+  C: "Common",
+  U: "Uncommon",
+  R: "Rare",
+  RR: "Double Rare",
+  RRR: "Double Rare",
+  AR: "Illustration Rare",
+  SR: "Secret Rare",
+  SAR: "Special Illustration Rare",
+  UR: "Ultra Rare",
+  HR: "Hyper Rare",
+  ACE: "ACE SPEC Rare",
+  P: "Promo",
+  PR: "Promo",
+  CHR: "Trainer Gallery Rare Holo",
+  TR: "Trainer Gallery Rare Holo",
+  S: "Shiny Rare",
+};
+
 function sleep(ms: number) {
   return new Promise((r) => setTimeout(r, ms));
 }
@@ -51,7 +71,7 @@ async function fetchCard(krId: string) {
     let number = "", rarity = "", artist = "", name = "", hp = "", cardType = "";
     for (let i = 0; i < texts.length; i++) {
       const t = texts[i];
-      if (/^\d{3}\/\d{3}$/.test(t)) {
+      if (/^\d{1,3}\/\d{1,3}$/.test(t)) {
         number = t;
         if (i + 1 < texts.length && /^[A-Z]{1,4}$/.test(texts[i + 1])) rarity = texts[i + 1];
       }
@@ -118,6 +138,8 @@ async function main() {
         }
         consecutive_misses = 0;
 
+        const rarityCanonical = data.rarity ? (KR_RARITY_MAP[data.rarity] ?? data.rarity) : null;
+
         batch.push({
           id: `kr-${krId}`,
           name: data.name,
@@ -126,7 +148,7 @@ async function main() {
           types: null,
           subtypes: null,
           hp: data.hp || null,
-          rarity: data.rarity || null,
+          rarity: rarityCanonical,
           rarity_ja: data.rarity || null,
           set_id: "kr-cards",
           number: data.number || null,

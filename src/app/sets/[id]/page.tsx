@@ -34,15 +34,17 @@ export default async function SetDetailPage({ params, searchParams }: Props) {
   // 세트 내 레어리티별 카드 수 집계
   const { data: rarityCounts } = await supabase
     .from("cards")
-    .select("rarity")
+    .select("rarity, rarity_ja")
     .eq("set_id", id)
     .not("rarity", "is", null);
 
-  const rarityMap = new Map<string, number>();
+  const rarityMap = new Map<string, { count: number; label: string }>();
+  const isKr = set.region === "kr";
   for (const row of rarityCounts ?? []) {
-    if (row.rarity) {
-      rarityMap.set(row.rarity, (rarityMap.get(row.rarity) ?? 0) + 1);
-    }
+    if (!row.rarity) continue;
+    const label = isKr ? (row.rarity_ja ?? row.rarity) : row.rarity;
+    const prev = rarityMap.get(row.rarity);
+    rarityMap.set(row.rarity, { count: (prev?.count ?? 0) + 1, label });
   }
   // 카드 수 많은 순 + 히트 레어리티 우선
   const hitRarities = [
@@ -50,7 +52,7 @@ export default async function SetDetailPage({ params, searchParams }: Props) {
     "Ultra Rare", "Secret Rare", "ACE SPEC Rare", "Double Rare",
   ];
   const rarities = [...rarityMap.entries()]
-    .map(([r, c]) => ({ rarity: r, count: c }))
+    .map(([r, v]) => ({ rarity: r, count: v.count, label: v.label }))
     .sort((a, b) => {
       const aHit = hitRarities.indexOf(a.rarity);
       const bHit = hitRarities.indexOf(b.rarity);
