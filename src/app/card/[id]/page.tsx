@@ -158,33 +158,32 @@ export default async function CardDetailPage({ params }: Props) {
 
           {/* External Links */}
           <div className="flex flex-wrap gap-2 mt-4">
-            {prices?.snkrdunk_url ? (
-              <a
-                href={prices.snkrdunk_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90 transition"
-              >
-                snkrdunk 상품 페이지 &rarr;
-              </a>
-            ) : card.name_ja ? (
-              <a
-                href={`https://snkrdunk.com/search?keyword=${encodeURIComponent(card.name_ja)}&searchCategoryIds=6`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[var(--primary)] text-[var(--primary)] text-sm font-medium hover:bg-[var(--primary)] hover:text-white transition"
-              >
-                snkrdunk에서 검색 &rarr;
-              </a>
-            ) : null}
+            <a
+              href={`https://snkrdunk.com/search?keyword=${encodeURIComponent(card.name_ja ?? card.name)}&searchCategoryIds=6`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90 transition"
+            >
+              스니덩 검색하기 &rarr;
+            </a>
             <a
               href={`https://www.tcgplayer.com/search/pokemon/product?q=${encodeURIComponent(card.name)}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-green-600 text-green-600 text-sm font-medium hover:bg-green-600 hover:text-white transition"
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-green-600 text-white text-sm font-medium hover:opacity-90 transition"
             >
-              TCGPlayer &rarr;
+              TCG 검색하기 &rarr;
             </a>
+            {prices?.snkrdunk_url && (
+              <a
+                href={prices.snkrdunk_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg border border-[var(--primary)] text-[var(--primary)] text-sm font-medium hover:bg-[var(--primary)] hover:text-white transition"
+              >
+                스니덩 상품 페이지 &rarr;
+              </a>
+            )}
           </div>
 
           {prices?.fetched_at && (
