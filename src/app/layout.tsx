@@ -37,6 +37,12 @@ export default function RootLayout({
               </span>
             </Link>
             <Link
+              href="/scan"
+              className="text-sm text-[var(--foreground)] opacity-70 hover:opacity-100 transition"
+            >
+              카드 스캔
+            </Link>
+            <Link
               href="/add"
               className="text-sm text-[var(--foreground)] opacity-70 hover:opacity-100 transition"
             >

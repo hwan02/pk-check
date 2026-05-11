@@ -106,17 +106,42 @@ export default async function HomePage({ searchParams }: Props) {
   }
 
   // 기본 메인: 검색 + 퀵필터 + 인기카드
-  const { data: topCards } = await supabase
-    .from("cards")
-    .select("*, prices(*), set:sets(*)")
-    .not("prices.tcg_market", "is", null)
-    .order("tcg_market", { referencedTable: "prices", ascending: false })
-    .limit(12);
+  // 인기 카드는 en/jp/kr 통틀어 가격순. tcg_market(USD)과 snkrdunk_price(JPY)를 JPY 환산해 비교.
+  const USD_TO_JPY = 150;
+  const [byTcg, bySnkr] = await Promise.all([
+    supabase
+      .from("cards")
+      .select("*, prices(*), set:sets(*)")
+      .not("prices.tcg_market", "is", null)
+      .order("tcg_market", { referencedTable: "prices", ascending: false, nullsFirst: false })
+      .limit(40),
+    supabase
+      .from("cards")
+      .select("*, prices(*), set:sets(*)")
+      .not("prices.snkrdunk_price", "is", null)
+      .order("snkrdunk_price", { referencedTable: "prices", ascending: false, nullsFirst: false })
+      .limit(40),
+  ]);
 
-  const cards = (topCards ?? []).map((c) => ({
-    ...c,
-    prices: Array.isArray(c.prices) ? c.prices[0] ?? null : c.prices ?? null,
-    set: Array.isArray(c.set) ? c.set[0] ?? null : c.set ?? null,
+  const seen = new Set<string>();
+  type RawRow = Record<string, unknown> & { id: string };
+  const merged: { card: RawRow; score: number }[] = [];
+  for (const c of [...(byTcg.data ?? []), ...(bySnkr.data ?? [])] as RawRow[]) {
+    if (seen.has(c.id)) continue;
+    seen.add(c.id);
+    const rawPrice = Array.isArray(c.prices) ? (c.prices as unknown[])[0] : c.prices;
+    const price = rawPrice as { tcg_market?: number | null; snkrdunk_price?: number | null } | null;
+    const tcgJpy = (price?.tcg_market ?? 0) * USD_TO_JPY;
+    const snkr = price?.snkrdunk_price ?? 0;
+    merged.push({ card: c, score: Math.max(tcgJpy, snkr) });
+  }
+  merged.sort((a, b) => b.score - a.score);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cards: any[] = merged.slice(0, 12).map(({ card }) => ({
+    ...card,
+    prices: Array.isArray(card.prices) ? (card.prices as unknown[])[0] ?? null : card.prices ?? null,
+    set: Array.isArray(card.set) ? (card.set as unknown[])[0] ?? null : card.set ?? null,
   }));
 
   return (
