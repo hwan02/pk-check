@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import PriceChart from "@/components/price-chart";
 import DeleteButton from "@/components/delete-button";
+import UpdateImageButton from "@/components/update-image-button";
 import { createServerClient } from "@/lib/supabase/server";
 import { USD_TO_KRW, JPY_TO_KRW, formatKRW } from "@/lib/constants";
 import type { Metadata } from "next";
@@ -98,6 +99,9 @@ export default async function CardDetailPage({ params }: Props) {
                 No Image
               </div>
             )}
+          </div>
+          <div className="mt-2 text-center">
+            <UpdateImageButton cardId={card.id} />
           </div>
         </div>
 

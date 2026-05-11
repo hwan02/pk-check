@@ -50,6 +50,9 @@ export default async function HomePage({ searchParams }: Props) {
     else if (priced === "tcg") query = query.not("prices.tcg_market", "is", null);
     else if (priced === "both") query = query.not("prices.snkrdunk_price", "is", null).not("prices.tcg_market", "is", null);
 
+    // 기본: 이미지 있는 카드 우선
+    query = query.not("image_small", "is", null);
+
     switch (sort) {
       case "price_desc":
         query = query.order("tcg_market", { referencedTable: "prices", ascending: false, nullsFirst: false });
