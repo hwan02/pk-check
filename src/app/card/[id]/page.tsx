@@ -11,14 +11,25 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
-// 스니덩 검색용 키워드: jp 카드의 영문/라틴 문자를 제거해 일본어/CJK만 남김.
-// 결과가 너무 짧으면(노이즈만 남으면) 원본으로 fallback.
-function buildSnkrdunkSearchName(card: { name: string; name_ja: string | null; region: string | null }): string {
+// 스니덩 검색용 키워드: 일본어/한글 카드명만 남기고 특수문자 제거
+function buildSnkrdunkSearchName(card: { name: string; name_ja: string | null; region: string | null; rarity?: string | null }): string {
   const base = card.name_ja ?? card.name;
-  if (card.region !== "jp") return base;
-  const stripped = base.replace(/[A-Za-z0-9]+/g, "").trim();
-  const meaningful = stripped.replace(/[（）()・〜~ー\s]/g, "");
-  return meaningful.length >= 2 ? stripped : base;
+  // 특수문자, 밑줄, 영숫자 제거 → 일본어/한글만 남김
+  const cleaned = base
+    .replace(/_+/g, "") // 밑줄 제거
+    .replace(/[A-Za-z0-9]+/g, " ") // 영숫자→공백
+    .replace(/[（）()「」『』【】\[\]・〜~:：,，.。\-/]/g, "") // 괄호/구두점 제거
+    .replace(/\s+/g, " ") // 연속 공백 정리
+    .trim();
+  // 유효한 CJK/가나 문자가 2자 이상 있으면 사용
+  const cjk = cleaned.replace(/[^\u3040-\u30FF\u4E00-\u9FFF\uAC00-\uD7AF]/g, "");
+  const keyword = cjk.length >= 2 ? cleaned : base.replace(/_+/g, " ").trim();
+  // 레어리티 약어 추가 (SAR, SR 등)
+  const rarity = card.rarity_ja ?? card.rarity ?? "";
+  if (rarity && ["SAR", "SR", "UR", "AR", "HR"].includes(rarity)) {
+    return `${keyword} ${rarity}`;
+  }
+  return keyword;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

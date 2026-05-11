@@ -3,16 +3,16 @@
 import { useRouter, usePathname, useSearchParams } from "next/navigation";
 
 const RARITIES = [
-  "Common",
-  "Uncommon",
-  "Rare",
-  "Double Rare",
-  "Illustration Rare",
-  "Special Illustration Rare",
-  "Hyper Rare",
-  "Ultra Rare",
-  "Secret Rare",
-  "ACE SPEC Rare",
+  { value: "Common", label: "C" },
+  { value: "Uncommon", label: "U" },
+  { value: "Rare", label: "R" },
+  { value: "Double Rare", label: "RR" },
+  { value: "Illustration Rare", label: "AR" },
+  { value: "Special Illustration Rare", label: "SAR" },
+  { value: "Hyper Rare", label: "HR" },
+  { value: "Ultra Rare", label: "UR" },
+  { value: "Secret Rare", label: "SR" },
+  { value: "ACE SPEC Rare", label: "ACE" },
 ];
 
 const TYPES = [
@@ -117,10 +117,10 @@ export default function FilterBar() {
         onChange={(e) => update("rarity", e.target.value)}
         className="px-3 py-1.5 rounded border border-[var(--border)] bg-[var(--card-bg)] text-sm"
       >
-        <option value="">레어리티 전체</option>
+        <option value="">등급 전체</option>
         {RARITIES.map((r) => (
-          <option key={r} value={r}>
-            {r}
+          <option key={r.value} value={r.value}>
+            {r.label}
           </option>
         ))}
       </select>

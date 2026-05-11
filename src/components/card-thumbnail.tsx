@@ -34,10 +34,11 @@ export default function CardThumbnail({ card }: { card: CardWithPrice }) {
         )}
       </div>
       <div className="p-2.5">
-        <p className="text-sm font-medium truncate">{card.name}</p>
-        {card.name_ja && (
-          <p className="text-xs opacity-60 truncate">{card.name_ja}</p>
-        )}
+        <p className="text-sm font-medium truncate">
+          {card.region === "kr" || card.region === "jp"
+            ? (card.name_ja ?? card.name)
+            : card.name}
+        </p>
         <p className="text-xs opacity-50 mt-0.5">{(card.region === "kr" ? card.rarity_ja : null) ?? card.rarity ?? ""}</p>
         <div className="mt-1.5 text-xs">
           {krw != null ? (
