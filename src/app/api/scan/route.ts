@@ -10,14 +10,32 @@ import { createServerClient } from "@/lib/supabase/server";
  *   - region: 'en'|'jp'|'kr' (선택, 좁힘)
  *   - name: OCR로 잡힌 카드명 일부 (선택, 후보 정렬 보조)
  */
+// 한국 약자 → 영문 정규명 매핑 (rarity 컬럼이 영문이라 약자로 들어오면 변환)
+const RARITY_ABBR_TO_NAME: Record<string, string> = {
+  C: "Common",
+  U: "Uncommon",
+  R: "Rare",
+  RR: "Double Rare",
+  AR: "Illustration Rare",
+  SR: "Secret Rare",
+  SAR: "Special Illustration Rare",
+  UR: "Ultra Rare",
+  HR: "Hyper Rare",
+  ACE: "ACE SPEC Rare",
+  ACESPEC: "ACE SPEC Rare",
+  CHR: "Trainer Gallery Rare Holo",
+  TR: "Trainer Gallery Rare Holo",
+};
+
 export async function GET(request: NextRequest) {
   const { searchParams } = request.nextUrl;
   const number = (searchParams.get("number") ?? "").trim();
   const region = searchParams.get("region") ?? "";
   const name = (searchParams.get("name") ?? "").trim();
+  const rarity = (searchParams.get("rarity") ?? "").trim();
 
-  if (!number) {
-    return NextResponse.json({ error: "number required" }, { status: 400 });
+  if (!number && !name && !rarity) {
+    return NextResponse.json({ error: "at least one of number/name/rarity required" }, { status: 400 });
   }
 
   const supabase = createServerClient();
@@ -26,64 +44,92 @@ export async function GET(request: NextRequest) {
   //   en: "1", "45", "199" (패딩 없음)
   //   jp: "001", "045" (3자리 패딩, 슬래시 없음)
   //   kr: "013/053" (full)
-  // OCR 결과를 케이스마다 try
+  // 추가로 일부 jp 카드는 number 컬럼이 snkrdunk product id로 저장 + 실제 번호는 name 안에 들어있음
   const numMatch = number.match(/^(\d{1,3})\s*\/\s*(\d{1,3})$/);
   const localOnly = number.match(/^(\d{1,3})$/);
 
   let query = supabase
     .from("cards")
     .select("id, name, name_ja, number, region, image_small, rarity, rarity_ja, set:sets(id, name)")
-    .limit(40);
+    .limit(60);
 
   const buildCandidates = (raw: string): string[] => {
-    const noPad = String(parseInt(raw, 10)); // "045" → "45"
+    const noPad = String(parseInt(raw, 10));
     const pad3 = raw.padStart(3, "0");
     return Array.from(new Set([raw, noPad, pad3]));
   };
 
+  const conds: string[] = [];
   if (numMatch) {
-    const localCandidates = buildCandidates(numMatch[1]);
-    const totalCandidates = buildCandidates(numMatch[2]);
-    const conds: string[] = [];
-    for (const l of localCandidates) {
+    const locals = buildCandidates(numMatch[1]);
+    const totals = buildCandidates(numMatch[2]);
+    for (const l of locals) {
       conds.push(`number.eq.${l}`);
-      for (const t of totalCandidates) conds.push(`number.eq.${l}/${t}`);
+      for (const t of totals) conds.push(`number.eq.${l}/${t}`);
       conds.push(`number.like.${l}/%`);
     }
-    query = query.or(conds.join(","));
   } else if (localOnly) {
     const cands = buildCandidates(localOnly[1]);
-    const conds: string[] = [];
     for (const l of cands) {
       conds.push(`number.eq.${l}`);
       conds.push(`number.like.${l}/%`);
+      // 일부 jp 카드는 이름 안에 번호가 들어있음 (예: "토우호쿠 P [SV-P 260]")
+      conds.push(`name.ilike.%${l}]%`);
+      conds.push(`name.ilike.%${l} %`);
     }
-    query = query.or(conds.join(","));
-  } else {
-    return NextResponse.json({ error: "invalid number format" }, { status: 400 });
   }
+
+  // 이름 후보도 OR 조건에 추가 (CJK 단편이라도 substring 매칭)
+  if (name) {
+    conds.push(`name.ilike.%${name}%`);
+    conds.push(`name_ja.ilike.%${name}%`);
+  }
+
+  if (conds.length === 0) {
+    return NextResponse.json({ error: "no usable hints" }, { status: 400 });
+  }
+
+  query = query.or(conds.join(","));
 
   if (region) query = query.eq("region", region);
 
   const { data, error } = await query;
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
 
-  let candidates = (data ?? []).map((c) => ({
-    ...c,
-    set: Array.isArray(c.set) ? c.set[0] ?? null : c.set ?? null,
-  }));
+  // 후보 정규화 + 점수 기반 정렬 (등급/이름 매칭 가중)
+  const rarityName = rarity ? RARITY_ABBR_TO_NAME[rarity.toUpperCase()] ?? null : null;
+  const lcName = name.toLowerCase();
 
-  // name 힌트가 있으면 매칭 점수로 정렬
-  if (name) {
-    const lcName = name.toLowerCase();
-    candidates = candidates
-      .map((c) => {
-        const matchEn = c.name?.toLowerCase().includes(lcName) ? 2 : 0;
-        const matchJa = c.name_ja?.includes(name) ? 2 : 0;
-        return { ...c, _score: matchEn + matchJa };
-      })
-      .sort((a, b) => b._score - a._score);
-  }
+  type Candidate = {
+    id: string; name: string; name_ja: string | null; number: string | null;
+    region: string | null; image_small: string | null; rarity: string | null; rarity_ja: string | null;
+    set: { id: string; name: string } | null;
+    _score: number;
+  };
+
+  const candidates: Candidate[] = (data ?? []).map((c) => {
+    let score = 0;
+    if (name) {
+      if (c.name?.toLowerCase().includes(lcName)) score += 3;
+      if (c.name_ja?.includes(name)) score += 3;
+    }
+    if (rarity) {
+      const rUp = rarity.toUpperCase();
+      if (c.rarity_ja?.toUpperCase() === rUp) score += 2;
+      else if (rarityName && c.rarity === rarityName) score += 2;
+    }
+    if (number) {
+      const fullNum = number.match(/^\d+\/\d+$/) ? number : null;
+      if (fullNum && c.number === fullNum) score += 3;
+      else if (c.number === number) score += 2;
+    }
+    return {
+      ...c,
+      set: Array.isArray(c.set) ? c.set[0] ?? null : c.set ?? null,
+      _score: score,
+    } as Candidate;
+  });
+  candidates.sort((a, b) => b._score - a._score);
 
   return NextResponse.json({ candidates: candidates.slice(0, 20) });
 }

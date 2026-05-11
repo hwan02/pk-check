@@ -28,41 +28,75 @@ export default function ScanPage() {
     setLoading(true);
     setCandidates([]);
     setDetectedNumber("");
-    setStatus("이미지 분석 중...");
+    setStatus("이미지 분석 중 (다국어 OCR 로딩, 첫 실행은 30초+)...");
     setPreview(URL.createObjectURL(file));
 
     try {
       const Tesseract = (await import("tesseract.js")).default;
-      const { data } = await Tesseract.recognize(file, "eng", {
+      // 다국어 인식: 영문(숫자), 일본어, 한국어
+      const { data } = await Tesseract.recognize(file, "eng+jpn+kor", {
         logger: (m) => {
           if (m.status === "recognizing text") {
             setStatus(`텍스트 인식 중... ${Math.round(m.progress * 100)}%`);
+          } else if (m.status === "loading language traineddata") {
+            setStatus(`언어 데이터 로딩 중... ${Math.round(m.progress * 100)}%`);
           }
         },
       });
 
-      // 카드 번호 패턴: "045/198", "045 / 198", "045/", etc.
       const text = data.text;
+
+      // 1) 카드 번호 패턴
       const numMatch = text.match(/(\d{1,3})\s*\/\s*(\d{1,3})/);
       let number = "";
       if (numMatch) {
         number = `${numMatch[1].padStart(3, "0")}/${numMatch[2].padStart(3, "0")}`;
       } else {
-        // fallback: 3자리 숫자 만이라도
-        const looseMatch = text.match(/\b(\d{3})\b/);
+        const looseMatch = text.match(/\b(\d{2,3})\b/);
         if (looseMatch) number = looseMatch[1];
       }
 
-      if (!number) {
-        setStatus("카드 번호를 찾지 못했어요. 번호(예: 045/198)가 잘 보이게 다시 찍어주세요.");
+      // 2) 레어리티: 알려진 약자 토큰 매칭 (단어 경계 단독으로 등장하는 경우)
+      const RARITY_TOKENS = ["SAR","SSR","SR","RRR","RR","AR","UR","HR","ACE","ACESPEC","CHR","TR","C","U","R","P","PR"];
+      let rarity = "";
+      // 우선 번호 직후의 토큰 찾기
+      if (numMatch) {
+        const after = text.slice(text.indexOf(numMatch[0]) + numMatch[0].length, text.indexOf(numMatch[0]) + numMatch[0].length + 20);
+        const m = after.match(/\b([A-Z]{1,4})\b/);
+        if (m && RARITY_TOKENS.includes(m[1])) rarity = m[1];
+      }
+      // 폴백: 텍스트 전체에서 가장 긴 매칭 (긴 SAR > SR > R 우선)
+      if (!rarity) {
+        for (const t of RARITY_TOKENS) {
+          const re = new RegExp(`(?:^|[^A-Z])${t}(?:[^A-Z]|$)`);
+          if (re.test(text)) {
+            rarity = t;
+            break; // RARITY_TOKENS가 긴 토큰부터 정렬돼있음
+          }
+        }
+      }
+
+      // 3) 일본어/한국어 카드명 후보 추출 (가장 긴 CJK 문자열)
+      const cjkChunks = text.match(/[぀-ゟ゠-ヿ一-鿿가-힯]+(?:[ ・]*[぀-ゟ゠-ヿ一-鿿가-힯]+)*/g) ?? [];
+      const longestName = cjkChunks.sort((a, b) => b.length - a.length)[0] ?? "";
+      const name = longestName.length >= 2 ? longestName : "";
+
+      if (!number && !name && !rarity) {
+        setStatus("번호/이름/등급을 찾지 못했어요. 카드 전체가 잘 보이게 다시 찍어주세요.");
         setLoading(false);
         return;
       }
 
-      setDetectedNumber(number);
-      setStatus(`번호 ${number} 검색 중...`);
+      const detected = [number && `번호 ${number}`, name && `이름 "${name}"`, rarity && `등급 ${rarity}`].filter(Boolean).join(" · ");
+      setDetectedNumber(detected);
+      setStatus(`검색 중...`);
 
-      const resp = await fetch(`/api/scan?number=${encodeURIComponent(number)}`);
+      const params = new URLSearchParams();
+      if (number) params.set("number", number);
+      if (name) params.set("name", name);
+      if (rarity) params.set("rarity", rarity);
+
+      const resp = await fetch(`/api/scan?${params}`);
       const json = await resp.json();
       if (json.candidates?.length) {
         setCandidates(json.candidates);
