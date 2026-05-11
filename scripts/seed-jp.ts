@@ -20,7 +20,11 @@ for (const line of envContent.split("\n")) {
   const eqIdx = trimmed.indexOf("=");
   if (eqIdx > 0) {
     const key = trimmed.slice(0, eqIdx);
-    const value = trimmed.slice(eqIdx + 1);
+    let value = trimmed.slice(eqIdx + 1);
+    // Vercel CLI는 값을 "..."로 감싸서 저장 → 양끝 따옴표 제거
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
     if (!process.env[key]) process.env[key] = value;
   }
 }
@@ -150,21 +154,35 @@ async function main() {
   console.log(`  처리 대상: ${targetSets.length}개 세트`);
 
   // 2. 세트별 카드 정보 fetch
+  // TCGdex가 동일 세트를 케이스 다르게 반환하는 경우가 있어 소문자 키로 dedupe
+  const dedup = new Map<string, TcgSetSummary>();
+  for (const s of targetSets) {
+    const key = s.id.toLowerCase();
+    if (!dedup.has(key)) dedup.set(key, s);
+  }
+  const uniqueSets = [...dedup.values()];
+  console.log(`  중복 제거 후 처리 대상: ${uniqueSets.length}개`);
+
   let totalCards = 0;
   let savedCards = 0;
   const setRows: Record<string, unknown>[] = [];
   const allCardJobs: { setDetail: TcgSetDetail; cardSummary: { id: string } }[] = [];
 
   console.log("\n[2/3] 세트 상세 로딩...");
-  for (let i = 0; i < targetSets.length; i++) {
-    const s = targetSets[i];
+  for (let i = 0; i < uniqueSets.length; i++) {
+    const s = uniqueSets[i];
     const detail = await fetchJson<TcgSetDetail>(`${API}/sets/${s.id}`);
     if (!detail) {
-      console.log(`  [${i + 1}/${targetSets.length}] ${s.id}: 스킵 (조회 실패)`);
+      console.log(`  [${i + 1}/${uniqueSets.length}] ${s.id}: 스킵 (조회 실패)`);
       continue;
     }
+    if (detail.cards.length === 0) {
+      console.log(`  [${i + 1}/${uniqueSets.length}] ${s.id}: 스킵 (0장)`);
+      continue;
+    }
+    const setKey = s.id.toLowerCase(); // FK 매칭을 위해 set_id는 소문자 통일
     setRows.push({
-      id: `jp-${s.id}`,
+      id: `jp-${setKey}`,
       name: detail.name,
       name_ja: detail.name,
       series: detail.serie?.name ?? null,
@@ -179,7 +197,7 @@ async function main() {
     for (const c of detail.cards) {
       allCardJobs.push({ setDetail: detail, cardSummary: c });
     }
-    console.log(`  [${i + 1}/${targetSets.length}] ${s.id} (${detail.cards.length}장)`);
+    console.log(`  [${i + 1}/${uniqueSets.length}] ${s.id} (${detail.cards.length}장)`);
   }
 
   // 세트 upsert
@@ -213,7 +231,7 @@ async function main() {
       const rarityJa = rarityEn ? (RARITY_JA_MAP[rarityEn] ?? null) : null;
 
       batch.push({
-        id: `jp-${card.id}`,
+        id: `jp-${card.id.toLowerCase()}`,
         name: card.name,
         name_ja: card.name,
         supertype,
@@ -222,7 +240,7 @@ async function main() {
         hp: card.hp != null ? String(card.hp) : null,
         rarity: rarityEn,
         rarity_ja: rarityJa,
-        set_id: `jp-${card.set.id}`,
+        set_id: `jp-${card.set.id.toLowerCase()}`,
         number: card.localId,
         artist: card.illustrator ?? null,
         attacks: null,
