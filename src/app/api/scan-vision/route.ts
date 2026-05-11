@@ -87,29 +87,50 @@ function findNumber(words: WordInfo[]): { number: string; nearby: WordInfo[] } {
   return { number: "", nearby: [] };
 }
 
-/** 상단 영역에서 가장 긴 CJK 문자열을 카드명으로 추출. */
+/**
+ * 카드명 추출. 카드명은 상단에서 **가장 큰 폰트**로 인쇄됨.
+ *  - 영역: y < 0.3
+ *  - 단어 높이(h)가 가장 큰 라인 → 그 라인의 텍스트 합쳐서 반환
+ *  - CJK 우선이지만 영문 카드(en region)도 대응
+ */
 function findName(words: WordInfo[]): string {
-  // 상단 후보: y<0.25
-  const top = words.filter((w) => w.cy < 0.25);
+  const top = words.filter((w) => w.cy < 0.3 && w.text.trim().length > 0);
+  if (top.length === 0) return "";
+
+  // y 좌표로 라인 묶기 (높이 ~10% 이내 같은 라인 취급)
   top.sort((a, b) => a.cy - b.cy || a.cx - b.cx);
-  // 라인 묶기
   const lines: WordInfo[][] = [];
   for (const w of top) {
     const last = lines[lines.length - 1];
-    if (last && Math.abs(last[0].cy - w.cy) < 0.03) last.push(w);
+    if (last && Math.abs(last[0].cy - w.cy) < Math.max(w.h, 0.02)) last.push(w);
     else lines.push([w]);
   }
-  // 각 라인에서 CJK 추출 후 가장 긴 것
-  let best = "";
-  for (const line of lines) {
+
+  // 각 라인의 평균 단어 높이 → 가장 큰 라인이 카드명일 확률 높음
+  const scored = lines.map((line) => {
+    const avgH = line.reduce((s, w) => s + w.h, 0) / line.length;
+    return { line, avgH };
+  });
+  scored.sort((a, b) => b.avgH - a.avgH);
+
+  // 상위 라인부터 검사: CJK 또는 충분히 긴 영문 텍스트
+  for (const { line } of scored) {
     line.sort((a, b) => a.cx - b.cx);
     const joined = line.map((w) => w.text).join("");
-    const cjkChunks = joined.match(/[぀-ゟ゠-ヿ一-鿿가-힯][぀-ゟ゠-ヿ一-鿿가-힯ー・]+/g) ?? [];
-    for (const chunk of cjkChunks) {
-      if (chunk.length > best.length) best = chunk;
+    // 카드 종류/HP/속성 부분 제외
+    if (/^(HP|hp)\d/.test(joined)) continue;
+    if (/^[\d]+$/.test(joined)) continue;
+    // CJK가 있으면 그 부분만, 아니면 전체
+    const cjk = joined.match(/[぀-ゟ゠-ヿ一-鿿가-힯][぀-ゟ゠-ヿ一-鿿가-힯ー・]*/g);
+    if (cjk && cjk.length > 0) {
+      const longest = cjk.sort((a, b) => b.length - a.length)[0];
+      if (longest.length >= 2) return longest;
     }
+    // 영문 카드명 (대소문자 혼합, 3자 이상)
+    const en = joined.match(/[A-Za-z][A-Za-z' .-]{2,}/);
+    if (en && en[0].length >= 3) return en[0].trim();
   }
-  return best;
+  return "";
 }
 
 /** 카드 번호 근처에서 등급 토큰 찾기, 없으면 전체에서 폴백. */

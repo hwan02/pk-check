@@ -118,11 +118,15 @@ export async function GET(request: NextRequest) {
     _score: number;
   };
 
+  // 이름이 있고 그게 CJK면 number-only 후보는 거의 무관 → 큰 가중치 차이
+  const nameIsCJK = /[぀-ゟ゠-ヿ一-鿿가-힯]/.test(name);
+
   const candidates: Candidate[] = (data ?? []).map((c) => {
     let score = 0;
     if (name) {
-      if (c.name?.toLowerCase().includes(lcName)) score += 3;
-      if (c.name_ja?.includes(name)) score += 3;
+      const matchEn = c.name?.toLowerCase().includes(lcName);
+      const matchJa = c.name_ja?.includes(name);
+      if (matchEn || matchJa) score += 10;
     }
     if (rarity) {
       const rUp = rarity.toUpperCase();
@@ -130,9 +134,10 @@ export async function GET(request: NextRequest) {
       else if (rarityName && c.rarity === rarityName) score += 2;
     }
     if (number) {
-      const fullNum = number.match(/^\d+\/\d+$/) ? number : null;
-      if (fullNum && c.number === fullNum) score += 3;
-      else if (c.number === number) score += 2;
+      const fullNum = /\/[A-Z0-9-]/.test(number) ? number : null;
+      if (fullNum && c.number === fullNum) score += 5;
+      else if (c.number === number) score += 3;
+      else if (c.number?.startsWith(number + "/")) score += 2;
     }
     return {
       ...c,
@@ -140,7 +145,15 @@ export async function GET(request: NextRequest) {
       _score: score,
     } as Candidate;
   });
-  candidates.sort((a, b) => b._score - a._score);
 
-  return NextResponse.json({ candidates: candidates.slice(0, 20) });
+  // CJK 이름이 있으면 이름 매치 없는 후보는 제외
+  let filtered = candidates;
+  if (nameIsCJK) {
+    const withName = candidates.filter((c) => c._score >= 10);
+    if (withName.length > 0) filtered = withName;
+  }
+
+  filtered.sort((a, b) => b._score - a._score);
+
+  return NextResponse.json({ candidates: filtered.slice(0, 20) });
 }
