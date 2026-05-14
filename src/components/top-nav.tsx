@@ -32,7 +32,7 @@ export default async function TopNav() {
         {/* PC 메인 메뉴 */}
         <div className="hidden md:flex items-center gap-7 text-sm font-semibold tracking-wide ml-4">
           <Link href="/shop" className="opacity-80 hover:opacity-100">SHOP</Link>
-          <Link href="/shop?category=pokemon" className="opacity-80 hover:opacity-100">POKÉMON</Link>
+          <Link href="/shop?category=pokemon" className="opacity-80 hover:opacity-100">POKEMON</Link>
           <Link href="/shop?category=onepiece" className="opacity-80 hover:opacity-100">ONE PIECE</Link>
           <Link href="/content" className="opacity-80 hover:opacity-100">MAGAZINE</Link>
         </div>
