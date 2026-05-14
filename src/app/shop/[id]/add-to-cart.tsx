@@ -7,7 +7,6 @@ export default function AddToCartButton({
   listingId,
   disabled,
   loggedIn,
-  isDemo = false,
 }: {
   listingId: string;
   disabled: boolean;
@@ -18,22 +17,11 @@ export default function AddToCartButton({
   const [loading, setLoading] = useState(false);
   const [msg, setMsg] = useState("");
 
-  if (isDemo) {
-    return (
-      <button
-        disabled
-        className="w-full py-3 rounded-xl bg-gray-300 text-white font-medium cursor-not-allowed"
-      >
-        샘플 상품 — 구매 불가
-      </button>
-    );
-  }
-
   if (!loggedIn) {
     return (
       <button
         onClick={() => router.push(`/login?next=/shop/${listingId}`)}
-        className="w-full py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:opacity-90"
+        className="w-full py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:opacity-90 cursor-pointer"
       >
         로그인하고 장바구니 담기
       </button>
@@ -63,7 +51,7 @@ export default function AddToCartButton({
       <button
         onClick={add}
         disabled={disabled || loading}
-        className="w-full py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:opacity-90 disabled:opacity-50"
+        className="w-full py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:opacity-90 disabled:opacity-50 cursor-pointer"
       >
         {disabled ? "품절" : loading ? "담는 중..." : "장바구니 담기"}
       </button>

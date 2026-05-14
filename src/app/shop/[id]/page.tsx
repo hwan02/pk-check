@@ -81,11 +81,6 @@ export default async function ListingDetailPage({ params }: Props) {
                 이미지 없음
               </div>
             )}
-            {item.isDemo && (
-              <span className="absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded bg-amber-100 text-amber-700">
-                DEMO
-              </span>
-            )}
           </div>
         </div>
 
@@ -153,15 +148,8 @@ export default async function ListingDetailPage({ params }: Props) {
               listingId={item.id}
               disabled={item.stock <= 0}
               loggedIn={!!user}
-              isDemo={item.isDemo}
             />
           </div>
-
-          {item.isDemo && (
-            <p className="mt-3 text-[11px] text-amber-700">
-              샘플 상품입니다. 실제 판매는 등록 후 가능합니다.
-            </p>
-          )}
         </div>
       </div>
 
