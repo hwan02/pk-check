@@ -61,3 +61,15 @@ export async function POST(request: NextRequest) {
   }
   return NextResponse.json({ ok: true });
 }
+
+export async function DELETE(request: NextRequest) {
+  const supabase = await createSsrClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  const { cartItemId } = await request.json();
+  if (!cartItemId) return NextResponse.json({ error: "cartItemId required" }, { status: 400 });
+
+  await supabase.from("cart_items").delete().eq("id", cartItemId).eq("user_id", user.id);
+  return NextResponse.json({ ok: true });
+}
