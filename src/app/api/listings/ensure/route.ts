@@ -1,13 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSsrClient } from "@/lib/supabase/ssr";
+import { createServerClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
-  const supabase = await createSsrClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  // 인증 확인은 SSR 클라이언트로
+  const ssrClient = await createSsrClient();
+  const { data: { user } } = await ssrClient.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
   const { cardId } = await request.json();
   if (!cardId) return NextResponse.json({ error: "cardId required" }, { status: 400 });
+
+  // DB 작업은 service role로 (RLS 우회)
+  const supabase = createServerClient();
 
   // 이미 이 card_id로 listing이 있는지 확인
   const { data: existing } = await supabase
