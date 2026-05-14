@@ -151,7 +151,7 @@ export default async function ListingDetailPage({ params }: Props) {
           <div className="mt-5">
             <AddToCartButton
               listingId={item.id}
-              disabled={!user || item.stock <= 0 || item.isDemo}
+              disabled={item.stock <= 0}
               loggedIn={!!user}
               isDemo={item.isDemo}
             />
