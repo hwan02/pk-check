@@ -30,9 +30,12 @@ export default function AddToCartButton({
     );
   }
 
+  // UUID 형식이면 실제 listing, 아니면 데모(cardId) → ensure 필요
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(listingId);
+
   async function ensureListing(): Promise<string | null> {
-    if (!isDemo) return listingId;
-    // 데모 → listings에 자동 생성
+    if (isUuid) return listingId;
+    // cardId → listings에 자동 생성
     const resp = await fetch("/api/listings/ensure", {
       method: "POST",
       headers: { "content-type": "application/json" },
