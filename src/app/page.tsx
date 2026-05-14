@@ -2,13 +2,12 @@ export const dynamic = "force-dynamic";
 
 import { Suspense } from "react";
 import Link from "next/link";
-import SearchBar from "@/components/search-bar";
-import CardGrid from "@/components/card-grid";
-import FilterBar from "@/components/filter-bar";
-import Pagination from "@/components/pagination";
-import { createServerClient } from "@/lib/supabase/server";
-import { ITEMS_PER_PAGE } from "@/lib/constants";
-import { expandSearchQuery } from "@/lib/translate";
+import { createSsrClient } from "@/lib/supabase/ssr";
+import ShopGrid from "@/components/shop-grid";
+import ShopSearchBar from "@/components/shop-search-bar";
+import CategoryTabs from "@/components/category-tabs";
+import type { Listing } from "@/lib/shop";
+import { getTopPricedCardsAsListings, type ShopItem } from "@/lib/shop-data";
 
 interface Props {
   searchParams: Promise<Record<string, string | undefined>>;
@@ -16,158 +15,100 @@ interface Props {
 
 export default async function HomePage({ searchParams }: Props) {
   const params = await searchParams;
-  const q = params.q ?? "";
-  const rarity = params.rarity ?? "";
-  const type = params.type ?? "";
-  const supertype = params.supertype ?? "";
-  const priced = params.priced ?? "";
-  const region = params.region ?? "";
-  const sort = params.sort ?? "";
-  const page = Math.max(1, parseInt(params.page ?? "1", 10));
+  const category = params.category ?? "";
+  const sort = params.sort ?? "newest";
 
-  const hasSearch = q || rarity || type || supertype || priced || region || sort;
+  const supabase = await createSsrClient();
+  let query = supabase
+    .from("listings")
+    .select("*")
+    .eq("is_active", true)
+    .gt("stock", 0);
 
-  const supabase = createServerClient();
+  if (category === "pokemon" || category === "onepiece") {
+    query = query.eq("category", category);
+  }
+  switch (sort) {
+    case "price_asc":
+      query = query.order("price_usd", { ascending: true });
+      break;
+    case "price_desc":
+      query = query.order("price_usd", { ascending: false });
+      break;
+    default:
+      query = query.order("created_at", { ascending: false });
+  }
+  query = query.limit(20);
 
-  if (hasSearch) {
-    // 검색/필터 모드
-    let query = supabase
-      .from("cards")
-      .select("*, prices(*), set:sets(*)", { count: "exact" });
+  const { data } = await query;
+  let items: ShopItem[] = ((data ?? []) as Listing[]).map((l) => ({ ...l, isDemo: false }));
 
-    if (q) {
-      const keywords = await expandSearchQuery(q);
-      const orConditions = keywords
-        .map((kw) => `name.ilike.%${kw}%,name_ja.ilike.%${kw}%`)
-        .join(",");
-      query = query.or(orConditions);
-    }
-    if (rarity) query = query.eq("rarity", rarity);
-    if (type) query = query.contains("types", [type]);
-    if (supertype) query = query.eq("supertype", supertype);
-    if (region) query = query.eq("region", region);
-    if (priced === "snkrdunk") query = query.not("prices.snkrdunk_price", "is", null);
-    else if (priced === "tcg") query = query.not("prices.tcg_market", "is", null);
-    else if (priced === "both") query = query.not("prices.snkrdunk_price", "is", null).not("prices.tcg_market", "is", null);
-
-    // 기본: 이미지 있는 카드 우선
-    query = query.not("image_small", "is", null);
-
-    switch (sort) {
-      case "price_desc":
-        query = query.order("tcg_market", { referencedTable: "prices", ascending: false, nullsFirst: false });
-        break;
-      case "price_asc":
-        query = query.order("tcg_market", { referencedTable: "prices", ascending: true, nullsFirst: false });
-        break;
-      case "newest":
-        query = query.order("updated_at", { ascending: false });
-        break;
-      default:
-        query = query.order("name", { ascending: true });
-    }
-
-    const from = (page - 1) * ITEMS_PER_PAGE;
-    query = query.range(from, from + ITEMS_PER_PAGE - 1);
-    const { data, count } = await query;
-
-    const cards = (data ?? []).map((c) => ({
-      ...c,
-      prices: Array.isArray(c.prices) ? c.prices[0] ?? null : c.prices ?? null,
-      set: Array.isArray(c.set) ? c.set[0] ?? null : c.set ?? null,
-    }));
-
-    const total = count ?? 0;
-    const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
-
-    const baseParams = new URLSearchParams();
-    if (q) baseParams.set("q", q);
-    if (rarity) baseParams.set("rarity", rarity);
-    if (type) baseParams.set("type", type);
-    if (supertype) baseParams.set("supertype", supertype);
-    if (priced) baseParams.set("priced", priced);
-    if (region) baseParams.set("region", region);
-    if (sort) baseParams.set("sort", sort);
-    const baseUrl = `/?${baseParams.toString()}`;
-
-    return (
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        <div className="flex justify-center mb-4">
-          <SearchBar defaultValue={q} />
-        </div>
-        <Suspense>
-          <FilterBar />
-        </Suspense>
-        <p className="text-sm opacity-60 mb-4">
-          {total > 0 ? `${total.toLocaleString()}개 결과` : "결과 없음"}
-          {q && <> &middot; &quot;{q}&quot;</>}
-        </p>
-        <CardGrid cards={cards} />
-        <Pagination currentPage={page} totalPages={totalPages} baseUrl={baseUrl} />
-      </div>
-    );
+  // listings가 비어있고 원피스 카테고리가 아니면 cards top 10 데모로 채움
+  if (items.length === 0 && category !== "onepiece") {
+    const demos = await getTopPricedCardsAsListings(supabase, 10);
+    if (sort === "price_asc") demos.sort((a, b) => a.price_usd - b.price_usd);
+    else if (sort === "price_desc") demos.sort((a, b) => b.price_usd - a.price_usd);
+    items = demos;
   }
 
-  // 기본 메인: 검색 + 퀵필터 + 인기카드
-  // 인기 카드는 en/jp/kr 통틀어 가격순. tcg_market(USD)과 snkrdunk_price(JPY)를 JPY 환산해 비교.
-  const USD_TO_JPY = 150;
-  const [byTcg, bySnkr] = await Promise.all([
-    supabase
-      .from("cards")
-      .select("*, prices(*), set:sets(*)")
-      .not("prices.tcg_market", "is", null)
-      .order("tcg_market", { referencedTable: "prices", ascending: false, nullsFirst: false })
-      .limit(40),
-    supabase
-      .from("cards")
-      .select("*, prices(*), set:sets(*)")
-      .not("prices.snkrdunk_price", "is", null)
-      .order("snkrdunk_price", { referencedTable: "prices", ascending: false, nullsFirst: false })
-      .limit(40),
-  ]);
-
-  const seen = new Set<string>();
-  type RawRow = Record<string, unknown> & { id: string };
-  const merged: { card: RawRow; score: number }[] = [];
-  for (const c of [...(byTcg.data ?? []), ...(bySnkr.data ?? [])] as RawRow[]) {
-    if (seen.has(c.id)) continue;
-    seen.add(c.id);
-    const rawPrice = Array.isArray(c.prices) ? (c.prices as unknown[])[0] : c.prices;
-    const price = rawPrice as { tcg_market?: number | null; snkrdunk_price?: number | null } | null;
-    const tcgJpy = (price?.tcg_market ?? 0) * USD_TO_JPY;
-    const snkr = price?.snkrdunk_price ?? 0;
-    merged.push({ card: c, score: Math.max(tcgJpy, snkr) });
+  function buildUrl(over: Record<string, string | undefined>) {
+    const sp = new URLSearchParams();
+    const merged = { category, sort, ...over };
+    for (const [k, v] of Object.entries(merged)) if (v) sp.set(k, v);
+    const s = sp.toString();
+    return s ? `/?${s}` : "/";
   }
-  merged.sort((a, b) => b.score - a.score);
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cards: any[] = merged.slice(0, 12).map(({ card }) => ({
-    ...card,
-    prices: Array.isArray(card.prices) ? (card.prices as unknown[])[0] ?? null : card.prices ?? null,
-    set: Array.isArray(card.set) ? (card.set as unknown[])[0] ?? null : card.set ?? null,
-  }));
+  const hasDemo = items.some((i) => i.isDemo);
 
   return (
     <div className="max-w-7xl mx-auto px-4 py-6">
-      <section className="mb-4">
-        <div className="flex justify-center">
-          <SearchBar />
+      <div className="flex justify-center mb-4">
+        <Suspense>
+          <ShopSearchBar />
+        </Suspense>
+      </div>
+
+      <CategoryTabs current={category} basePath="/" sort={sort} />
+
+      <div className="flex items-center justify-between mb-4 mt-3">
+        <span className="text-xs opacity-60">
+          {items.length}개 상품
+          {hasDemo && <span className="ml-2 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 text-[10px]">DEMO</span>}
+        </span>
+        <div className="flex items-center gap-1">
+          {[
+            { v: "newest", l: "최신순" },
+            { v: "price_asc", l: "낮은가격" },
+            { v: "price_desc", l: "높은가격" },
+          ].map((s) => (
+            <Link
+              key={s.v}
+              href={buildUrl({ sort: s.v })}
+              className={`text-xs px-2 py-1 rounded ${
+                sort === s.v
+                  ? "bg-[var(--primary)] text-white"
+                  : "opacity-60 hover:opacity-100"
+              }`}
+            >
+              {s.l}
+            </Link>
+          ))}
         </div>
-      </section>
+      </div>
 
-      <Suspense>
-        <FilterBar />
-      </Suspense>
+      <ShopGrid listings={items} />
 
-      <section>
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold">인기 카드</h2>
-          <Link href="/?sort=price_desc" className="text-sm text-[var(--primary)] hover:underline">
-            전체보기
+      {items.length >= 10 && (
+        <div className="flex justify-center mt-8">
+          <Link
+            href={`/shop${category ? `?category=${category}` : ""}`}
+            className="px-5 py-2.5 rounded-xl border border-[var(--border)] text-sm hover:bg-[var(--card-bg)]"
+          >
+            전체 상품 보기 →
           </Link>
         </div>
-        <CardGrid cards={cards} />
-      </section>
+      )}
     </div>
   );
 }
