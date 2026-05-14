@@ -28,7 +28,7 @@ export default async function ListingDetailPage({ params }: Props) {
     if (data) item = { ...(data as Listing), isDemo: false };
   }
 
-  // 2) 없으면 cards 데모 fallback (id가 카드 id 형식)
+  // 2) 없으면 cards 데모 fallback
   if (!item) {
     item = await getTopCardAsListing(supabase, id);
   }
@@ -38,83 +38,104 @@ export default async function ListingDetailPage({ params }: Props) {
   const { data: { user } } = await supabase.auth.getUser();
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6">
-      <Link href="/shop" className="text-sm opacity-60 hover:opacity-100">
-        ← 상품 목록
-      </Link>
+    <div className="max-w-6xl mx-auto px-4 pt-4 pb-12">
+      {/* breadcrumb */}
+      <nav className="text-xs opacity-60 mb-4 flex items-center gap-1.5">
+        <Link href="/shop" className="hover:opacity-100">SHOP</Link>
+        <span>/</span>
+        <Link href={`/shop?category=${item.category}`} className="hover:opacity-100">
+          {CATEGORY_LABEL[item.category]}
+        </Link>
+        <span>/</span>
+        <span className="opacity-80 truncate">{item.title}</span>
+      </nav>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-4">
-        <div className="aspect-square relative rounded-xl overflow-hidden bg-gray-50 border border-[var(--border)]">
-          {item.image_url ? (
-            <Image
-              src={item.image_url}
-              alt={item.title}
-              fill
-              className="object-contain"
-              sizes="(max-width: 768px) 100vw, 50vw"
-              priority
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center text-sm opacity-40">
-              이미지 없음
-            </div>
-          )}
-        </div>
-
+      <div className="grid grid-cols-1 md:grid-cols-[1.1fr_1fr] gap-8 lg:gap-12">
+        {/* Image */}
         <div>
-          <div className="flex items-center gap-2 mb-2 flex-wrap">
-            <span className="text-xs px-2 py-0.5 rounded bg-[var(--primary)] text-white">
-              {CATEGORY_LABEL[item.category]}
-            </span>
-            {item.language && LANGUAGE_LABEL[item.language] && (
-              <span className="text-xs px-2 py-0.5 rounded border border-[var(--border)]">
-                {LANGUAGE_LABEL[item.language]}
-              </span>
-            )}
-            {item.condition && CONDITION_LABEL[item.condition] && (
-              <span className="text-xs px-2 py-0.5 rounded border border-[var(--border)]">
-                {CONDITION_LABEL[item.condition]}
-              </span>
+          <div className="aspect-square relative rounded-2xl overflow-hidden bg-[var(--card-bg)] border border-[var(--border)]">
+            {item.image_url ? (
+              <Image
+                src={item.image_url}
+                alt={item.title}
+                fill
+                className="object-contain"
+                sizes="(max-width: 768px) 100vw, 50vw"
+                priority
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-sm opacity-40">
+                이미지 없음
+              </div>
             )}
             {item.isDemo && (
-              <span className="text-xs px-2 py-0.5 rounded bg-amber-100 text-amber-700">
+              <span className="absolute top-3 left-3 text-[11px] font-semibold px-2 py-1 rounded bg-amber-100 text-amber-700">
                 DEMO
               </span>
             )}
           </div>
+        </div>
 
-          <h1 className="text-2xl font-bold">{item.title}</h1>
-          {item.title_en && (
-            <p className="text-sm opacity-60 mt-1">{item.title_en}</p>
-          )}
+        {/* Info / Price */}
+        <div className="md:sticky md:top-20 md:self-start">
+          {/* 영문/카테고리 라인 (작게) */}
+          <div className="text-xs tracking-widest opacity-50 uppercase mb-1">
+            {CATEGORY_LABEL[item.category]}
+            {item.title_en && <> · {item.title_en}</>}
+          </div>
 
-          <p className="text-3xl font-bold text-[var(--primary)] mt-4">
-            {formatUSD(item.price_usd)}
-          </p>
-          <p className="text-xs opacity-60 mt-1">
-            재고: {item.stock}개 · Worldwide shipping via PayPal
-          </p>
+          {/* 메인 타이틀 */}
+          <h1 className="text-2xl md:text-3xl font-bold leading-tight tracking-tight">
+            {item.title}
+          </h1>
 
-          {item.description && (
-            <div className="mt-6">
-              <h3 className="text-sm font-semibold mb-1">상품 정보</h3>
-              <p className="text-sm whitespace-pre-line opacity-80">{item.description}</p>
-            </div>
-          )}
-          {item.description_en && item.description_en !== item.description && (
-            <div className="mt-4">
-              <h3 className="text-sm font-semibold mb-1">Info (EN)</h3>
-              <p className="text-sm whitespace-pre-line opacity-80">{item.description_en}</p>
-            </div>
-          )}
+          {/* 옵션 칩 */}
+          <div className="flex flex-wrap gap-1.5 mt-3">
+            {item.language && LANGUAGE_LABEL[item.language] && (
+              <span className="text-[11px] px-2 py-1 rounded-full border border-[var(--border)]">
+                {LANGUAGE_LABEL[item.language]}
+              </span>
+            )}
+            {item.condition && CONDITION_LABEL[item.condition] && (
+              <span className="text-[11px] px-2 py-1 rounded-full border border-[var(--border)]">
+                {CONDITION_LABEL[item.condition]}
+              </span>
+            )}
+          </div>
 
-          {item.isDemo && (
-            <div className="mt-6 rounded-lg border border-amber-200 bg-amber-50 p-3 text-xs text-amber-800">
-              샘플 상품입니다. 실제 판매는 등록 후 가능합니다.
-            </div>
-          )}
+          {/* 가격 박스 (KREAM 시그니처) */}
+          <div className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] p-5">
+            <p className="text-xs opacity-60 mb-1">즉시 구매가</p>
+            <p className="text-3xl md:text-4xl font-extrabold tracking-tight">
+              {formatUSD(item.price_usd)}
+            </p>
+            <p className="text-xs opacity-60 mt-1">Worldwide shipping · PayPal</p>
 
-          <div className="mt-8">
+            <dl className="grid grid-cols-2 gap-y-2 mt-5 pt-4 border-t border-[var(--border)] text-xs">
+              <dt className="opacity-60">재고</dt>
+              <dd className="text-right font-medium">{item.stock}개</dd>
+
+              <dt className="opacity-60">카테고리</dt>
+              <dd className="text-right font-medium">{CATEGORY_LABEL[item.category]}</dd>
+
+              {item.language && LANGUAGE_LABEL[item.language] && (
+                <>
+                  <dt className="opacity-60">언어</dt>
+                  <dd className="text-right font-medium">{LANGUAGE_LABEL[item.language]}</dd>
+                </>
+              )}
+
+              {item.condition && CONDITION_LABEL[item.condition] && (
+                <>
+                  <dt className="opacity-60">상태</dt>
+                  <dd className="text-right font-medium">{CONDITION_LABEL[item.condition]}</dd>
+                </>
+              )}
+            </dl>
+          </div>
+
+          {/* CTA */}
+          <div className="mt-5">
             <AddToCartButton
               listingId={item.id}
               disabled={!user || item.stock <= 0 || item.isDemo}
@@ -122,8 +143,39 @@ export default async function ListingDetailPage({ params }: Props) {
               isDemo={item.isDemo}
             />
           </div>
+
+          {item.isDemo && (
+            <p className="mt-3 text-[11px] text-amber-700">
+              샘플 상품입니다. 실제 판매는 등록 후 가능합니다.
+            </p>
+          )}
         </div>
       </div>
+
+      {/* 상품 정보 / 배송 안내 — 아래에 펼침 */}
+      {(item.description || item.description_en) && (
+        <section className="mt-12 max-w-3xl">
+          <h2 className="text-sm font-semibold tracking-widest uppercase opacity-70 mb-3">상품 정보</h2>
+          {item.description && (
+            <p className="text-sm whitespace-pre-line opacity-90 leading-relaxed">{item.description}</p>
+          )}
+          {item.description_en && item.description_en !== item.description && (
+            <>
+              <h3 className="text-xs font-semibold tracking-widest uppercase opacity-60 mt-6 mb-2">INFO (EN)</h3>
+              <p className="text-sm whitespace-pre-line opacity-80 leading-relaxed">{item.description_en}</p>
+            </>
+          )}
+        </section>
+      )}
+
+      <section className="mt-12 max-w-3xl">
+        <h2 className="text-sm font-semibold tracking-widest uppercase opacity-70 mb-3">배송 & 결제</h2>
+        <ul className="text-sm opacity-80 space-y-1.5">
+          <li>· 전 세계 배송 (Worldwide shipping)</li>
+          <li>· PayPal 결제 지원</li>
+          <li>· 영업일 기준 1–3일 내 발송</li>
+        </ul>
+      </section>
     </div>
   );
 }
