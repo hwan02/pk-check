@@ -148,6 +148,7 @@ export default async function ListingDetailPage({ params }: Props) {
               listingId={item.id}
               disabled={item.stock <= 0}
               loggedIn={!!user}
+              isDemo={item.isDemo}
             />
           </div>
         </div>
