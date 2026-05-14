@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSsrClient } from "@/lib/supabase/ssr";
+import { createServerClient } from "@/lib/supabase/server";
 import { createPayPalOrder } from "@/lib/paypal";
 
 export async function POST(request: NextRequest) {
-  const supabase = await createSsrClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const ssrClient = await createSsrClient();
+  const { data: { user } } = await ssrClient.auth.getUser();
   if (!user) return NextResponse.json({ error: "로그인 필요" }, { status: 401 });
 
+  const db = createServerClient();
   const { shippingAddress } = await request.json();
 
   // 장바구니 가져오기
-  const { data: cartItems } = await supabase
+  const { data: cartItems } = await db
     .from("cart_items")
     .select("*, listing:listings(*)")
     .eq("user_id", user.id);
@@ -24,7 +26,7 @@ export async function POST(request: NextRequest) {
     const price = (item.listing as { price_usd: number })?.price_usd ?? 0;
     return sum + price * item.quantity;
   }, 0);
-  const shipping = 0; // 무료배송 or 추후 설정
+  const shipping = 0;
   const total = subtotal + shipping;
 
   // DB에 주문 생성 (status: pending)
@@ -40,7 +42,7 @@ export async function POST(request: NextRequest) {
     };
   });
 
-  const { data: order, error: orderErr } = await supabase
+  const { data: order, error: orderErr } = await db
     .from("orders")
     .insert({
       user_id: user.id,
@@ -59,14 +61,13 @@ export async function POST(request: NextRequest) {
 
   // 주문 아이템 저장
   const items = orderItems.map((item) => ({ ...item, order_id: order.id }));
-  await supabase.from("order_items").insert(items);
+  await db.from("order_items").insert(items);
 
   // PayPal 주문 생성
   const paypalOrder = await createPayPalOrder(total, order.id);
 
   if (paypalOrder.id) {
-    // DB에 PayPal order ID 저장
-    await supabase
+    await db
       .from("orders")
       .update({ paypal_order_id: paypalOrder.id })
       .eq("id", order.id);
@@ -77,5 +78,5 @@ export async function POST(request: NextRequest) {
     });
   }
 
-  return NextResponse.json({ error: "PayPal 주문 생성 실패" }, { status: 500 });
+  return NextResponse.json({ error: "PayPal 주문 생성 실패", detail: paypalOrder }, { status: 500 });
 }
