@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSsrClient } from "@/lib/supabase/ssr";
+import { createServerClient } from "@/lib/supabase/server";
 
 export async function GET() {
-  const supabase = await createSsrClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const ssrClient = await createSsrClient();
+  const { data: { user } } = await ssrClient.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
-  const { data, error } = await supabase
+  const db = createServerClient();
+  const { data, error } = await db
     .from("cart_items")
     .select("*, listing:listings(*)")
     .eq("user_id", user.id)
@@ -16,9 +18,11 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = await createSsrClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const ssrClient = await createSsrClient();
+  const { data: { user } } = await ssrClient.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  const db = createServerClient(); // service role로 RLS 우회
 
   const body = await request.json();
   const listingId = body.listing_id as string | undefined;
@@ -27,7 +31,7 @@ export async function POST(request: NextRequest) {
   if (!Number.isInteger(quantity) || quantity < 1)
     return NextResponse.json({ error: "invalid quantity" }, { status: 400 });
 
-  const { data: listing } = await supabase
+  const { data: listing } = await db
     .from("listings")
     .select("id, stock, is_active")
     .eq("id", listingId)
@@ -36,7 +40,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "listing not found" }, { status: 404 });
 
   // upsert: 기존에 있으면 quantity 증가
-  const { data: existing } = await supabase
+  const { data: existing } = await db
     .from("cart_items")
     .select("id, quantity")
     .eq("user_id", user.id)
@@ -48,13 +52,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "재고 부족" }, { status: 400 });
 
   if (existing) {
-    const { error } = await supabase
+    const { error } = await db
       .from("cart_items")
       .update({ quantity: newQty })
       .eq("id", existing.id);
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   } else {
-    const { error } = await supabase
+    const { error } = await db
       .from("cart_items")
       .insert({ user_id: user.id, listing_id: listingId, quantity });
     if (error) return NextResponse.json({ error: error.message }, { status: 500 });
@@ -63,13 +67,14 @@ export async function POST(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
-  const supabase = await createSsrClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const ssrClient = await createSsrClient();
+  const { data: { user } } = await ssrClient.auth.getUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
+  const db = createServerClient();
   const { cartItemId } = await request.json();
   if (!cartItemId) return NextResponse.json({ error: "cartItemId required" }, { status: 400 });
 
-  await supabase.from("cart_items").delete().eq("id", cartItemId).eq("user_id", user.id);
+  await db.from("cart_items").delete().eq("id", cartItemId).eq("user_id", user.id);
   return NextResponse.json({ ok: true });
 }
