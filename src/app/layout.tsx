@@ -39,8 +39,8 @@ export default function RootLayout({
     <html lang="ko" className={`${notoSansKr.variable} ${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col pb-16">
         <header className="border-b border-[var(--border)] bg-[var(--card-bg)]/95 backdrop-blur-sm sticky top-0 z-50">
-          <nav className="max-w-7xl mx-auto px-4 h-14 flex items-center">
-            <Link href="/" className="flex items-center">
+          <nav className="max-w-7xl mx-auto px-4 h-14 flex items-center justify-between gap-6">
+            <Link href="/" className="flex items-center shrink-0">
               <span
                 className="text-2xl font-black tracking-tight"
                 style={{ fontFamily: "var(--font-brand), sans-serif", letterSpacing: "-0.04em" }}
@@ -48,6 +48,16 @@ export default function RootLayout({
                 KIKIDULT
               </span>
             </Link>
+            <div className="hidden md:flex items-center gap-6 text-sm font-semibold">
+              <Link href="/shop" className="opacity-80 hover:opacity-100 tracking-wide">SHOP</Link>
+              <Link href="/shop?category=pokemon" className="opacity-80 hover:opacity-100 tracking-wide">POKÉMON</Link>
+              <Link href="/shop?category=onepiece" className="opacity-80 hover:opacity-100 tracking-wide">ONE PIECE</Link>
+              <Link href="/content" className="opacity-80 hover:opacity-100 tracking-wide">MAGAZINE</Link>
+            </div>
+            <div className="md:hidden flex items-center gap-3 text-xs">
+              <Link href="/shop" className="opacity-80">SHOP</Link>
+              <Link href="/content" className="opacity-80">MAGAZINE</Link>
+            </div>
           </nav>
         </header>
         <main className="flex-1">{children}</main>

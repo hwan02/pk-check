@@ -7,6 +7,7 @@ import { createSsrClient } from "@/lib/supabase/ssr";
 import { CATEGORY_LABEL, CONDITION_LABEL, LANGUAGE_LABEL, formatUSD, type Listing } from "@/lib/shop";
 import { getTopCardAsListing, isUuidLike, type ShopItem } from "@/lib/shop-data";
 import AddToCartButton from "./add-to-cart";
+import PriceTrend from "@/components/price-trend";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -36,6 +37,18 @@ export default async function ListingDetailPage({ params }: Props) {
   if (!item) notFound();
 
   const { data: { user } } = await supabase.auth.getUser();
+
+  // 시세 추이: card_id 연결돼있으면 price_history 조회
+  let priceHistory: { recorded_at: string; tcg_market: number | null; snkrdunk_price: number | null }[] = [];
+  if (item.card_id) {
+    const { data: hist } = await supabase
+      .from("price_history")
+      .select("recorded_at, tcg_market, snkrdunk_price")
+      .eq("card_id", item.card_id)
+      .order("recorded_at", { ascending: true })
+      .limit(400);
+    priceHistory = hist ?? [];
+  }
 
   return (
     <div className="max-w-6xl mx-auto px-4 pt-4 pb-12">
@@ -151,6 +164,14 @@ export default async function ListingDetailPage({ params }: Props) {
           )}
         </div>
       </div>
+
+      {/* 시세 추이 (연결된 카드일 때) */}
+      {priceHistory.length > 0 && (
+        <section className="mt-12 max-w-3xl">
+          <h2 className="text-sm font-semibold tracking-widest uppercase opacity-70 mb-3">시세 추이</h2>
+          <PriceTrend data={priceHistory} />
+        </section>
+      )}
 
       {/* 상품 정보 / 배송 안내 — 아래에 펼침 */}
       {(item.description || item.description_en) && (
