@@ -28,14 +28,12 @@
   --color-buy: var(--buy);
   --color-sell: var(--sell);
   --color-down: var(--down);
-  --font-sans: var(--font-sans);
-  --font-brand: var(--font-brand);
 }
 
 body {
   background: var(--surface);
   color: var(--foreground);
-  font-family: var(--font-sans, Arial, Helvetica, sans-serif);
+  font-family: var(--font-sans), "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
