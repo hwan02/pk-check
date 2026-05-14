@@ -47,16 +47,16 @@ export default async function HomePage() {
     <div>
       {/* Hero */}
       <section className="border-b border-[var(--border)] bg-[var(--card-bg)]">
-        <div className="max-w-7xl mx-auto px-4 py-10 md:py-16">
+        <div className="max-w-7xl mx-auto px-4 py-12 md:py-20 text-center flex flex-col items-center">
           <p className="text-xs tracking-[0.3em] opacity-50 uppercase">Kikidult — TCG Market</p>
-          <h1 className="mt-3 text-4xl md:text-6xl font-black tracking-tight leading-[1.05]">
+          <h1 className="mt-4 text-4xl md:text-6xl font-black tracking-tight leading-[1.05]">
             카드의 가치를,<br />
             정확하게 거래하세요.
           </h1>
-          <p className="mt-4 text-sm md:text-base opacity-70 max-w-md">
+          <p className="mt-5 text-sm md:text-base opacity-70 max-w-lg">
             포켓몬과 원피스 트레이딩 카드의 정품을 전 세계로. PayPal 결제와 안전 배송.
           </p>
-          <div className="mt-6 max-w-xl">
+          <div className="mt-7 w-full max-w-xl">
             <Suspense>
               <ShopSearchBar />
             </Suspense>

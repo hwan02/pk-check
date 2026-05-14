@@ -27,7 +27,7 @@ export default async function BottomNav() {
   if (isAdmin) items.push({ href: "/admin/listings", label: "관리", icon: <CogIcon /> });
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-[var(--card-bg)] border-t border-[var(--border)] pb-[env(safe-area-inset-bottom)]">
+    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--card-bg)] border-t border-[var(--border)] pb-[env(safe-area-inset-bottom)]">
       <ul className="grid grid-cols-5 max-w-md mx-auto">
         {items.map((it) => (
           <li key={it.href}>
