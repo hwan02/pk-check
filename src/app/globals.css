@@ -1,85 +1,92 @@
 @import "tailwindcss";
 
+/* KREAM-style 디자인 토큰 (Kikidult)
+ * 흑백 베이스 + 액센트:
+ *   buy(녹색)  = 매수가/체결가
+ *   sell(빨강) = 매도가/상승가
+ *   down(파랑) = 하락가
+ */
 :root {
-  --background: #f0eef6;
-  --foreground: #1a1a2e;
+  --background: #ffffff;
+  --foreground: #1a1a1a;
   --card-bg: #ffffff;
-  --border: #d8d5e4;
-  --primary: #6c5ce7;
-  --primary-dark: #5a4bd1;
-  --accent: #fd79a8;
-  --surface: #f0eef6;
-  --gradient-start: #a29bfe;
-  --gradient-end: #fd79a8;
+  --border: #ebebeb;
+  --border-strong: #d3d3d3;
+  --primary: #1a1a1a;          /* 검정 (메인 액션) */
+  --primary-dark: #000000;
+  --accent: #f15746;            /* 빨강 (상승/메인 가격) */
+  --surface: #fafafa;           /* 페이지 배경 */
+  --muted: #8a8a8a;
+  --buy: #41b979;               /* KREAM 매수가 그린 */
+  --sell: #ef6253;              /* KREAM 매도가 레드 */
+  --down: #3ea2ff;              /* 하락 블루 */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-buy: var(--buy);
+  --color-sell: var(--sell);
+  --color-down: var(--down);
+  --font-sans: var(--font-sans);
+  --font-brand: var(--font-brand);
 }
 
 body {
   background: var(--surface);
   color: var(--foreground);
   font-family: var(--font-sans, Arial, Helvetica, sans-serif);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Logo gradient */
+/* 로고 — 검정 굵게, 그라데이션 제거 */
 .logo-text {
-  background: linear-gradient(135deg, var(--gradient-start), var(--gradient-end));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--foreground);
+  letter-spacing: -0.02em;
 }
 
-/* Card hover */
-.card-glow {
+/* 카드 — 보더 + 미세 hover */
+.card-tile {
   background: var(--card-bg);
   border: 1px solid var(--border);
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: border-color 0.15s, transform 0.15s;
 }
-.card-glow:hover {
-  transform: translateY(-3px);
-  box-shadow:
-    0 10px 30px -8px rgba(108, 92, 231, 0.18),
-    0 4px 12px -4px rgba(0, 0, 0, 0.06);
+.card-tile:hover {
+  border-color: var(--border-strong);
 }
-
-/* Holographic shimmer */
-@keyframes shimmer {
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
+.card-tile:active {
+  transform: scale(0.99);
 }
 
-.holo-shimmer {
-  position: relative;
-  overflow: hidden;
-}
-.holo-shimmer:hover::after {
-  content: "";
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(
-    105deg,
-    transparent 40%,
-    rgba(255, 255, 255, 0.35) 45%,
-    rgba(255, 255, 255, 0.1) 50%,
-    transparent 55%
-  );
-  background-size: 200% 100%;
-  animation: shimmer 1.2s ease-in-out infinite;
-  pointer-events: none;
-  border-radius: inherit;
+/* 가격 강조 */
+.price-accent {
+  color: var(--accent);
+  font-weight: 700;
 }
 
-/* Smooth fade in */
+/* 스크롤바 살짝 얇게 (데스크탑) */
+@media (min-width: 768px) {
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #d8d8d8;
+    border-radius: 999px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #b8b8b8;
+  }
+}
+
 main {
-  animation: fadeIn 0.25s ease-out;
+  animation: fadeIn 0.2s ease-out;
 }
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
+  from { opacity: 0; transform: translateY(2px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+/* line-clamp 유틸 (Tailwind v4에서는 plugin 없이도 작동) */
+.line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+.line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
