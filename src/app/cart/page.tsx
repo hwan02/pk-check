@@ -125,12 +125,7 @@ export default function CartPage() {
         </div>
 
         <div className="flex justify-between text-sm mt-1.5">
-          <span className="opacity-60">
-            결제 수수료
-            <span className="text-[11px] opacity-50 ml-1">
-              (PayPal {(feeRate * 100).toFixed(1)}% + $0.30)
-            </span>
-          </span>
+          <span className="opacity-60">결제 수수료</span>
           <span className="font-bold">${paymentFee.toFixed(2)}</span>
         </div>
 
