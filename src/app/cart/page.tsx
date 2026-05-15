@@ -90,9 +90,20 @@ export default function CartPage() {
   const bundleSaving: number = (data as unknown as { bundle_saving_usd?: number })?.bundle_saving_usd ?? 0;
   const paymentFee = data?.payment_fee_usd ?? 0;
   const total = data?.total_usd ?? 0;
-  const feeRate = data?.fee_rates?.payment ?? 0;
+  const isDomestic = !!(data?.shipping as { domestic?: boolean })?.domestic;
+  const zoneLabel = data?.shipping?.zone_label ?? "";
   const p = data?.profile as { country?: string | null; postal_code?: string | null; address1?: string | null } | null;
   const hasAddress = !!p?.country && !!p?.postal_code && !!p?.address1;
+
+  const [selectedWeight, setSelectedWeight] = useState("auto");
+  const WEIGHT_OPTIONS = [
+    { value: "auto", label: `자동 추정 (${data?.shipping?.weight_g ?? 0}g)` },
+    { value: "100", label: "~100g (카드 1~2장)" },
+    { value: "250", label: "~250g (카드 5~8장)" },
+    { value: "500", label: "~500g (카드 10장+)" },
+    { value: "1000", label: "~1kg (소형 박스)" },
+    { value: "2000", label: "~2kg (중형 박스)" },
+  ];
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -158,41 +169,66 @@ export default function CartPage() {
 
         <hr className="my-3 border-[var(--border)]" />
         <div className="flex justify-between text-base">
-          <span className="font-bold">결제 금액 (상품+수수료)</span>
+          <span className="font-bold">총 결제 금액</span>
           <span className="font-black">${(subtotal + paymentFee).toFixed(2)}</span>
         </div>
 
-        {/* 예상 배송비 안내 */}
-        <div className="mt-4 p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
-          <p className="text-xs font-semibold mb-1">배송비 안내</p>
-          {hasAddress ? (
-            <>
-              <div className="flex justify-between text-xs">
-                <span className="opacity-60">
-                  예상 배송비
-                  <span className="opacity-50 ml-1">
-                    ({data?.shipping?.zone_label ?? ""}{!(data?.shipping as { domestic?: boolean })?.domestic ? ` · ${data?.shipping?.weight_g ?? 0}g` : ""})
-                  </span>
-                </span>
-                <span className="font-bold">${shippingUsd.toFixed(2)}</span>
+        {/* 예상 운송 정보 */}
+        {hasAddress && (
+          <div className="mt-4 p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
+            {!isDomestic && (
+              <div className="mb-3">
+                <label className="text-[11px] font-semibold opacity-60 block mb-1">예상 중량 선택</label>
+                <select
+                  value={selectedWeight}
+                  onChange={(e) => setSelectedWeight(e.target.value)}
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-[var(--border)] bg-[var(--card-bg)]"
+                >
+                  {WEIGHT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
               </div>
-              {bundleSaving > 0 && (
-                <div className="flex items-center gap-1.5 mt-2 text-xs">
-                  <span className="px-1.5 py-0.5 rounded bg-green-100 text-green-700 font-bold text-[10px]">묶음 배송</span>
-                  <span className="text-green-700 font-medium">
-                    개별 발송 대비 ${bundleSaving.toFixed(2)} 절약!
-                  </span>
-                </div>
-              )}
-              <p className="text-[10px] opacity-50 mt-1.5 leading-relaxed">
-                배송비는 실제 포장 후 중량 측정하여 확정됩니다.<br />
-                확정된 배송비는 이메일로 안내드리며, 추가 결제 후 발송됩니다.
-              </p>
-            </>
-          ) : (
-            <p className="text-xs opacity-50">배송지 등록 후 예상 배송비를 확인할 수 있습니다.</p>
-          )}
-        </div>
+            )}
+
+            <div className="flex justify-between text-xs">
+              <span className="opacity-60">예상 중량</span>
+              <span className="font-bold">
+                {selectedWeight === "auto"
+                  ? `${data?.shipping?.weight_g ?? 0}g`
+                  : `${selectedWeight}g`}
+              </span>
+            </div>
+            <div className="flex justify-between text-xs mt-1">
+              <span className="opacity-60">
+                {isDomestic ? "예상 국내 택배비" : `예상 국제운송료`}
+                <span className="opacity-50 ml-1">({zoneLabel})</span>
+              </span>
+              <span className="font-bold">${shippingUsd.toFixed(2)}</span>
+            </div>
+
+            {bundleSaving > 0 && (
+              <div className="flex items-center gap-1.5 mt-2 text-xs">
+                <span className="px-1.5 py-0.5 rounded bg-green-100 text-green-700 font-bold text-[10px]">묶음 배송</span>
+                <span className="text-green-700 font-medium">
+                  개별 발송 대비 ${bundleSaving.toFixed(2)} 절약!
+                </span>
+              </div>
+            )}
+
+            <p className="text-[10px] opacity-50 mt-2 leading-relaxed border-t border-[var(--border)] pt-2">
+              {isDomestic
+                ? "국내 배송비는 실제 발송 시 확정되며, 추가 정산 시 결제합니다."
+                : "국제운송료는 상품의 실제 중량 측정 후 추가 정산 시 결제합니다."}
+            </p>
+          </div>
+        )}
+
+        {!hasAddress && (
+          <div className="mt-4 p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
+            <p className="text-xs opacity-50">배송지 등록 후 예상 운송료를 확인할 수 있습니다.</p>
+          </div>
+        )}
       </div>
 
       {hasAddress ? (
