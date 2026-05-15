@@ -231,7 +231,8 @@ export default async function OrderDetailPage({ params }: Props) {
           <span className="font-bold">{formatUSD(order.subtotal_usd + (order.payment_fee_usd ?? 0))}</span>
         </div>
 
-        {/* 2차 결제 (배송비) */}
+        {/* 2차 결제 (배송비) - 해외 배송만 */}
+        {order.shipping_country !== "KR" && (
         <div className="mt-4 pt-4 border-t border-[var(--border)]">
           <p className="text-xs font-semibold opacity-60 mb-2">배송비 (추가결제)</p>
           {order.status === "paid" && (
@@ -260,6 +261,17 @@ export default async function OrderDetailPage({ params }: Props) {
             </div>
           )}
         </div>
+        )}
+
+        {/* 국내 배송비 */}
+        {order.shipping_country === "KR" && (
+          <div className="mt-4 pt-4 border-t border-[var(--border)]">
+            <div className="flex items-center justify-between text-sm">
+              <span className="opacity-70">국내 배송비</span>
+              <span className="font-medium">₩3,000 (착불 또는 별도 안내)</span>
+            </div>
+          </div>
+        )}
 
         {/* 총 결제금액 */}
         <div className="mt-4 pt-4 border-t border-[var(--border-strong)] flex items-end justify-between">

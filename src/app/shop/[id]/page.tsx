@@ -10,6 +10,7 @@ import PriceTrend from "@/components/price-trend";
 import ProductVideo from "@/components/product-video";
 import ProductGallery from "@/components/product-gallery";
 import WishlistButton from "@/components/wishlist-button";
+import TrackView from "@/components/track-view";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -104,6 +105,7 @@ export default async function ListingDetailPage({ params }: Props) {
 
   return (
     <div className="max-w-6xl mx-auto px-4 pt-4 pb-12">
+      <TrackView id={item.id} title={item.title} image_url={item.image_url} price_usd={item.price_usd} />
       {/* breadcrumb */}
       <nav className="text-xs opacity-60 mb-4 flex items-center gap-1.5">
         <Link href="/shop" className="hover:opacity-100">SHOP</Link>

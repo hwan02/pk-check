@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import RecentlyViewed from "@/components/recently-viewed";
 
 interface CartItem {
   id: string;
@@ -277,6 +278,8 @@ export default function CartPage() {
           배송지 등록하기
         </Link>
       )}
+
+      <RecentlyViewed />
     </div>
   );
 }
