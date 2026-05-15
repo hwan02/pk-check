@@ -28,11 +28,6 @@ export async function PATCH(request: Request) {
     name,
     customs_id_no: customsIdNo,
     phone: optStr(body.phone),
-    recipient_name: optStr(body.recipient_name),
-    postal_code: optStr(body.postal_code),
-    address1: optStr(body.address1),
-    address2: optStr(body.address2),
-    country: optStr(body.country),
   };
 
   const { error } = await supabase

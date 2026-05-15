@@ -43,11 +43,14 @@ export default async function AdminOrderDetailPage({ params }: Props) {
     order.user_id
       ? db
           .from("profiles")
-          .select("name, email, customs_id_no, phone, recipient_name, postal_code, address1, address2")
+          .select("name, email, customs_id_no")
           .eq("id", order.user_id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
   ]);
+
+  // 주문 시점에 스냅샷된 배송지 (orders.shipping_address jsonb)
+  const shippingSnap = order.shipping_address;
 
   const orderItems = (items ?? []) as OrderItem[];
 
@@ -94,14 +97,14 @@ export default async function AdminOrderDetailPage({ params }: Props) {
             {profileRow?.customs_id_no ?? "-"}
           </dd>
           <dt className="opacity-60">수령인</dt>
-          <dd className="font-medium">{profileRow?.recipient_name ?? "-"}</dd>
+          <dd className="font-medium">{shippingSnap?.name ?? "-"}</dd>
           <dt className="opacity-60">전화</dt>
-          <dd className="font-medium">{profileRow?.phone ?? "-"}</dd>
+          <dd className="font-medium">{shippingSnap?.phone ?? "-"}</dd>
           <dt className="opacity-60">주소</dt>
           <dd className="font-medium">
-            {profileRow?.postal_code ? `(${profileRow.postal_code}) ` : ""}
-            {profileRow?.address1}
-            {profileRow?.address2 ? `, ${profileRow.address2}` : ""}
+            {shippingSnap?.postal_code ? `(${shippingSnap.postal_code}) ` : ""}
+            {shippingSnap?.line1}
+            {shippingSnap?.line2 ? `, ${shippingSnap.line2}` : ""}
           </dd>
         </dl>
       </section>

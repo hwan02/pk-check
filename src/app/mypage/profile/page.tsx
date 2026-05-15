@@ -12,9 +12,7 @@ export default async function ProfileEditPage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select(
-      "name, email, customs_id_no, phone, recipient_name, postal_code, address1, address2, country",
-    )
+    .select("name, email, customs_id_no, phone")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -33,11 +31,6 @@ export default async function ProfileEditPage() {
         email={profile?.email ?? user.email ?? ""}
         defaultCustomsIdNo={profile?.customs_id_no ?? ""}
         defaultPhone={profile?.phone ?? ""}
-        defaultRecipientName={profile?.recipient_name ?? ""}
-        defaultPostalCode={profile?.postal_code ?? ""}
-        defaultAddress1={profile?.address1 ?? ""}
-        defaultAddress2={profile?.address2 ?? ""}
-        defaultCountry={profile?.country ?? "KR"}
       />
     </div>
   );

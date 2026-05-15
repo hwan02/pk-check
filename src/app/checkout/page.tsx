@@ -25,6 +25,17 @@ interface PreviewProfile {
   country: string | null;
 }
 
+interface AddressOption {
+  id: string;
+  label: string | null;
+  recipient_name: string;
+  country: string;
+  postal_code: string;
+  address1: string;
+  address2: string | null;
+  is_default: boolean;
+}
+
 interface ShippingQuote {
   zone: 1 | 2 | 3 | 4;
   zone_label: string;
@@ -39,6 +50,8 @@ interface ShippingQuote {
 interface Preview {
   items: CartItem[];
   profile: PreviewProfile | null;
+  address_id: string | null;
+  addresses: AddressOption[];
   subtotal_usd: number;
   payment_fee_usd: number;
   fee_rates: { payment: number };
@@ -62,15 +75,33 @@ export default function CheckoutPage() {
   const [error, setError] = useState("");
   const [sdkReady, setSdkReady] = useState(false);
   const [rendered, setRendered] = useState(false);
+  const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
 
   const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
 
-  useEffect(() => {
-    fetch("/api/checkout/preview")
-      .then((r) => r.json())
-      .then((d: Preview) => setData(d))
-      .finally(() => setLoading(false));
+  const fetchPreview = useCallback(async (addressId: string | null) => {
+    const qs = addressId ? `?address_id=${encodeURIComponent(addressId)}` : "";
+    const r = await fetch(`/api/checkout/preview${qs}`);
+    return (await r.json()) as Preview;
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchPreview(null).then((d) => {
+      if (cancelled) return;
+      setData(d);
+      if (d.address_id) setSelectedAddressId(d.address_id);
+      setLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [fetchPreview]);
+
+  async function onChangeAddress(id: string) {
+    setSelectedAddressId(id);
+    setRendered(false);
+    const d = await fetchPreview(id);
+    setData(d);
+  }
 
   const addressReady =
     !!data?.profile?.postal_code &&
@@ -90,7 +121,7 @@ export default function CheckoutPage() {
         const resp = await fetch("/api/paypal/create-order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
+          body: JSON.stringify({ address_id: selectedAddressId }),
         });
         const json = await resp.json();
         if (!resp.ok) {
@@ -125,7 +156,7 @@ export default function CheckoutPage() {
         setPaying(false);
       },
     }).render("#paypal-button-container");
-  }, [data, rendered, router, addressReady]);
+  }, [data, rendered, router, addressReady, selectedAddressId]);
 
   useEffect(() => {
     if (sdkReady && data?.items.length && !rendered && addressReady) {
@@ -146,6 +177,7 @@ export default function CheckoutPage() {
   }
 
   const p = data.profile;
+  const hasMultiple = data.addresses.length > 1;
 
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
@@ -158,12 +190,31 @@ export default function CheckoutPage() {
             배송지
           </p>
           <Link
-            href="/mypage/profile"
+            href="/mypage/addresses"
             className="text-[11px] underline underline-offset-2 opacity-70 hover:opacity-100"
           >
-            변경
+            {data.addresses.length > 0 ? "관리" : "등록"}
           </Link>
         </div>
+
+        {hasMultiple && (
+          <div className="mb-3">
+            <select
+              value={selectedAddressId ?? ""}
+              onChange={(e) => onChangeAddress(e.target.value)}
+              className="w-full px-3 py-2 text-sm rounded-lg border border-[var(--border)] focus:border-[var(--primary)] outline-none"
+            >
+              {data.addresses.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.is_default ? "★ " : ""}
+                  {a.label ? `[${a.label}] ` : ""}
+                  {a.recipient_name} · {a.postal_code} {a.address1}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
+
         {addressReady ? (
           <div className="text-xs leading-relaxed">
             <p className="font-semibold text-sm">{p?.recipient_name || "—"}</p>
@@ -239,7 +290,7 @@ export default function CheckoutPage() {
         <div id="paypal-button-container" className="min-h-[60px]" />
       ) : (
         <Link
-          href="/mypage/profile"
+          href="/mypage/addresses"
           className="block w-full py-3 rounded-xl bg-[var(--primary)] text-white text-sm font-semibold text-center"
         >
           배송지 등록하기

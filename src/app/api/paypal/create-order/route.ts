@@ -5,26 +5,31 @@ import { createPayPalOrder } from "@/lib/paypal";
 import { getUsdToKrw, quoteShipping } from "@/lib/shipping";
 import { calcFees } from "@/lib/fees";
 
-export async function POST(_request: NextRequest) {
+export async function POST(request: NextRequest) {
   const ssrClient = await createSsrClient();
   const { data: { user } } = await ssrClient.auth.getUser();
   if (!user) return NextResponse.json({ error: "로그인 필요" }, { status: 401 });
 
+  const body = await request.json().catch(() => ({}));
+  const addressId = typeof body.address_id === "string" ? body.address_id : null;
+
   const db = createServerClient();
 
-  // 장바구니 + 회원 배송지 + 실시간 환율 동시 조회
-  const [cartRes, profileRes, rate] = await Promise.all([
+  let addressQuery = db
+    .from("shipping_addresses")
+    .select("id, recipient_name, phone, country, postal_code, address1, address2")
+    .eq("user_id", user.id);
+  addressQuery = addressId
+    ? addressQuery.eq("id", addressId)
+    : addressQuery.eq("is_default", true);
+
+  const [cartRes, addressRes, profileRes, rate] = await Promise.all([
     db
       .from("cart_items")
       .select("*, listing:listings(*)")
       .eq("user_id", user.id),
-    db
-      .from("profiles")
-      .select(
-        "recipient_name, phone, postal_code, address1, address2, country, name",
-      )
-      .eq("id", user.id)
-      .maybeSingle(),
+    addressQuery.maybeSingle(),
+    db.from("profiles").select("name").eq("id", user.id).maybeSingle(),
     getUsdToKrw(),
   ]);
 
@@ -33,28 +38,23 @@ export async function POST(_request: NextRequest) {
     return NextResponse.json({ error: "장바구니가 비어있습니다" }, { status: 400 });
   }
 
-  const profile = profileRes.data as {
-    recipient_name: string | null;
+  const address = addressRes.data as {
+    id: string;
+    recipient_name: string;
     phone: string | null;
-    postal_code: string | null;
-    address1: string | null;
+    country: string;
+    postal_code: string;
+    address1: string;
     address2: string | null;
-    country: string | null;
-    name: string | null;
   } | null;
 
-  if (
-    !profile?.postal_code ||
-    !profile?.address1 ||
-    !profile?.country
-  ) {
+  if (!address) {
     return NextResponse.json(
       { error: "배송지가 등록되지 않았습니다. 마이페이지에서 먼저 등록해 주세요." },
       { status: 400 },
     );
   }
 
-  // 소계
   const subtotal = Math.round(
     cartItems.reduce((sum, item) => {
       const price = (item.listing as { price_usd: number })?.price_usd ?? 0;
@@ -62,21 +62,22 @@ export async function POST(_request: NextRequest) {
     }, 0) * 100,
   ) / 100;
 
-  // 서버사이드 배송비 + 수수료 재계산 (클라이언트 신뢰 X)
   const totalQty = cartItems.reduce((s, i) => s + i.quantity, 0);
-  const quote = quoteShipping(profile.country, totalQty, rate);
+  const quote = quoteShipping(address.country, totalQty, rate);
   const fees = calcFees(subtotal, quote.shipping_usd);
   const shipping = fees.shipping_usd;
   const total = fees.total_usd;
 
+  const profileName = (profileRes.data as { name: string | null } | null)?.name ?? null;
+
   // 주문 시점의 배송지 스냅샷
   const shippingAddress = {
-    name: profile.recipient_name || profile.name || "",
-    line1: profile.address1,
-    line2: profile.address2 ?? undefined,
-    postal_code: profile.postal_code,
-    country: profile.country,
-    phone: profile.phone ?? undefined,
+    name: address.recipient_name || profileName || "",
+    line1: address.address1,
+    line2: address.address2 ?? undefined,
+    postal_code: address.postal_code,
+    country: address.country,
+    phone: address.phone ?? undefined,
   };
 
   const orderItems = cartItems.map((item) => {
@@ -106,7 +107,7 @@ export async function POST(_request: NextRequest) {
       shipping_usd: shipping,
       payment_fee_usd: fees.payment_fee_usd,
       total_usd: total,
-      shipping_country: profile.country,
+      shipping_country: address.country,
       shipping_address: shippingAddress,
       estimated_weight_g: quote.weight_g,
       exchange_rate: rate,
