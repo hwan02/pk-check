@@ -4,7 +4,11 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/browser";
 
-export default function LoginForm() {
+interface Props {
+  redirectTo?: string;
+}
+
+export default function LoginForm({ redirectTo = "/" }: Props) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -22,16 +26,17 @@ export default function LoginForm() {
       setError(error.message);
       return;
     }
-    router.push("/");
+    router.push(redirectTo);
     router.refresh();
   }
 
   async function signInWithGoogle() {
     const supabase = createClient();
+    const next = encodeURIComponent(redirectTo);
     await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        redirectTo: `${window.location.origin}/auth/callback?next=/`,
+        redirectTo: `${window.location.origin}/auth/callback?next=${next}`,
       },
     });
   }

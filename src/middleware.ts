@@ -2,6 +2,19 @@ import { createServerClient } from "@supabase/ssr";
 import { NextRequest, NextResponse } from "next/server";
 
 export async function middleware(request: NextRequest) {
+  // Supabase Site URL fallback 대비: 어느 경로로 떨어지든 ?code= 가 있으면
+  // /auth/callback 으로 리라이트해서 세션을 확립한다.
+  const url = request.nextUrl;
+  if (url.pathname !== "/auth/callback" && url.searchParams.has("code")) {
+    const target = url.clone();
+    const originalPath = url.pathname === "/" ? "/" : url.pathname;
+    target.pathname = "/auth/callback";
+    if (!target.searchParams.has("next")) {
+      target.searchParams.set("next", originalPath);
+    }
+    return NextResponse.redirect(target);
+  }
+
   let response = NextResponse.next({ request });
 
   const supabase = createServerClient(

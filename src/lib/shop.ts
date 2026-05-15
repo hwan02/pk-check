@@ -39,3 +39,96 @@ export const LANGUAGE_LABEL: Record<string, string> = {
 export function formatUSD(n: number): string {
   return `$${n.toFixed(2)}`;
 }
+
+// -----------------------------------------------------------
+// Orders (해외 구매자 주문 / 배송조회)
+// -----------------------------------------------------------
+export type OrderStatus =
+  | "pending"
+  | "paid"
+  | "shipped"
+  | "delivered"
+  | "cancelled"
+  | "refunded";
+
+export type CustomsStatus = "pending" | "in_review" | "cleared" | "held";
+
+export interface ShippingAddress {
+  name?: string;
+  line1?: string;
+  line2?: string;
+  city?: string;
+  state?: string;
+  postal_code?: string;
+  country?: string;
+  phone?: string;
+}
+
+export interface Order {
+  id: string;
+  order_no: string | null;
+  user_id: string | null;
+  status: OrderStatus;
+  subtotal_usd: number;
+  shipping_usd: number;
+  total_usd: number;
+  agent_fee_usd: number;
+  payment_fee_usd: number;
+  exchange_rate: number | null;
+  estimated_weight_g: number | null;
+  payment_method: "card" | "paypal" | "bank" | null;
+  card_brand: string | null;
+  card_last4: string | null;
+  shipping_country: string | null;
+  shipping_address: ShippingAddress | null;
+  tracking_carrier: string | null;
+  tracking_no: string | null;
+  tracking_url: string | null;
+  shipped_at: string | null;
+  delivered_at: string | null;
+  customs_status: CustomsStatus | null;
+  customs_cleared_at: string | null;
+  paid_at: string | null;
+  created_at: string;
+}
+
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  listing_id: string | null;
+  title: string;
+  title_en: string | null;
+  image_url: string | null;
+  price_usd: number;
+  quantity: number;
+}
+
+export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
+  pending: "결제 대기",
+  paid: "결제 완료",
+  shipped: "배송중",
+  delivered: "배송 완료",
+  cancelled: "취소",
+  refunded: "환불",
+};
+
+export const CUSTOMS_STATUS_LABEL: Record<CustomsStatus, string> = {
+  pending: "통관 대기",
+  in_review: "통관 검토중",
+  cleared: "통관 완료",
+  held: "통관 보류",
+};
+
+export function formatKRW(n: number): string {
+  return `₩${Math.round(n).toLocaleString()}`;
+}
+
+export function formatOrderDate(iso: string): string {
+  const d = new Date(iso);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  const hh = String(d.getHours()).padStart(2, "0");
+  const mm = String(d.getMinutes()).padStart(2, "0");
+  return `${y}.${m}.${day} ${hh}:${mm}`;
+}

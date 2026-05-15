@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { createSsrClient } from "@/lib/supabase/ssr";
+import LoginLink from "@/components/login-link";
 
 export default async function TopNav() {
   const supabase = await createSsrClient();
@@ -52,11 +53,11 @@ export default async function TopNav() {
             )}
           </Link>
           {user ? (
-            <Link href="/orders" className="opacity-80 hover:opacity-100">내 주문</Link>
+            <Link href="/mypage" className="opacity-80 hover:opacity-100">마이페이지</Link>
           ) : (
-            <Link href="/login" className="px-3 py-1.5 rounded-full bg-[var(--primary)] text-white text-xs font-semibold">
+            <LoginLink className="px-3 py-1.5 rounded-full bg-[var(--primary)] text-white text-xs font-semibold">
               로그인
-            </Link>
+            </LoginLink>
           )}
           {isAdmin && (
             <Link href="/admin/listings" className="opacity-60 hover:opacity-100 text-xs">관리</Link>
