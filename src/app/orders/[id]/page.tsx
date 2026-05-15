@@ -213,45 +213,60 @@ export default async function OrderDetailPage({ params }: Props) {
           ))}
         </ul>
 
+        {/* 1차 결제 (상품 + 수수료) */}
         <dl className="border-t border-[var(--border)] mt-2 pt-3 space-y-2 text-sm">
           <div className="flex items-center justify-between">
             <dt className="opacity-70">상품 합계</dt>
             <dd className="font-medium">{formatUSD(order.subtotal_usd)}</dd>
           </div>
           <div className="flex items-center justify-between">
-            <dt className="opacity-70">배송비</dt>
-            <dd className="font-medium">{formatUSD(order.shipping_usd)}</dd>
-          </div>
-          <div className="flex items-center justify-between">
             <dt className="opacity-70">결제 수수료</dt>
             <dd className="font-medium">{formatUSD(order.payment_fee_usd)}</dd>
           </div>
-          <div className="flex items-center justify-between">
-            <dt className="opacity-70">계산 환율</dt>
-            <dd className="font-medium">
-              {rate ? `1 USD = ${formatKRW(rate)}` : "-"}
-            </dd>
-          </div>
-          <div className="flex items-center justify-between">
-            <dt className="opacity-70">예상 중량</dt>
-            <dd className="font-medium">
-              {order.estimated_weight_g
-                ? `${order.estimated_weight_g} g`
-                : "-"}
-            </dd>
-          </div>
         </dl>
+        <div className="mt-3 pt-3 border-t border-[var(--border)] flex items-center justify-between text-sm">
+          <span className="font-semibold">1차 결제 (상품+수수료)</span>
+          <span className="font-bold">{formatUSD(order.subtotal_usd + (order.payment_fee_usd ?? 0))}</span>
+        </div>
+
+        {/* 2차 결제 (배송비) */}
+        <div className="mt-4 pt-4 border-t border-[var(--border)]">
+          <p className="text-xs font-semibold opacity-60 mb-2">2차 결제 (배송비)</p>
+          <dl className="space-y-2 text-sm">
+            {order.shipping_usd > 0 ? (
+              <div className="flex items-center justify-between">
+                <dt className="opacity-70">
+                  배송비
+                  {order.estimated_weight_g ? (
+                    <span className="opacity-50 text-[11px] ml-1">({order.estimated_weight_g}g)</span>
+                  ) : null}
+                </dt>
+                <dd className="font-bold text-green-700">{formatUSD(order.shipping_usd)} 결제 완료</dd>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between">
+                <dt className="opacity-70">배송비</dt>
+                <dd className="font-medium text-[var(--accent)]">미결제 (중량 측정 후 안내)</dd>
+              </div>
+            )}
+          </dl>
+          {order.shipping_usd <= 0 && order.status === "paid" && (
+            <p className="text-[10px] opacity-50 mt-2">
+              상품 포장 후 실제 중량을 측정하여 배송비를 이메일로 안내드립니다.
+            </p>
+          )}
+        </div>
 
         {/* 총 결제금액 */}
         <div className="mt-4 pt-4 border-t border-[var(--border-strong)] flex items-end justify-between">
           <span className="text-xs opacity-60">총 결제금액</span>
           <div className="text-right">
             <p className="text-2xl font-extrabold tracking-tight">
-              {formatUSD(order.total_usd)}
+              {formatUSD(order.subtotal_usd + (order.payment_fee_usd ?? 0) + (order.shipping_usd ?? 0))}
             </p>
             {rate > 0 && (
               <p className="text-xs opacity-60 mt-0.5">
-                ≈ {formatKRW(totalKrw)}
+                ≈ {formatKRW((order.subtotal_usd + (order.payment_fee_usd ?? 0) + (order.shipping_usd ?? 0)) * rate)}
               </p>
             )}
           </div>
