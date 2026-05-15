@@ -78,8 +78,17 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // 장바구니 비우기
-    await db.from("cart_items").delete().eq("user_id", user.id);
+    // 결제 완료된 상품만 장바구니에서 제거 (즉시구매는 장바구니를 거치지 않으므로 다른 항목 보존)
+    const purchasedListingIds = (orderItems ?? [])
+      .map((i) => i.listing_id)
+      .filter((id): id is string => !!id);
+    if (purchasedListingIds.length > 0) {
+      await db
+        .from("cart_items")
+        .delete()
+        .eq("user_id", user.id)
+        .in("listing_id", purchasedListingIds);
+    }
 
     // 주문 확인 이메일 발송
     try {

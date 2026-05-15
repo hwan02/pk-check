@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, Suspense } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Script from "next/script";
 
 interface CartItem {
@@ -82,7 +82,26 @@ declare global {
 }
 
 export default function CheckoutPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="max-w-2xl mx-auto px-4 py-16 text-center text-sm opacity-50">
+          로딩 중...
+        </div>
+      }
+    >
+      <CheckoutContent />
+    </Suspense>
+  );
+}
+
+function CheckoutContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const buyListingId = searchParams.get("buy");
+  const buyQty = searchParams.get("qty") ?? "1";
+  const isBuyNow = !!buyListingId;
+
   const [data, setData] = useState<Preview | null>(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
@@ -98,10 +117,14 @@ export default function CheckoutPage() {
     const params = new URLSearchParams();
     if (addressId) params.set("address_id", addressId);
     if (weight !== "auto") params.set("weight", weight);
+    if (buyListingId) {
+      params.set("buy", buyListingId);
+      params.set("qty", buyQty);
+    }
     const qs = params.toString() ? `?${params.toString()}` : "";
     const r = await fetch(`/api/checkout/preview${qs}`);
     return (await r.json()) as Preview;
-  }, []);
+  }, [buyListingId, buyQty]);
 
   useEffect(() => {
     let cancelled = false;
@@ -152,7 +175,12 @@ export default function CheckoutPage() {
         const resp = await fetch("/api/paypal/create-order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ address_id: selectedAddressId }),
+          body: JSON.stringify({
+            address_id: selectedAddressId,
+            buy_now: isBuyNow
+              ? { listing_id: buyListingId, quantity: parseInt(buyQty, 10) || 1 }
+              : undefined,
+          }),
         });
         const json = await resp.json();
         if (!resp.ok) {
@@ -187,7 +215,7 @@ export default function CheckoutPage() {
         setPaying(false);
       },
     }).render("#paypal-button-container");
-  }, [data, rendered, router, addressReady, selectedAddressId]);
+  }, [data, rendered, router, addressReady, selectedAddressId, isBuyNow, buyListingId, buyQty]);
 
   useEffect(() => {
     if (sdkReady && data?.items.length && !rendered && addressReady) {

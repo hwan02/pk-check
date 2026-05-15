@@ -4,11 +4,15 @@ import { createServerClient } from "@/lib/supabase/server";
 import { getUsdToKrw, quoteShipping, calcShippingKRW, getShippingZone, isKorea, ZONE_LABEL, DOMESTIC_LABEL } from "@/lib/shipping";
 import { calcFees, PAYMENT_FEE_RATE } from "@/lib/fees";
 
-// 결제 직전 견적: 장바구니 + 선택된 배송지로 배송비/예상중량 계산
+// 결제 직전 견적
+//  - 기본: 장바구니 + 선택된 배송지로 계산
+//  - ?buy=<listing_id>&qty=N : 즉시구매 모드 (장바구니 무시, 단일 상품)
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const weightOverride = url.searchParams.get("weight");
   const addressIdOverride = url.searchParams.get("address_id");
+  const buyListingId = url.searchParams.get("buy");
+  const buyQty = Math.max(1, parseInt(url.searchParams.get("qty") ?? "1", 10) || 1);
 
   const ssr = await createSsrClient();
   const { data: { user } } = await ssr.auth.getUser();
@@ -18,7 +22,6 @@ export async function GET(request: Request) {
 
   const db = createServerClient();
 
-  // 1) 배송지 선택: ?address_id 우선, 없으면 default
   let addressQuery = db
     .from("shipping_addresses")
     .select("id, label, recipient_name, phone, country, postal_code, address1, address2, is_default")
@@ -29,12 +32,44 @@ export async function GET(request: Request) {
     addressQuery = addressQuery.eq("is_default", true);
   }
 
-  const [cartRes, addressRes, addressListRes, rate] = await Promise.all([
-    db
-      .from("cart_items")
-      .select("*, listing:listings(*)")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false }),
+  type ItemShape = {
+    id: string;
+    quantity: number;
+    listing: {
+      id: string;
+      title: string;
+      title_en: string | null;
+      image_url: string | null;
+      price_usd: number;
+      stock: number;
+      is_active: boolean;
+    } | null;
+  };
+
+  // 즉시구매 vs 장바구니
+  const itemsPromise: Promise<ItemShape[]> = buyListingId
+    ? (async () => {
+        const res = await db
+          .from("listings")
+          .select("id, title, title_en, image_url, price_usd, stock, is_active")
+          .eq("id", buyListingId)
+          .eq("is_active", true)
+          .maybeSingle();
+        const l = res.data as ItemShape["listing"] | null;
+        if (!l) return [];
+        return [{ id: `buy-${l.id}`, quantity: buyQty, listing: l }];
+      })()
+    : (async () => {
+        const res = await db
+          .from("cart_items")
+          .select("*, listing:listings(*)")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+        return (res.data ?? []) as ItemShape[];
+      })();
+
+  const [items, addressRes, addressListRes, rate] = await Promise.all([
+    itemsPromise,
     addressQuery.maybeSingle(),
     db
       .from("shipping_addresses")
@@ -44,13 +79,6 @@ export async function GET(request: Request) {
       .order("created_at", { ascending: false }),
     getUsdToKrw(),
   ]);
-
-  type CartRow = {
-    id: string;
-    quantity: number;
-    listing: { id: string; price_usd: number } | null;
-  };
-  const items = (cartRes.data ?? []) as CartRow[];
   const address = addressRes.data as {
     id: string;
     label: string | null;
@@ -106,10 +134,11 @@ export async function GET(request: Request) {
   const bundleSavingUsd = Math.round((individualShippingTotal - quote.shipping_usd) * 100) / 100;
 
   return NextResponse.json({
-    items: cartRes.data ?? [],
+    items,
     profile,
     address_id: address?.id ?? null,
     addresses: addressListRes.data ?? [],
+    buy_now: buyListingId ? { listing_id: buyListingId, quantity: buyQty } : null,
     subtotal_usd: fees.subtotal_usd,
     payment_fee_usd: fees.payment_fee_usd,
     fee_rates: {

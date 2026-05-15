@@ -12,6 +12,9 @@ export async function POST(request: NextRequest) {
 
   const body = await request.json().catch(() => ({}));
   const addressId = typeof body.address_id === "string" ? body.address_id : null;
+  const buyNow = body.buy_now as { listing_id?: string; quantity?: number } | undefined;
+  const buyListingId = typeof buyNow?.listing_id === "string" ? buyNow.listing_id : null;
+  const buyQty = Math.max(1, parseInt(String(buyNow?.quantity ?? 1), 10) || 1);
 
   const db = createServerClient();
 
@@ -23,19 +26,49 @@ export async function POST(request: NextRequest) {
     ? addressQuery.eq("id", addressId)
     : addressQuery.eq("is_default", true);
 
-  const [cartRes, addressRes, profileRes, rate] = await Promise.all([
-    db
-      .from("cart_items")
-      .select("*, listing:listings(*)")
-      .eq("user_id", user.id),
+  type LineItem = {
+    listing: {
+      id: string;
+      title: string;
+      title_en: string | null;
+      image_url: string | null;
+      price_usd: number;
+    };
+    quantity: number;
+  };
+
+  const itemsPromise: Promise<LineItem[]> = buyListingId
+    ? (async () => {
+        const res = await db
+          .from("listings")
+          .select("id, title, title_en, image_url, price_usd, is_active, stock")
+          .eq("id", buyListingId)
+          .eq("is_active", true)
+          .maybeSingle();
+        const l = res.data as LineItem["listing"] | null;
+        if (!l) return [];
+        return [{ listing: l, quantity: buyQty }];
+      })()
+    : (async () => {
+        const res = await db
+          .from("cart_items")
+          .select("*, listing:listings(*)")
+          .eq("user_id", user.id);
+        return (res.data ?? []) as unknown as LineItem[];
+      })();
+
+  const [cartItems, addressRes, profileRes, rate] = await Promise.all([
+    itemsPromise,
     addressQuery.maybeSingle(),
     db.from("profiles").select("name").eq("id", user.id).maybeSingle(),
     getUsdToKrw(),
   ]);
 
-  const cartItems = cartRes.data;
-  if (!cartItems?.length) {
-    return NextResponse.json({ error: "장바구니가 비어있습니다" }, { status: 400 });
+  if (!cartItems.length) {
+    return NextResponse.json(
+      { error: buyListingId ? "상품을 찾을 수 없습니다" : "장바구니가 비어있습니다" },
+      { status: 400 },
+    );
   }
 
   const address = addressRes.data as {
@@ -57,7 +90,7 @@ export async function POST(request: NextRequest) {
 
   const subtotal = Math.round(
     cartItems.reduce((sum, item) => {
-      const price = (item.listing as { price_usd: number })?.price_usd ?? 0;
+      const price = item.listing?.price_usd ?? 0;
       return sum + price * item.quantity;
     }, 0) * 100,
   ) / 100;
@@ -70,7 +103,6 @@ export async function POST(request: NextRequest) {
 
   const profileName = (profileRes.data as { name: string | null } | null)?.name ?? null;
 
-  // 주문 시점의 배송지 스냅샷
   const shippingAddress = {
     name: address.recipient_name || profileName || "",
     line1: address.address1,
@@ -80,23 +112,14 @@ export async function POST(request: NextRequest) {
     phone: address.phone ?? undefined,
   };
 
-  const orderItems = cartItems.map((item) => {
-    const listing = item.listing as {
-      id: string;
-      title: string;
-      title_en: string | null;
-      image_url: string | null;
-      price_usd: number;
-    };
-    return {
-      listing_id: listing.id,
-      title: listing.title,
-      title_en: listing.title_en,
-      image_url: listing.image_url,
-      price_usd: listing.price_usd,
-      quantity: item.quantity,
-    };
-  });
+  const orderItems = cartItems.map((item) => ({
+    listing_id: item.listing.id,
+    title: item.listing.title,
+    title_en: item.listing.title_en,
+    image_url: item.listing.image_url,
+    price_usd: item.listing.price_usd,
+    quantity: item.quantity,
+  }));
 
   const { data: order, error: orderErr } = await db
     .from("orders")

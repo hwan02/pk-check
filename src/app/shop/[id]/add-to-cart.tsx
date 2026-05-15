@@ -53,21 +53,10 @@ export default function AddToCartButton({
     }
   }
 
-  async function buyNow() {
+  function buyNow() {
+    // 장바구니를 건드리지 않고 쿼리 파라미터로 단일 상품 결제 흐름 진입
     setBuyLoading(true);
-    setMsg("");
-    const resp = await fetch("/api/cart", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ listing_id: listingId, quantity: 1 }),
-    });
-    setBuyLoading(false);
-    if (resp.ok) {
-      router.push("/checkout");
-    } else {
-      const json = await resp.json().catch(() => ({}));
-      setMsg(json.error ?? "담기 실패");
-    }
+    router.push(`/checkout?buy=${encodeURIComponent(listingId)}&qty=1`);
   }
 
   return (
@@ -79,7 +68,7 @@ export default function AddToCartButton({
           disabled={disabled || buyLoading}
           className="flex-1 py-3 rounded-xl bg-[var(--accent)] text-white font-bold hover:opacity-90 disabled:opacity-50 cursor-pointer"
         >
-          {disabled ? "품절" : buyLoading ? "처리 중..." : "즉시 구매"}
+          {disabled ? "품절" : buyLoading ? "이동 중..." : "즉시 구매"}
         </button>
       </div>
       <button
