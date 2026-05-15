@@ -47,6 +47,20 @@ interface ShippingQuote {
   domestic: boolean;
 }
 
+const WEIGHT_OPTIONS = [
+  { value: "500", label: "0.5 kg" },
+  { value: "1000", label: "1 kg" },
+  { value: "1500", label: "1.5 kg" },
+  { value: "2000", label: "2 kg" },
+  { value: "2500", label: "2.5 kg" },
+  { value: "3000", label: "3 kg" },
+  { value: "3500", label: "3.5 kg" },
+  { value: "4000", label: "4 kg" },
+  { value: "4500", label: "4.5 kg" },
+  { value: "5000", label: "5 kg" },
+  { value: "5500", label: "5.5 kg" },
+];
+
 interface Preview {
   items: CartItem[];
   profile: PreviewProfile | null;
@@ -76,18 +90,22 @@ export default function CheckoutPage() {
   const [sdkReady, setSdkReady] = useState(false);
   const [rendered, setRendered] = useState(false);
   const [selectedAddressId, setSelectedAddressId] = useState<string | null>(null);
+  const [selectedWeight, setSelectedWeight] = useState<string>("auto");
 
   const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
 
-  const fetchPreview = useCallback(async (addressId: string | null) => {
-    const qs = addressId ? `?address_id=${encodeURIComponent(addressId)}` : "";
+  const fetchPreview = useCallback(async (addressId: string | null, weight: string) => {
+    const params = new URLSearchParams();
+    if (addressId) params.set("address_id", addressId);
+    if (weight !== "auto") params.set("weight", weight);
+    const qs = params.toString() ? `?${params.toString()}` : "";
     const r = await fetch(`/api/checkout/preview${qs}`);
     return (await r.json()) as Preview;
   }, []);
 
   useEffect(() => {
     let cancelled = false;
-    fetchPreview(null).then((d) => {
+    fetchPreview(null, "auto").then((d) => {
       if (cancelled) return;
       setData(d);
       if (d.address_id) setSelectedAddressId(d.address_id);
@@ -99,7 +117,14 @@ export default function CheckoutPage() {
   async function onChangeAddress(id: string) {
     setSelectedAddressId(id);
     setRendered(false);
-    const d = await fetchPreview(id);
+    const d = await fetchPreview(id, selectedWeight);
+    setData(d);
+  }
+
+  async function onChangeWeight(weight: string) {
+    setSelectedWeight(weight);
+    setRendered(false);
+    const d = await fetchPreview(selectedAddressId, weight);
     setData(d);
   }
 
@@ -267,6 +292,21 @@ export default function CheckoutPage() {
             </>
           ) : (
             <>
+              <div className="mb-3">
+                <label className="text-[11px] font-semibold opacity-60 block mb-1">
+                  예상 중량 선택
+                </label>
+                <select
+                  value={selectedWeight}
+                  onChange={(e) => onChangeWeight(e.target.value)}
+                  className="w-full px-3 py-2 text-xs rounded-lg border border-[var(--border)] bg-[var(--card-bg)]"
+                >
+                  <option value="auto">자동 추정 ({data.shipping.weight_g}g)</option>
+                  {WEIGHT_OPTIONS.map((o) => (
+                    <option key={o.value} value={o.value}>{o.label}</option>
+                  ))}
+                </select>
+              </div>
               <Row
                 label="예상 국제운송료"
                 value={`$${data.shipping.shipping_usd.toFixed(2)}`}
