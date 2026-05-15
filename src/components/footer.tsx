@@ -2,7 +2,7 @@ import Link from "next/link";
 
 // 사업자 정보
 const BUSINESS = {
-  name: "Kikidult",
+  name: "포포스테이",
   ceo: "서승환",
   bizNo: "217-62-00760",
   ecommerceNo: "", // 신고 준비 중
