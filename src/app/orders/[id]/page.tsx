@@ -85,6 +85,14 @@ export default async function OrderDetailPage({ params }: Props) {
         <p className="text-xs opacity-60 mt-3">
           주문일시 · {formatOrderDate(order.created_at)}
         </p>
+        {order.bundle_group && (
+          <div className="mt-3 pt-3 border-t border-[var(--border)] flex items-center justify-between text-xs">
+            <span className="opacity-60">통합배송 번호</span>
+            <span className="font-mono font-semibold px-2 py-0.5 rounded bg-blue-50 text-blue-700 border border-blue-200">
+              {order.bundle_group}
+            </span>
+          </div>
+        )}
       </header>
 
       {/* 주문 상품 */}

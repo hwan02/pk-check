@@ -92,6 +92,7 @@ export interface Order {
   customs_status: CustomsStatus | null;
   customs_cleared_at: string | null;
   paid_at: string | null;
+  bundle_group: string | null;
   created_at: string;
 }
 
