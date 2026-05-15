@@ -33,6 +33,7 @@ interface ShippingQuote {
   shipping_krw: number;
   shipping_usd: number;
   exchange_rate: number;
+  domestic: boolean;
 }
 
 interface Preview {
