@@ -71,7 +71,6 @@ export async function PATCH(req: Request, { params }: Ctx) {
   if ("tracking_no" in body) update.tracking_no = optStr(body.tracking_no);
   if ("tracking_url" in body) update.tracking_url = optStr(body.tracking_url);
 
-  if ("agent_fee_usd" in body) update.agent_fee_usd = optNum(body.agent_fee_usd) ?? 0;
   if ("payment_fee_usd" in body) update.payment_fee_usd = optNum(body.payment_fee_usd) ?? 0;
   if ("exchange_rate" in body) update.exchange_rate = optNum(body.exchange_rate);
   if ("estimated_weight_g" in body) {

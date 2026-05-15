@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { createSsrClient } from "@/lib/supabase/ssr";
 import { createServerClient } from "@/lib/supabase/server";
-import { quoteShipping, ZONE_LABEL } from "@/lib/shipping";
+import { getUsdToKrw, quoteShipping, ZONE_LABEL } from "@/lib/shipping";
+import { calcFees, PAYMENT_FEE_RATE } from "@/lib/fees";
 
 // 결제 직전 견적: 장바구니 + 회원 배송지로 배송비/예상중량 계산
 export async function GET() {
@@ -12,7 +13,7 @@ export async function GET() {
   }
 
   const db = createServerClient();
-  const [cartRes, profileRes] = await Promise.all([
+  const [cartRes, profileRes, rate] = await Promise.all([
     db
       .from("cart_items")
       .select("*, listing:listings(*)")
@@ -25,6 +26,7 @@ export async function GET() {
       )
       .eq("id", user.id)
       .maybeSingle(),
+    getUsdToKrw(),
   ]);
 
   type CartRow = {
@@ -50,17 +52,21 @@ export async function GET() {
     ) * 100,
   ) / 100;
 
-  const quote = quoteShipping(profile?.country, totalQty);
-  const total_usd = Math.round((subtotal_usd + quote.shipping_usd) * 100) / 100;
+  const quote = quoteShipping(profile?.country, totalQty, rate);
+  const fees = calcFees(subtotal_usd, quote.shipping_usd);
 
   return NextResponse.json({
     items: cartRes.data ?? [],
     profile,
-    subtotal_usd,
+    subtotal_usd: fees.subtotal_usd,
+    payment_fee_usd: fees.payment_fee_usd,
+    fee_rates: {
+      payment: PAYMENT_FEE_RATE,
+    },
     shipping: {
       ...quote,
       zone_label: ZONE_LABEL[quote.zone],
     },
-    total_usd,
+    total_usd: fees.total_usd,
   });
 }

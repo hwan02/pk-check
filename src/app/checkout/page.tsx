@@ -39,6 +39,8 @@ interface Preview {
   items: CartItem[];
   profile: PreviewProfile | null;
   subtotal_usd: number;
+  payment_fee_usd: number;
+  fee_rates: { payment: number };
   shipping: ShippingQuote;
   total_usd: number;
 }
@@ -200,12 +202,23 @@ export default function CheckoutPage() {
               <span>
                 국제 배송비{" "}
                 <span className="opacity-50 text-[11px]">
-                  (우체국 K-Packet · {data.shipping.weight_g}g)
+                  (K-Packet · {data.shipping.weight_g}g)
                 </span>
               </span>
             }
             value={`$${data.shipping.shipping_usd.toFixed(2)}`}
             sub={`₩${data.shipping.shipping_krw.toLocaleString()} · ${data.shipping.zone_label}`}
+          />
+          <Row
+            label={
+              <span>
+                결제 수수료{" "}
+                <span className="opacity-50 text-[11px]">
+                  (PayPal {(data.fee_rates.payment * 100).toFixed(1)}% + $0.30)
+                </span>
+              </span>
+            }
+            value={`$${data.payment_fee_usd.toFixed(2)}`}
           />
         </div>
         <div className="border-t border-[var(--border-strong)] mt-3 pt-3 flex justify-between text-base font-bold">

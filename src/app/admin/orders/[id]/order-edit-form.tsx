@@ -35,7 +35,6 @@ export default function OrderEditForm({ order }: Props) {
   const [trackingNo, setTrackingNo] = useState(order.tracking_no ?? "");
   const [trackingUrl, setTrackingUrl] = useState(order.tracking_url ?? "");
   const [customsStatus, setCustomsStatus] = useState(order.customs_status ?? "pending");
-  const [agentFee, setAgentFee] = useState(String(order.agent_fee_usd));
   const [paymentFee, setPaymentFee] = useState(String(order.payment_fee_usd));
   const [exchangeRate, setExchangeRate] = useState(
     order.exchange_rate ? String(order.exchange_rate) : "",
@@ -57,7 +56,6 @@ export default function OrderEditForm({ order }: Props) {
       tracking_no: trackingNo.trim() || null,
       tracking_url: trackingUrl.trim() || null,
       customs_status: customsStatus,
-      agent_fee_usd: Number(agentFee) || 0,
       payment_fee_usd: Number(paymentFee) || 0,
       exchange_rate: exchangeRate ? Number(exchangeRate) : null,
       estimated_weight_g: weightG ? Number(weightG) : null,
@@ -162,16 +160,7 @@ export default function OrderEditForm({ order }: Props) {
         <legend className="text-xs font-semibold opacity-70 mb-2">
           수수료 · 환율 · 중량
         </legend>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <Field label="대행수수료 (USD)">
-            <input
-              type="number"
-              step="0.01"
-              value={agentFee}
-              onChange={(e) => setAgentFee(e.target.value)}
-              className={inp}
-            />
-          </Field>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           <Field label="결제수수료 (USD)">
             <input
               type="number"

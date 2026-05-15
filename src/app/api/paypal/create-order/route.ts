@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSsrClient } from "@/lib/supabase/ssr";
 import { createServerClient } from "@/lib/supabase/server";
 import { createPayPalOrder } from "@/lib/paypal";
-import { DEFAULT_USD_TO_KRW, quoteShipping } from "@/lib/shipping";
+import { getUsdToKrw, quoteShipping } from "@/lib/shipping";
+import { calcFees } from "@/lib/fees";
 
 export async function POST(_request: NextRequest) {
   const ssrClient = await createSsrClient();
@@ -11,8 +12,8 @@ export async function POST(_request: NextRequest) {
 
   const db = createServerClient();
 
-  // 장바구니 + 회원 배송지 동시 조회
-  const [cartRes, profileRes] = await Promise.all([
+  // 장바구니 + 회원 배송지 + 실시간 환율 동시 조회
+  const [cartRes, profileRes, rate] = await Promise.all([
     db
       .from("cart_items")
       .select("*, listing:listings(*)")
@@ -24,6 +25,7 @@ export async function POST(_request: NextRequest) {
       )
       .eq("id", user.id)
       .maybeSingle(),
+    getUsdToKrw(),
   ]);
 
   const cartItems = cartRes.data;
@@ -60,11 +62,12 @@ export async function POST(_request: NextRequest) {
     }, 0) * 100,
   ) / 100;
 
-  // 서버사이드 배송비 재계산 (클라이언트 신뢰 X)
+  // 서버사이드 배송비 + 수수료 재계산 (클라이언트 신뢰 X)
   const totalQty = cartItems.reduce((s, i) => s + i.quantity, 0);
-  const quote = quoteShipping(profile.country, totalQty);
-  const shipping = quote.shipping_usd;
-  const total = Math.round((subtotal + shipping) * 100) / 100;
+  const quote = quoteShipping(profile.country, totalQty, rate);
+  const fees = calcFees(subtotal, quote.shipping_usd);
+  const shipping = fees.shipping_usd;
+  const total = fees.total_usd;
 
   // 주문 시점의 배송지 스냅샷
   const shippingAddress = {
@@ -101,11 +104,12 @@ export async function POST(_request: NextRequest) {
       status: "pending",
       subtotal_usd: subtotal,
       shipping_usd: shipping,
+      payment_fee_usd: fees.payment_fee_usd,
       total_usd: total,
       shipping_country: profile.country,
       shipping_address: shippingAddress,
       estimated_weight_g: quote.weight_g,
-      exchange_rate: DEFAULT_USD_TO_KRW,
+      exchange_rate: rate,
     })
     .select("id")
     .single();

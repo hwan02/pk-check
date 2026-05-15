@@ -236,10 +236,6 @@ export default async function OrderDetailPage({ params }: Props) {
             <dd className="font-medium">{formatUSD(order.shipping_usd)}</dd>
           </div>
           <div className="flex items-center justify-between">
-            <dt className="opacity-70">대행 수수료</dt>
-            <dd className="font-medium">{formatUSD(order.agent_fee_usd)}</dd>
-          </div>
-          <div className="flex items-center justify-between">
             <dt className="opacity-70">결제 수수료</dt>
             <dd className="font-medium">{formatUSD(order.payment_fee_usd)}</dd>
           </div>

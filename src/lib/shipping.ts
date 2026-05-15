@@ -152,9 +152,29 @@ export function estimateWeightG(itemCount: number): number {
   return PACKAGING_BASE_G + PER_ITEM_G * Math.max(1, itemCount);
 }
 
-// 기본 환율 (USD = N KRW). 결제 시점에 admin 이 보정 가능.
-// 추후 환율 API 연동 시 동적 적용.
-export const DEFAULT_USD_TO_KRW = 1380;
+// fallback 환율 (USD = N KRW). API 실패 시에만 사용.
+export const FALLBACK_USD_TO_KRW = 1500;
+
+// 호환용 별칭 (구 코드 참조 대비)
+export const DEFAULT_USD_TO_KRW = FALLBACK_USD_TO_KRW;
+
+// 실시간 환율 (Frankfurter / ECB) — 1시간 캐시
+// https://www.frankfurter.app/
+export async function getUsdToKrw(): Promise<number> {
+  try {
+    const resp = await fetch(
+      "https://api.frankfurter.app/latest?from=USD&to=KRW",
+      { next: { revalidate: 3600 } }, // 1h
+    );
+    if (!resp.ok) return FALLBACK_USD_TO_KRW;
+    const data: { rates?: { KRW?: number } } = await resp.json();
+    const rate = data.rates?.KRW;
+    if (typeof rate === "number" && rate > 500 && rate < 3000) return rate;
+    return FALLBACK_USD_TO_KRW;
+  } catch {
+    return FALLBACK_USD_TO_KRW;
+  }
+}
 
 export interface ShippingQuote {
   zone: ShippingZone;
@@ -168,7 +188,7 @@ export interface ShippingQuote {
 export function quoteShipping(
   country: string | null | undefined,
   itemCount: number,
-  exchangeRate: number = DEFAULT_USD_TO_KRW,
+  exchangeRate: number = FALLBACK_USD_TO_KRW,
 ): ShippingQuote {
   const zone = getShippingZone(country);
   const weight_g = estimateWeightG(itemCount);

@@ -74,7 +74,6 @@ export interface Order {
   subtotal_usd: number;
   shipping_usd: number;
   total_usd: number;
-  agent_fee_usd: number;
   payment_fee_usd: number;
   exchange_rate: number | null;
   estimated_weight_g: number | null;
