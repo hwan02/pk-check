@@ -78,7 +78,7 @@ export default function CartPage() {
 
   const subtotal = data?.subtotal_usd ?? 0;
   const shippingUsd = data?.shipping?.shipping_usd ?? 0;
-  const bundleSaving = (data as Record<string, unknown>)?.bundle_saving_usd as number ?? 0;
+  const bundleSaving: number = (data as unknown as { bundle_saving_usd?: number })?.bundle_saving_usd ?? 0;
   const paymentFee = data?.payment_fee_usd ?? 0;
   const total = data?.total_usd ?? 0;
   const feeRate = data?.fee_rates?.payment ?? 0;
