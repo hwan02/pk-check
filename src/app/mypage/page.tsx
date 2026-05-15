@@ -43,7 +43,7 @@ export default async function MyPage() {
       </h2>
       <ul className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] overflow-hidden divide-y divide-[var(--border)] mb-4">
         <MenuItem href="/orders" label="주문/배송 조회" icon={<ReceiptIcon />} />
-        <MenuItem href="/support" label="문의 / 채팅" icon={<ChatIcon />} />
+        <MenuItem href="/support" label="고객센터 채팅" icon={<ChatIcon />} />
         <MenuItem href="/cart" label="장바구니" icon={<CartIcon />} />
         <MenuItem
           href="/mypage/profile"

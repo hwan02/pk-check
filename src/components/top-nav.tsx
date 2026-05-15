@@ -87,7 +87,7 @@ export default async function TopNav() {
                     href="/support"
                     className="block px-4 py-2 text-xs hover:bg-[var(--surface)]"
                   >
-                    문의 / 채팅
+                    고객센터 채팅
                   </Link>
                   <Link
                     href="/mypage/profile"
