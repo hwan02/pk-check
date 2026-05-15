@@ -81,7 +81,8 @@ export default function CartPage() {
   const paymentFee = data?.payment_fee_usd ?? 0;
   const total = data?.total_usd ?? 0;
   const feeRate = data?.fee_rates?.payment ?? 0;
-  const hasAddress = !!data?.profile?.country;
+  const p = data?.profile as { country?: string | null; postal_code?: string | null; address1?: string | null } | null;
+  const hasAddress = !!p?.country && !!p?.postal_code && !!p?.address1;
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
