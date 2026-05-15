@@ -227,7 +227,7 @@ export default async function OrderDetailPage({ params }: Props) {
           </div>
         </dl>
         <div className="mt-3 pt-3 border-t border-[var(--border)] flex items-center justify-between text-sm">
-          <span className="font-semibold">1차 결제 (상품+수수료)</span>
+          <span className="font-semibold">결제 (상품+수수료)</span>
           <span className="font-bold">{formatUSD(order.subtotal_usd + (order.payment_fee_usd ?? 0))}</span>
         </div>
 
