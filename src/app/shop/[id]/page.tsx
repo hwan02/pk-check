@@ -13,14 +13,21 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
+// UUID 형식 판별
+function isUuid(s: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+}
+
 export default async function ListingDetailPage({ params }: Props) {
   const { id } = await params;
   const supabase = await createSsrClient();
 
+  // short_id 우선, UUID 형식이면 id로 조회 (기존 링크 호환)
+  const column = isUuid(id) ? "id" : "short_id";
   const { data } = await supabase
     .from("listings")
     .select("*")
-    .eq("id", id)
+    .eq(column, id)
     .maybeSingle();
   const item = data as Listing | null;
   if (!item) notFound();

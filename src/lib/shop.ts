@@ -1,5 +1,6 @@
 export interface Listing {
   id: string;
+  short_id: string | null;
   title: string;
   title_en: string | null;
   category: "pokemon" | "onepiece";

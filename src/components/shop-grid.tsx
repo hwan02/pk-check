@@ -18,7 +18,7 @@ export default function ShopGrid({ listings }: { listings: Listing[] }) {
         const secondary = l.title_en && l.title !== l.title_en ? l.title : null;
         const meta = [CATEGORY_LABEL[l.category], l.language && LANGUAGE_LABEL[l.language]].filter(Boolean).join(" · ");
         return (
-          <Link key={l.id} href={`/shop/${l.id}`} className="block group">
+          <Link key={l.id} href={`/shop/${l.short_id ?? l.id}`} className="block group">
             <div className="rounded-xl overflow-hidden bg-[var(--surface)] border border-[var(--border)] group-hover:border-[var(--border-strong)] transition-colors">
               <div className="aspect-square relative bg-white">
                 {l.image_url ? (

@@ -81,8 +81,20 @@ export default async function AdminListingsPage() {
               )}
               <p className="text-xs opacity-60">
                 {formatUSD(l.price_usd)} · 재고 {l.stock}
+                {l.short_id && (
+                  <>
+                    {" · "}
+                    <span className="font-mono">/shop/{l.short_id}</span>
+                  </>
+                )}
               </p>
             </div>
+            <Link
+              href={`/admin/listings/${l.id}`}
+              className="text-xs px-3 py-1.5 rounded border border-[var(--border)] hover:bg-[var(--surface)] font-medium"
+            >
+              수정
+            </Link>
             <DeleteListingButton id={l.id} />
           </div>
         ))}

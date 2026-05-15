@@ -50,11 +50,6 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/content" className="opacity-70 hover:opacity-100">
-                  매거진
-                </Link>
-              </li>
-              <li>
                 <a
                   href={`mailto:${BUSINESS.contactEmail}`}
                   className="opacity-70 hover:opacity-100"

@@ -46,7 +46,20 @@ export async function PATCH(
   const body = await request.json();
   const admin = createServerClient();
 
-  const allowed = ["title", "title_en", "price_usd", "stock", "description", "description_en", "is_active", "condition", "language"];
+  const allowed = [
+    "title",
+    "title_en",
+    "category",
+    "price_usd",
+    "stock",
+    "description",
+    "description_en",
+    "is_active",
+    "condition",
+    "language",
+    "video_url",
+    "image_url",
+  ];
   const update: Record<string, unknown> = {};
   for (const k of allowed) {
     if (k in body) update[k] = body[k];

@@ -1,8 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
+import { customAlphabet } from "nanoid";
 import { createSsrClient } from "@/lib/supabase/ssr";
 import { createServerClient } from "@/lib/supabase/server";
 
 const BUCKET = "listing-images";
+
+// URL-safe, 헷갈리는 문자(0/O, 1/l/I) 제외한 알파벳으로 8자
+const shortId = customAlphabet(
+  "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz",
+  8,
+);
 
 async function requireAdmin() {
   const supabase = await createSsrClient();
@@ -71,9 +78,19 @@ export async function POST(request: NextRequest) {
     imageUrl = pub.publicUrl;
   }
 
+  // nanoid 짧은 ID 생성 (충돌 시 1회 재시도)
+  let short_id = shortId();
+  const existing = await admin
+    .from("listings")
+    .select("id")
+    .eq("short_id", short_id)
+    .maybeSingle();
+  if (existing.data) short_id = shortId();
+
   const { data, error } = await admin
     .from("listings")
     .insert({
+      short_id,
       title,
       title_en: titleEn,
       category,
