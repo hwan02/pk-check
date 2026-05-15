@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import RecentlyViewed from "@/components/recently-viewed";
@@ -34,6 +35,7 @@ interface Preview {
 }
 
 export default function CartPage() {
+  const router = useRouter();
   const [data, setData] = useState<Preview | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedWeight, setSelectedWeight] = useState("auto");
@@ -57,6 +59,7 @@ export default function CartPage() {
       body: JSON.stringify({ cartItemId: itemId }),
     });
     fetchCart();
+    router.refresh();
   }
 
   async function updateQty(itemId: string, qty: number) {
@@ -67,6 +70,7 @@ export default function CartPage() {
       body: JSON.stringify({ cartItemId: itemId, quantity: qty }),
     });
     fetchCart();
+    router.refresh();
   }
 
   if (loading) {
