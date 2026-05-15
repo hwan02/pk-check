@@ -35,6 +35,8 @@ interface Preview {
 export default function CartPage() {
   const [data, setData] = useState<Preview | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedWeight, setSelectedWeight] = useState("auto");
+  const [customShipping, setCustomShipping] = useState<number | null>(null);
 
   async function fetchCart() {
     const resp = await fetch("/api/checkout/preview");
@@ -94,9 +96,6 @@ export default function CartPage() {
   const zoneLabel = data?.shipping?.zone_label ?? "";
   const p = data?.profile as { country?: string | null; postal_code?: string | null; address1?: string | null } | null;
   const hasAddress = !!p?.country && !!p?.postal_code && !!p?.address1;
-
-  const [selectedWeight, setSelectedWeight] = useState("auto");
-  const [customShipping, setCustomShipping] = useState<number | null>(null);
 
   const WEIGHT_OPTIONS = [
     { value: "auto", label: `자동 추정 (${data?.shipping?.weight_g ?? 0}g)` },
