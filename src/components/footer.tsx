@@ -1,17 +1,16 @@
 import Link from "next/link";
 
-// 사업자 정보 — 실제 값으로 교체 필요
+// 사업자 정보
 const BUSINESS = {
   name: "Kikidult",
-  ceo: "OOO",
-  bizNo: "000-00-00000",
-  ecommerceNo: "제0000-서울-0000호",
-  address: "서울특별시 OO구 OO로 OOO",
-  contactEmail: "support@kikidult.com",
-  contactPhone: "02-0000-0000",
-  privacyOfficer: "OOO",
-  privacyEmail: "privacy@kikidult.com",
-  hosting: "Vercel · Supabase",
+  ceo: "서승환",
+  bizNo: "217-62-00760",
+  ecommerceNo: "", // 신고 준비 중
+  address: "서울특별시 서대문구 성산로18길 18-8, 2층",
+  contactEmail: "kikidult.help@gmail.com",
+  contactPhone: "070-8064-4216",
+  privacyOfficer: "서승환",
+  privacyEmail: "kikidult.help@gmail.com",
 };
 
 export default function Footer() {
@@ -70,8 +69,12 @@ export default function Footer() {
               <dd>{BUSINESS.ceo}</dd>
               <dt className="opacity-60">사업자</dt>
               <dd>{BUSINESS.bizNo}</dd>
-              <dt className="opacity-60">통신판매</dt>
-              <dd>{BUSINESS.ecommerceNo}</dd>
+              {BUSINESS.ecommerceNo && (
+                <>
+                  <dt className="opacity-60">통신판매</dt>
+                  <dd>{BUSINESS.ecommerceNo}</dd>
+                </>
+              )}
               <dt className="opacity-60">주소</dt>
               <dd>{BUSINESS.address}</dd>
             </dl>
@@ -94,8 +97,6 @@ export default function Footer() {
               <dd>{BUSINESS.contactPhone}</dd>
               <dt className="opacity-60">운영시간</dt>
               <dd>평일 10:00 – 18:00 (KST)</dd>
-              <dt className="opacity-60">호스팅</dt>
-              <dd className="opacity-80">{BUSINESS.hosting}</dd>
             </dl>
           </div>
         </div>
