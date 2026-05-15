@@ -4,7 +4,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSsrClient } from "@/lib/supabase/ssr";
-import BundleShipping from "@/components/bundle-shipping";
 import {
   ORDER_STATUS_LABEL,
   formatOrderDate,
@@ -73,13 +72,6 @@ export default async function OrdersPage({ searchParams }: Props) {
           결제가 완료되었습니다! 감사합니다.
         </div>
       )}
-
-      {/* 묶음 배송 UI: paid 상태 주문이 2개 이상일 때 */}
-      <BundleShipping
-        paidOrders={orders
-          .filter((o) => o.status === "paid")
-          .map((o) => ({ id: o.id, order_no: (o as unknown as { order_no?: string }).order_no, bundle_group: (o as unknown as { bundle_group?: string }).bundle_group }))}
-      />
 
       {orders.length === 0 ? (
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] p-12 text-center">
