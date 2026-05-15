@@ -46,10 +46,12 @@ export function formatUSD(n: number): string {
 // Orders (해외 구매자 주문 / 배송조회)
 // -----------------------------------------------------------
 export type OrderStatus =
-  | "pending"
-  | "paid"
-  | "shipped"
-  | "delivered"
+  | "pending"           // 결제 대기
+  | "paid"              // 1차 결제 완료 (상품+수수료)
+  | "shipping_pending"  // 배송비 청구됨 (이메일 발송, 추가결제 대기)
+  | "shipping_paid"     // 배송비 결제 완료 (발송 준비)
+  | "shipped"           // 발송 완료
+  | "delivered"         // 배송 완료
   | "cancelled"
   | "refunded";
 
@@ -107,6 +109,8 @@ export interface OrderItem {
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   pending: "결제 대기",
   paid: "결제 완료",
+  shipping_pending: "배송비 결제 대기",
+  shipping_paid: "추가결제 완료",
   shipped: "배송중",
   delivered: "배송 완료",
   cancelled: "취소",

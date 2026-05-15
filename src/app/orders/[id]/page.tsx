@@ -21,6 +21,8 @@ interface Props {
 const STATUS_COLOR: Record<string, string> = {
   pending: "bg-gray-100 text-gray-700",
   paid: "bg-blue-50 text-blue-700",
+  shipping_pending: "bg-orange-50 text-orange-700",
+  shipping_paid: "bg-emerald-50 text-emerald-700",
   shipped: "bg-amber-50 text-amber-700",
   delivered: "bg-emerald-50 text-emerald-700",
   cancelled: "bg-gray-100 text-gray-500",
@@ -231,29 +233,31 @@ export default async function OrderDetailPage({ params }: Props) {
 
         {/* 2차 결제 (배송비) */}
         <div className="mt-4 pt-4 border-t border-[var(--border)]">
-          <p className="text-xs font-semibold opacity-60 mb-2">2차 결제 (배송비)</p>
-          <dl className="space-y-2 text-sm">
-            {order.shipping_usd > 0 ? (
+          <p className="text-xs font-semibold opacity-60 mb-2">배송비 (추가결제)</p>
+          {order.status === "paid" && (
+            <div className="p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
+              <p className="text-sm opacity-70">중량 측정 대기</p>
+              <p className="text-[10px] opacity-50 mt-1">
+                상품 포장 후 실제 중량을 측정하여 배송비를 이메일로 안내드립니다.
+              </p>
+            </div>
+          )}
+          {order.status === "shipping_pending" && (
+            <div className="p-3 rounded-lg bg-orange-50 border border-orange-200">
               <div className="flex items-center justify-between">
-                <dt className="opacity-70">
-                  배송비
-                  {order.estimated_weight_g ? (
-                    <span className="opacity-50 text-[11px] ml-1">({order.estimated_weight_g}g)</span>
-                  ) : null}
-                </dt>
-                <dd className="font-bold text-green-700">{formatUSD(order.shipping_usd)} 결제 완료</dd>
+                <span className="text-sm font-semibold text-orange-700">배송비 결제 대기</span>
+                <span className="text-sm font-bold">{formatUSD(order.shipping_usd)}</span>
               </div>
-            ) : (
-              <div className="flex items-center justify-between">
-                <dt className="opacity-70">배송비</dt>
-                <dd className="font-medium text-[var(--accent)]">미결제 (중량 측정 후 안내)</dd>
-              </div>
-            )}
-          </dl>
-          {order.shipping_usd <= 0 && order.status === "paid" && (
-            <p className="text-[10px] opacity-50 mt-2">
-              상품 포장 후 실제 중량을 측정하여 배송비를 이메일로 안내드립니다.
-            </p>
+              <p className="text-[10px] text-orange-600 mt-1">
+                이메일로 발송된 결제 링크로 배송비를 결제해주세요.
+              </p>
+            </div>
+          )}
+          {(order.status === "shipping_paid" || ["shipped", "delivered"].includes(order.status)) && order.shipping_usd > 0 && (
+            <div className="flex items-center justify-between text-sm">
+              <span className="opacity-70">배송비</span>
+              <span className="font-bold text-emerald-700">{formatUSD(order.shipping_usd)} 결제 완료</span>
+            </div>
           )}
         </div>
 

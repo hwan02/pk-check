@@ -55,7 +55,7 @@ export async function POST(request: NextRequest) {
     .from("orders")
     .update({
       shipping_usd: actualShippingUsd,
-      status: "awaiting_shipping_payment",
+      status: "shipping_pending",
     })
     .eq("id", orderId);
 

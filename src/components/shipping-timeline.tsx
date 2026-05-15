@@ -8,85 +8,88 @@ interface Step {
   active: boolean;
 }
 
-function getInternationalSteps(order: Order): Step[] {
-  const status = order.status;
-  const steps: Step[] = [
-    {
-      label: "결제 완료",
-      sublabel: "상품 준비 중",
-      date: order.paid_at,
-      done: ["paid", "shipped", "delivered"].includes(status),
-      active: status === "paid" && !order.shipped_at,
-    },
-    {
-      label: "발송 완료",
-      sublabel: "한국 우체국 접수",
-      date: order.shipped_at,
-      done: !!order.shipped_at,
-      active: !!order.shipped_at && !order.customs_cleared_at && status !== "delivered",
-    },
-    {
-      label: "수출 통관",
-      sublabel: "한국 세관 처리 (자동)",
-      date: null,
-      done: !!order.customs_status && order.customs_status !== "pending",
-      active: false, // 한국 수출은 자동이라 별도 표시 불필요
-    },
-    {
-      label: "운송 중",
-      sublabel: "항공편 이동",
-      date: null,
-      done: !!order.customs_cleared_at || status === "delivered",
-      active: !!order.shipped_at && !order.delivered_at && status !== "paid",
-    },
-    {
-      label: "도착국 통관",
-      sublabel: "수입국 세관 심사",
-      date: order.customs_cleared_at,
-      done: !!order.customs_cleared_at,
-      active: false,
-    },
-    {
-      label: "배송 완료",
-      sublabel: "수령 확인",
-      date: order.delivered_at,
-      done: status === "delivered",
-      active: status === "delivered",
-    },
-  ];
-  return steps;
-}
+const AFTER_PAID = ["paid", "shipping_pending", "shipping_paid", "shipped", "delivered"];
+const AFTER_SHIPPING_PAID = ["shipping_paid", "shipped", "delivered"];
+const AFTER_SHIPPED = ["shipped", "delivered"];
 
-function getDomesticSteps(order: Order): Step[] {
-  const status = order.status;
+function getInternationalSteps(order: Order): Step[] {
+  const s = order.status;
   return [
     {
       label: "결제 완료",
       sublabel: "상품 준비 중",
       date: order.paid_at,
-      done: ["paid", "shipped", "delivered"].includes(status),
-      active: status === "paid" && !order.shipped_at,
+      done: AFTER_PAID.includes(s),
+      active: s === "paid",
+    },
+    {
+      label: "배송비 청구",
+      sublabel: "중량 측정 → 이메일 안내",
+      date: null,
+      done: ["shipping_pending", ...AFTER_SHIPPING_PAID].includes(s),
+      active: s === "shipping_pending",
+    },
+    {
+      label: "추가결제 완료",
+      sublabel: "배송비 결제 확인",
+      date: null,
+      done: AFTER_SHIPPING_PAID.includes(s),
+      active: s === "shipping_paid",
     },
     {
       label: "발송 완료",
-      sublabel: "택배사 접수",
+      sublabel: "한국 우체국 접수",
       date: order.shipped_at,
-      done: !!order.shipped_at,
-      active: !!order.shipped_at && status !== "delivered",
+      done: AFTER_SHIPPED.includes(s),
+      active: s === "shipped" && !order.customs_cleared_at,
     },
     {
-      label: "배송 중",
-      sublabel: "배송 진행",
-      date: null,
-      done: status === "delivered",
-      active: !!order.shipped_at && status !== "delivered",
+      label: "운송 중",
+      sublabel: "항공편 이동 → 도착국 세관",
+      date: order.customs_cleared_at,
+      done: !!order.customs_cleared_at || s === "delivered",
+      active: s === "shipped" && !!order.shipped_at && !order.delivered_at,
     },
     {
       label: "배송 완료",
       sublabel: "수령 확인",
       date: order.delivered_at,
-      done: status === "delivered",
-      active: status === "delivered",
+      done: s === "delivered",
+      active: s === "delivered",
+    },
+  ];
+}
+
+function getDomesticSteps(order: Order): Step[] {
+  const s = order.status;
+  return [
+    {
+      label: "결제 완료",
+      sublabel: "상품 준비 중",
+      date: order.paid_at,
+      done: AFTER_PAID.includes(s),
+      active: s === "paid" || s === "shipping_pending" || s === "shipping_paid",
+    },
+    {
+      label: "발송 완료",
+      sublabel: "택배사 접수",
+      date: order.shipped_at,
+      done: AFTER_SHIPPED.includes(s),
+      active: s === "shipped" && !order.delivered_at,
+    },
+    {
+      label: "배송 중",
+      sublabel: "배송 진행",
+      date: null,
+      done: s === "delivered",
+      active: s === "shipped",
+    },
+    {
+      label: "배송 완료",
+      sublabel: "수령 확인",
+      date: order.delivered_at,
+      done: s === "delivered",
+      active: s === "delivered",
     },
   ];
 }
@@ -106,7 +109,6 @@ export default function ShippingTimeline({
         const isLast = i === steps.length - 1;
         return (
           <div key={step.label} className="flex gap-3">
-            {/* 점 + 라인 */}
             <div className="flex flex-col items-center">
               <div
                 className={`w-3 h-3 rounded-full flex-shrink-0 mt-0.5 ${
@@ -125,7 +127,6 @@ export default function ShippingTimeline({
                 />
               )}
             </div>
-            {/* 텍스트 */}
             <div className={`pb-4 ${step.done || step.active ? "" : "opacity-40"}`}>
               <p className={`text-xs font-semibold ${step.active ? "text-[var(--accent)]" : ""}`}>
                 {step.label}
