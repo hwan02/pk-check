@@ -193,55 +193,67 @@ export default function CartPage() {
           <span className="font-black">${(subtotal + paymentFee).toFixed(2)}</span>
         </div>
 
-        {/* 예상 운송 정보 */}
+        {/* 배송비 안내 */}
         {hasAddress ? (
           <div className="mt-4 p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
-            <div className="mb-3">
-              <label className="text-[11px] font-semibold opacity-60 block mb-1">
-                예상 중량 선택
-              </label>
-              <select
-                value={selectedWeight}
-                onChange={(e) => onWeightChange(e.target.value)}
-                className="w-full px-3 py-2 text-xs rounded-lg border border-[var(--border)] bg-[var(--card-bg)]"
-              >
-                <option value="auto">선택해주세요</option>
-                {WEIGHT_OPTIONS.map((o) => (
-                  <option key={o.value} value={o.value}>{o.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {selectedWeight !== "auto" && (
+            {isDomestic ? (
               <>
                 <div className="flex justify-between text-xs">
-                  <span className="opacity-60">예상 중량</span>
-                  <span className="font-bold">{(Number(selectedWeight) / 1000).toFixed(1)} kg</span>
+                  <span className="opacity-60">국내 배송비</span>
+                  <span className="font-bold">₩3,000</span>
                 </div>
-                <div className="flex justify-between text-xs mt-1">
-                  <span className="opacity-60">
-                    {isDomestic ? "예상 국내 택배비" : "예상 국제운송료"}
-                    <span className="opacity-50 ml-1">({zoneLabel})</span>
-                  </span>
-                  <span className="font-bold">${(customShipping ?? shippingUsd).toFixed(2)}</span>
+                <p className="text-[10px] opacity-50 mt-2 leading-relaxed border-t border-[var(--border)] pt-2">
+                  국내 배송비 ₩3,000은 실제 발송 시 추가 정산됩니다.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="mb-3">
+                  <label className="text-[11px] font-semibold opacity-60 block mb-1">
+                    예상 중량 선택
+                  </label>
+                  <select
+                    value={selectedWeight}
+                    onChange={(e) => onWeightChange(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-lg border border-[var(--border)] bg-[var(--card-bg)]"
+                  >
+                    <option value="auto">선택해주세요</option>
+                    {WEIGHT_OPTIONS.map((o) => (
+                      <option key={o.value} value={o.value}>{o.label}</option>
+                    ))}
+                  </select>
                 </div>
+
+                {selectedWeight !== "auto" && (
+                  <>
+                    <div className="flex justify-between text-xs">
+                      <span className="opacity-60">예상 중량</span>
+                      <span className="font-bold">{(Number(selectedWeight) / 1000).toFixed(1)} kg</span>
+                    </div>
+                    <div className="flex justify-between text-xs mt-1">
+                      <span className="opacity-60">
+                        예상 국제운송료
+                        <span className="opacity-50 ml-1">({zoneLabel})</span>
+                      </span>
+                      <span className="font-bold">${(customShipping ?? shippingUsd).toFixed(2)}</span>
+                    </div>
+                  </>
+                )}
+
+                {bundleSaving > 0 && (
+                  <div className="flex items-center gap-1.5 mt-2 text-xs">
+                    <span className="px-1.5 py-0.5 rounded bg-green-100 text-green-700 font-bold text-[10px]">묶음 배송</span>
+                    <span className="text-green-700 font-medium">
+                      개별 발송 대비 ${bundleSaving.toFixed(2)} 절약!
+                    </span>
+                  </div>
+                )}
+
+                <p className="text-[10px] opacity-50 mt-2 leading-relaxed border-t border-[var(--border)] pt-2">
+                  국제운송료는 상품의 실제 중량 측정 후 추가 정산 시 결제합니다.
+                </p>
               </>
             )}
-
-            {bundleSaving > 0 && (
-              <div className="flex items-center gap-1.5 mt-2 text-xs">
-                <span className="px-1.5 py-0.5 rounded bg-green-100 text-green-700 font-bold text-[10px]">묶음 배송</span>
-                <span className="text-green-700 font-medium">
-                  개별 발송 대비 ${bundleSaving.toFixed(2)} 절약!
-                </span>
-              </div>
-            )}
-
-            <p className="text-[10px] opacity-50 mt-2 leading-relaxed border-t border-[var(--border)] pt-2">
-              {isDomestic
-                ? "국내 배송비는 실제 발송 시 확정되며, 추가 정산 시 결제합니다."
-                : "국제운송료는 상품의 실제 중량 측정 후 추가 정산 시 결제합니다."}
-            </p>
           </div>
         ) : (
           <div className="mt-4 p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)]">

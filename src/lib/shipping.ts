@@ -192,7 +192,7 @@ export interface ShippingQuote {
 }
 
 // 국내 택배비 (KRW)
-const DOMESTIC_SHIPPING_KRW = 4000; // 일반 등기소포 기준
+const DOMESTIC_SHIPPING_KRW = 3000;
 
 export function quoteShipping(
   country: string | null | undefined,
