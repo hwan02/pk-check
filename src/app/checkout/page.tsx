@@ -114,16 +114,22 @@ export default function CheckoutPage() {
     return () => { cancelled = true; };
   }, [fetchPreview]);
 
+  function clearPaypalButtons() {
+    const el = document.getElementById("paypal-button-container");
+    if (el) el.innerHTML = "";
+    setRendered(false);
+  }
+
   async function onChangeAddress(id: string) {
     setSelectedAddressId(id);
-    setRendered(false);
+    clearPaypalButtons();
     const d = await fetchPreview(id, selectedWeight);
     setData(d);
   }
 
   async function onChangeWeight(weight: string) {
     setSelectedWeight(weight);
-    setRendered(false);
+    clearPaypalButtons();
     const d = await fetchPreview(selectedAddressId, weight);
     setData(d);
   }
