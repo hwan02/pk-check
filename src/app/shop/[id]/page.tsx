@@ -188,22 +188,20 @@ export default async function ListingDetailPage({ params }: Props) {
 
           {/* CTA */}
           <div className="mt-5">
-            <div className="flex gap-2">
-              <div className="flex-1">
-                <AddToCartButton
+            <AddToCartButton
+              listingId={item.id}
+              disabled={item.stock <= 0}
+              loggedIn={!!user}
+              wishlistSlot={
+                <WishlistButton
                   listingId={item.id}
-                  disabled={item.stock <= 0}
+                  initialWishlisted={wishlisted}
                   loggedIn={!!user}
+                  variant="icon"
+                  className="w-12 h-12 shrink-0"
                 />
-              </div>
-              <WishlistButton
-                listingId={item.id}
-                initialWishlisted={wishlisted}
-                loggedIn={!!user}
-                variant="icon"
-                className="w-12 h-12 shrink-0"
-              />
-            </div>
+              }
+            />
           </div>
         </div>
       </div>

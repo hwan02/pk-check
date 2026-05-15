@@ -1,16 +1,18 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 export default function AddToCartButton({
   listingId,
   disabled,
   loggedIn,
+  wishlistSlot,
 }: {
   listingId: string;
   disabled: boolean;
   loggedIn: boolean;
+  wishlistSlot?: ReactNode;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -19,12 +21,17 @@ export default function AddToCartButton({
 
   if (!loggedIn) {
     return (
-      <button
-        onClick={() => router.push(`/login?redirect=/shop/${listingId}`)}
-        className="w-full py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:opacity-90 cursor-pointer"
-      >
-        로그인하고 구매하기
-      </button>
+      <div className="space-y-2">
+        <div className="flex gap-2">
+          {wishlistSlot && <div className="shrink-0">{wishlistSlot}</div>}
+          <button
+            onClick={() => router.push(`/login?redirect=/shop/${listingId}`)}
+            className="flex-1 py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:opacity-90 cursor-pointer"
+          >
+            로그인하고 구매하기
+          </button>
+        </div>
+      </div>
     );
   }
 
@@ -65,13 +72,16 @@ export default function AddToCartButton({
 
   return (
     <div className="space-y-2">
-      <button
-        onClick={buyNow}
-        disabled={disabled || buyLoading}
-        className="w-full py-3 rounded-xl bg-[var(--accent)] text-white font-bold hover:opacity-90 disabled:opacity-50 cursor-pointer"
-      >
-        {disabled ? "품절" : buyLoading ? "처리 중..." : "즉시 구매"}
-      </button>
+      <div className="flex gap-2">
+        {wishlistSlot && <div className="shrink-0">{wishlistSlot}</div>}
+        <button
+          onClick={buyNow}
+          disabled={disabled || buyLoading}
+          className="flex-1 py-3 rounded-xl bg-[var(--accent)] text-white font-bold hover:opacity-90 disabled:opacity-50 cursor-pointer"
+        >
+          {disabled ? "품절" : buyLoading ? "처리 중..." : "즉시 구매"}
+        </button>
+      </div>
       <button
         onClick={addToCart}
         disabled={disabled || loading}
