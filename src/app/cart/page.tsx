@@ -53,7 +53,16 @@ export default function CartPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cartItemId: itemId }),
     });
-    // 다시 불러오기
+    fetchCart();
+  }
+
+  async function updateQty(itemId: string, qty: number) {
+    if (qty < 1) return;
+    await fetch("/api/cart/update", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ cartItemId: itemId, quantity: qty }),
+    });
     fetchCart();
   }
 
@@ -104,16 +113,32 @@ export default function CartPage() {
             )}
             <div className="flex-1 min-w-0">
               <p className="text-sm font-medium line-clamp-1">{item.listing.title}</p>
-              <p className="text-xs opacity-50 mt-0.5">수량 {item.quantity}</p>
+              <div className="flex items-center gap-2 mt-1.5">
+                <button
+                  onClick={() => updateQty(item.id, item.quantity - 1)}
+                  disabled={item.quantity <= 1}
+                  className="w-6 h-6 rounded border border-[var(--border)] text-xs flex items-center justify-center disabled:opacity-30 cursor-pointer"
+                >
+                  −
+                </button>
+                <span className="text-xs font-medium w-5 text-center">{item.quantity}</span>
+                <button
+                  onClick={() => updateQty(item.id, item.quantity + 1)}
+                  className="w-6 h-6 rounded border border-[var(--border)] text-xs flex items-center justify-center cursor-pointer"
+                >
+                  +
+                </button>
+                <button
+                  onClick={() => removeItem(item.id)}
+                  className="text-[10px] text-[var(--muted)] hover:text-[var(--accent)] ml-2 cursor-pointer"
+                >
+                  삭제
+                </button>
+              </div>
             </div>
             <div className="text-right flex-shrink-0">
               <p className="text-sm font-bold">${(item.listing.price_usd * item.quantity).toFixed(2)}</p>
-              <button
-                onClick={() => removeItem(item.id)}
-                className="text-[10px] text-[var(--muted)] hover:text-[var(--accent)] mt-1 cursor-pointer"
-              >
-                삭제
-              </button>
+              <p className="text-[10px] opacity-40">${item.listing.price_usd.toFixed(2)} × {item.quantity}</p>
             </div>
           </div>
         ))}
