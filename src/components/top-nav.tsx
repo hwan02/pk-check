@@ -58,7 +58,7 @@ export default async function TopNav() {
                 href="/mypage"
                 className="opacity-80 hover:opacity-100 inline-flex items-center gap-1 py-3"
               >
-                마이페이지
+                My Page
                 <svg
                   width="12"
                   height="12"

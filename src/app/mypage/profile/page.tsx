@@ -21,7 +21,7 @@ export default async function ProfileEditPage() {
   return (
     <div className="max-w-xl mx-auto px-4 py-6">
       <nav className="text-xs opacity-60 mb-4 flex items-center gap-1.5">
-        <Link href="/mypage" className="hover:opacity-100">마이페이지</Link>
+        <Link href="/mypage" className="hover:opacity-100">My Page</Link>
         <span>/</span>
         <span className="opacity-80">회원정보 수정</span>
       </nav>

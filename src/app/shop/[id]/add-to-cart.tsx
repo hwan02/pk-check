@@ -20,7 +20,7 @@ export default function AddToCartButton({
   if (!loggedIn) {
     return (
       <button
-        onClick={() => router.push(`/login?next=/shop/${listingId}`)}
+        onClick={() => router.push(`/login?redirect=/shop/${listingId}`)}
         className="w-full py-3 rounded-xl bg-[var(--primary)] text-white font-medium hover:opacity-90 cursor-pointer"
       >
         로그인하고 구매하기

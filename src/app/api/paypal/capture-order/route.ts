@@ -34,12 +34,24 @@ export async function POST(request: NextRequest) {
     const captureId =
       capture.purchase_units?.[0]?.payments?.captures?.[0]?.id ?? null;
 
+    // 결제 수단 메타 추출 (PayPal 지갑 / 카드 funding)
+    const paymentSource = (capture as { payment_source?: Record<string, unknown> }).payment_source ?? {};
+    const card = paymentSource.card as
+      | { brand?: string; last_digits?: string }
+      | undefined;
+    const paymentMethod: "card" | "paypal" = card ? "card" : "paypal";
+    const cardBrand = card?.brand ?? null;
+    const cardLast4 = card?.last_digits ?? null;
+
     await db
       .from("orders")
       .update({
         status: "paid",
         paypal_capture_id: captureId,
         paid_at: new Date().toISOString(),
+        payment_method: paymentMethod,
+        card_brand: cardBrand,
+        card_last4: cardLast4,
       })
       .eq("id", orderId);
 

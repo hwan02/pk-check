@@ -9,6 +9,8 @@ const BUSINESS = {
   address: "서울특별시 OO구 OO로 OOO",
   contactEmail: "support@kikidult.com",
   contactPhone: "02-0000-0000",
+  privacyOfficer: "OOO",
+  privacyEmail: "privacy@kikidult.com",
   hosting: "Vercel · Supabase",
 };
 
@@ -103,13 +105,37 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="border-t border-[var(--border)] mt-8 pt-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
+        {/* 개인정보처리방침 안내 */}
+        <div className="border-t border-[var(--border)] mt-8 pt-5 text-[11px] opacity-70 leading-relaxed space-y-1">
+          <p>
+            <strong className="opacity-90">개인정보보호책임자</strong> ·{" "}
+            {BUSINESS.privacyOfficer} (
+            <a
+              href={`mailto:${BUSINESS.privacyEmail}`}
+              className="underline underline-offset-2 hover:opacity-100"
+            >
+              {BUSINESS.privacyEmail}
+            </a>
+            )
+          </p>
+          <p className="opacity-80">
+            회원의 개인정보는 관련 법령 및{" "}
+            <Link
+              href="/legal/privacy"
+              className="underline underline-offset-2 font-semibold opacity-100 hover:opacity-100"
+            >
+              개인정보처리방침
+            </Link>
+            에 따라 안전하게 보호됩니다. {BUSINESS.name}은(는) 통신판매중개자이자 해외 구매대행
+            서비스 제공자로서, 통관 시 부과되는 관세·부가세는 회원이 부담합니다.
+          </p>
+        </div>
+
+        <div className="border-t border-[var(--border)] mt-5 pt-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
           <p className="text-[11px] opacity-50">
             © {new Date().getFullYear()} {BUSINESS.name}. All rights reserved.
           </p>
-          <p className="text-[11px] opacity-50">
-            결제수단: PayPal · Visa · Master · AMEX
-          </p>
+          <p className="text-[11px] opacity-50">결제수단: PayPal</p>
         </div>
       </div>
     </footer>

@@ -39,7 +39,7 @@ export default async function MyPage() {
 
       {/* 메뉴 */}
       <h2 className="text-xs font-semibold tracking-widest uppercase opacity-60 px-1 mb-2">
-        마이페이지
+        My Page
       </h2>
       <ul className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] overflow-hidden divide-y divide-[var(--border)] mb-4">
         <MenuItem href="/orders" label="주문/배송 조회" icon={<ReceiptIcon />} />

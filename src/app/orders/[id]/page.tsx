@@ -33,14 +33,15 @@ export default async function OrderDetailPage({ params }: Props) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect(`/login?redirect=/orders/${id}`);
 
-  const { data: o } = await supabase
+  const { data: orderRow } = await supabase
     .from("orders")
     .select("*")
     .eq("id", id)
     .eq("user_id", user.id)
     .maybeSingle();
-  if (!o) notFound();
-  const order = o as Order;
+  if (!orderRow) notFound();
+  const order = orderRow as Order;
+
   const { data: rows } = await supabase
     .from("order_items")
     .select("*")

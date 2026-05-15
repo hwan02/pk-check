@@ -10,8 +10,6 @@ import type { Listing } from "@/lib/shop";
 export default async function HomePage() {
   const supabase = await createSsrClient();
 
-  // 1) 신규 입고 (최신순 8)
-  // 2) 프리미엄 (가격 높은순 8)
   const [newestRes, priciestRes] = await Promise.all([
     supabase
       .from("listings")
@@ -80,14 +78,18 @@ export default async function HomePage() {
       </section>
 
       {/* 신규 입고 */}
-      <Section title="신규 입고" subtitle="JUST ARRIVED" href="/shop?sort=newest">
-        <ShopGrid listings={newest} />
-      </Section>
+      {newest.length > 0 && (
+        <Section title="신규 입고" subtitle="JUST ARRIVED" href="/shop?sort=newest">
+          <ShopGrid listings={newest} />
+        </Section>
+      )}
 
       {/* 프리미엄 */}
-      <Section title="프리미엄" subtitle="HIGH VALUE" href="/shop?sort=price_desc">
-        <ShopGrid listings={priciest} />
-      </Section>
+      {priciest.length > 0 && (
+        <Section title="프리미엄" subtitle="HIGH VALUE" href="/shop?sort=price_desc">
+          <ShopGrid listings={priciest} />
+        </Section>
+      )}
 
       {/* 전체 보기 */}
       <div className="max-w-7xl mx-auto px-4 pt-2 pb-16 flex justify-center">

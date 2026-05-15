@@ -73,7 +73,7 @@ export default async function OrdersPage({ searchParams }: Props) {
         </div>
       )}
 
-      {displayOrders.length === 0 ? (
+      {orders.length === 0 ? (
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] p-12 text-center">
           <p className="text-sm opacity-60">아직 주문 내역이 없습니다.</p>
           <Link
@@ -85,7 +85,7 @@ export default async function OrdersPage({ searchParams }: Props) {
         </div>
       ) : (
         <ul className="space-y-4">
-          {displayOrders.map((o) => {
+          {orders.map((o) => {
             const items = itemsByOrder.get(o.id) ?? [];
             const totalQty = items.reduce((s, i) => s + i.quantity, 0);
             return (
