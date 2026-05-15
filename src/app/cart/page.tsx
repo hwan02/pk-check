@@ -171,7 +171,7 @@ export default function CartPage() {
                 <span className="opacity-60">
                   예상 배송비
                   <span className="opacity-50 ml-1">
-                    (K-Packet · {data?.shipping?.weight_g ?? 0}g · {data?.shipping?.zone_label ?? ""})
+                    ({data?.shipping?.zone_label ?? ""}{!(data?.shipping as { domestic?: boolean })?.domestic ? ` · ${data?.shipping?.weight_g ?? 0}g` : ""})
                   </span>
                 </span>
                 <span className="font-bold">${shippingUsd.toFixed(2)}</span>

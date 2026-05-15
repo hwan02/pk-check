@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSsrClient } from "@/lib/supabase/ssr";
 import { createServerClient } from "@/lib/supabase/server";
-import { getUsdToKrw, quoteShipping, ZONE_LABEL } from "@/lib/shipping";
+import { getUsdToKrw, quoteShipping, ZONE_LABEL, DOMESTIC_LABEL } from "@/lib/shipping";
 import { calcFees, PAYMENT_FEE_RATE } from "@/lib/fees";
 
 // 결제 직전 견적: 장바구니 + 회원 배송지로 배송비/예상중량 계산
@@ -72,7 +72,7 @@ export async function GET() {
     },
     shipping: {
       ...quote,
-      zone_label: ZONE_LABEL[quote.zone],
+      zone_label: quote.domestic ? DOMESTIC_LABEL : ZONE_LABEL[quote.zone],
     },
     bundle_saving_usd: bundleSavingUsd,
     total_usd: fees.total_usd,

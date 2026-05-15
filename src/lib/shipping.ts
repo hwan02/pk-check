@@ -84,9 +84,14 @@ const COUNTRY_ZONE: Record<string, ShippingZone> = {
   MA: 4,
 };
 
+export function isKorea(countryCode: string | null | undefined): boolean {
+  return (countryCode ?? "").toUpperCase() === "KR";
+}
+
 export function getShippingZone(countryCode: string | null | undefined): ShippingZone {
   if (!countryCode) return 4;
   const cc = countryCode.toUpperCase();
+  if (cc === "KR") return 1; // 국내 배송은 별도 처리하지만, zone 요청 시 1로 반환
   return COUNTRY_ZONE[cc] ?? 4;
 }
 
@@ -183,15 +188,34 @@ export interface ShippingQuote {
   shipping_krw: number;
   shipping_usd: number;
   exchange_rate: number;
+  domestic: boolean;
 }
+
+// 국내 택배비 (KRW)
+const DOMESTIC_SHIPPING_KRW = 4000; // 일반 등기소포 기준
 
 export function quoteShipping(
   country: string | null | undefined,
   itemCount: number,
   exchangeRate: number = FALLBACK_USD_TO_KRW,
 ): ShippingQuote {
-  const zone = getShippingZone(country);
   const weight_g = estimateWeightG(itemCount);
+
+  if (isKorea(country)) {
+    const shipping_krw = DOMESTIC_SHIPPING_KRW;
+    const shipping_usd = Math.round((shipping_krw / exchangeRate) * 100) / 100;
+    return {
+      zone: 1,
+      country: "KR",
+      weight_g,
+      shipping_krw,
+      shipping_usd,
+      exchange_rate: exchangeRate,
+      domestic: true,
+    };
+  }
+
+  const zone = getShippingZone(country);
   const shipping_krw = calcShippingKRW(zone, weight_g);
   const shipping_usd = Math.round((shipping_krw / exchangeRate) * 100) / 100;
   return {
@@ -201,12 +225,15 @@ export function quoteShipping(
     shipping_krw,
     shipping_usd,
     exchange_rate: exchangeRate,
+    domestic: false,
   };
 }
 
 export const ZONE_LABEL: Record<ShippingZone, string> = {
-  1: "Zone 1 (Japan / Greater China)",
-  2: "Zone 2 (Southeast / South Asia)",
-  3: "Zone 3 (North America / Oceania / Middle East)",
-  4: "Zone 4 (Europe / Latin America / Africa)",
+  1: "Zone 1 (동북아)",
+  2: "Zone 2 (동남아/서남아)",
+  3: "Zone 3 (북미/오세아니아/중동)",
+  4: "Zone 4 (유럽/중남미/아프리카)",
 };
+
+export const DOMESTIC_LABEL = "국내 택배";
