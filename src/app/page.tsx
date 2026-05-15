@@ -42,7 +42,8 @@ export default async function HomePage() {
             정확하게 거래하세요.
           </h1>
           <p className="mt-5 text-sm md:text-base opacity-70 max-w-lg">
-            포켓몬과 원피스 트레이딩 카드의 정품을 전 세계로. PayPal 결제와 안전 배송.
+            포켓몬과 원피스 트레이딩 카드의 정품을 전 세계로.<br />
+            PayPal 결제와 안전 배송.
           </p>
           <div className="mt-7 w-full max-w-xl">
             <Suspense>
