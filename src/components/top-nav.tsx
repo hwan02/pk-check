@@ -53,7 +53,67 @@ export default async function TopNav() {
             )}
           </Link>
           {user ? (
-            <Link href="/mypage" className="opacity-80 hover:opacity-100">마이페이지</Link>
+            <div className="relative group">
+              <Link
+                href="/mypage"
+                className="opacity-80 hover:opacity-100 inline-flex items-center gap-1 py-3"
+              >
+                마이페이지
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="opacity-60 transition-transform group-hover:rotate-180"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </Link>
+              <div
+                className="invisible opacity-0 group-hover:visible group-hover:opacity-100 transition-opacity absolute right-0 top-full pt-1 w-44"
+                role="menu"
+              >
+                <div className="rounded-xl border border-[var(--border)] bg-[var(--card-bg)] shadow-lg overflow-hidden py-1.5">
+                  <Link
+                    href="/orders"
+                    className="block px-4 py-2 text-xs hover:bg-[var(--surface)]"
+                  >
+                    주문/배송 조회
+                  </Link>
+                  <Link
+                    href="/support"
+                    className="block px-4 py-2 text-xs hover:bg-[var(--surface)]"
+                  >
+                    문의 / 채팅
+                  </Link>
+                  <Link
+                    href="/mypage/profile"
+                    className="block px-4 py-2 text-xs hover:bg-[var(--surface)]"
+                  >
+                    회원정보 수정
+                  </Link>
+                  <Link
+                    href="/cart"
+                    className="block px-4 py-2 text-xs hover:bg-[var(--surface)]"
+                  >
+                    장바구니
+                  </Link>
+                  <div className="border-t border-[var(--border)] my-1" />
+                  <form action="/api/auth/signout" method="POST">
+                    <button
+                      type="submit"
+                      className="w-full text-left px-4 py-2 text-xs opacity-70 hover:opacity-100 hover:bg-[var(--surface)] cursor-pointer"
+                    >
+                      로그아웃
+                    </button>
+                  </form>
+                </div>
+              </div>
+            </div>
           ) : (
             <LoginLink className="px-3 py-1.5 rounded-full bg-[var(--primary)] text-white text-xs font-semibold">
               로그인

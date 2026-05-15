@@ -3,6 +3,7 @@ import { Suspense } from "react";
 import { Noto_Sans_KR, Inter } from "next/font/google";
 import BottomNav from "@/components/bottom-nav";
 import TopNav from "@/components/top-nav";
+import Footer from "@/components/footer";
 import "./globals.css";
 
 // KREAM이 쓰는 Pretendard와 가장 비슷한 Noto Sans KR + 영문 워드마크용 Inter
@@ -46,6 +47,7 @@ export default function RootLayout({
           <TopNav />
         </Suspense>
         <main className="flex-1">{children}</main>
+        <Footer />
         <Suspense fallback={<div className="md:hidden fixed bottom-0 left-0 right-0 h-14" />}>
           <BottomNav />
         </Suspense>

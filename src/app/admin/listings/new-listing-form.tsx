@@ -16,6 +16,7 @@ export default function NewListingForm() {
   const [stock, setStock] = useState("1");
   const [description, setDescription] = useState("");
   const [descriptionEn, setDescriptionEn] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
@@ -29,7 +30,7 @@ export default function NewListingForm() {
 
   function reset() {
     setTitle(""); setTitleEn(""); setPriceUsd(""); setStock("1");
-    setDescription(""); setDescriptionEn(""); setFile(null); setPreview(null);
+    setDescription(""); setDescriptionEn(""); setVideoUrl(""); setFile(null); setPreview(null);
     setErrors([]);
   }
 
@@ -64,6 +65,7 @@ export default function NewListingForm() {
     form.append("stock", stock);
     if (description.trim()) form.append("description", description.trim());
     if (descriptionEn.trim()) form.append("description_en", descriptionEn.trim());
+    if (videoUrl.trim()) form.append("video_url", videoUrl.trim());
     if (file) form.append("image", file);
 
     try {
@@ -164,6 +166,17 @@ export default function NewListingForm() {
               className={`${inp} h-20 resize-none`}
               placeholder="Card condition, notes for overseas buyers"
             />
+          </Field>
+          <Field label="상품 영상 URL (YouTube/Vimeo 권장, 직접 mp4도 가능)">
+            <input
+              value={videoUrl}
+              onChange={(e) => setVideoUrl(e.target.value)}
+              className={inp}
+              placeholder="https://youtu.be/..."
+            />
+            <p className="text-[11px] opacity-50 mt-1">
+              유튜브/비메오 사용 시 용량 부담 없이 임베드됩니다.
+            </p>
           </Field>
           <Field label="이미지 (PNG/JPEG/WEBP, 5MB 이하)">
             <input type="file" accept="image/png,image/jpeg,image/webp" onChange={pickFile} className="text-sm" />

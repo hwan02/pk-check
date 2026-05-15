@@ -45,6 +45,7 @@ function rowToShopItem(row: ViewRow): ShopItem | null {
     description_en: [setLabel, row.rarity].filter(Boolean).join(" · ") || null,
     image_url: row.image_large || row.image_small,
     image_urls: null,
+    video_url: null,
     is_active: true,
     card_id: row.id,
     created_at: row.updated_at ?? new Date().toISOString(),

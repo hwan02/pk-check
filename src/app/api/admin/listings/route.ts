@@ -34,6 +34,9 @@ export async function POST(request: NextRequest) {
   const stockRaw = (form.get("stock") as string | null) ?? "1";
   const description = (form.get("description") as string | null)?.trim() || null;
   const descriptionEn = (form.get("description_en") as string | null)?.trim() || null;
+  const videoUrlRaw = (form.get("video_url") as string | null)?.trim() || null;
+  const videoUrl =
+    videoUrlRaw && /^https?:\/\//.test(videoUrlRaw) ? videoUrlRaw : null;
   const image = form.get("image") as File | null;
 
   if (!title) return NextResponse.json({ error: "title required" }, { status: 400 });
@@ -81,6 +84,7 @@ export async function POST(request: NextRequest) {
       description,
       description_en: descriptionEn,
       image_url: imageUrl,
+      video_url: videoUrl,
       is_active: true,
     })
     .select()

@@ -11,6 +11,7 @@ export interface Listing {
   description_en: string | null;
   image_url: string | null;
   image_urls: string[] | null;
+  video_url: string | null;
   is_active: boolean;
   card_id: string | null;
   created_at: string;

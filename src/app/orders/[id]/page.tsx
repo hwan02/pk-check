@@ -310,12 +310,18 @@ export default async function OrderDetailPage({ params }: Props) {
         </div>
       </section>
 
-      <div className="flex justify-center mt-6">
+      <div className="flex justify-center gap-2 mt-6">
         <Link
           href="/orders"
           className="text-xs px-4 py-2 rounded-full border border-[var(--border)] hover:bg-[var(--surface)]"
         >
           목록으로
+        </Link>
+        <Link
+          href={`/support?order=${order.id}`}
+          className="text-xs px-4 py-2 rounded-full bg-[var(--primary)] text-white font-semibold"
+        >
+          이 주문 문의하기
         </Link>
       </div>
     </div>

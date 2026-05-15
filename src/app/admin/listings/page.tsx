@@ -37,9 +37,9 @@ export default async function AdminListingsPage() {
   const listings = (data ?? []) as Listing[];
 
   return (
-    <div className="max-w-5xl mx-auto px-4 py-6">
+    <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold">상품 관리</h1>
+        <h1 className="text-2xl font-bold tracking-tight">상품 관리</h1>
         <Link href="/shop" className="text-sm opacity-70 hover:opacity-100">
           쇼핑 페이지로 →
         </Link>

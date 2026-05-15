@@ -43,6 +43,7 @@ export default async function MyPage() {
       </h2>
       <ul className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] overflow-hidden divide-y divide-[var(--border)] mb-4">
         <MenuItem href="/orders" label="주문/배송 조회" icon={<ReceiptIcon />} />
+        <MenuItem href="/support" label="문의 / 채팅" icon={<ChatIcon />} />
         <MenuItem href="/cart" label="장바구니" icon={<CartIcon />} />
         <MenuItem
           href="/mypage/profile"
@@ -130,6 +131,13 @@ function UserIcon() {
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
       <circle cx="12" cy="7" r="4" />
+    </svg>
+  );
+}
+function ChatIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
     </svg>
   );
 }

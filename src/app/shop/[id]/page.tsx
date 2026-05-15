@@ -8,6 +8,7 @@ import { CATEGORY_LABEL, CONDITION_LABEL, LANGUAGE_LABEL, formatUSD, type Listin
 import { getTopCardAsListing, isUuidLike, type ShopItem } from "@/lib/shop-data";
 import AddToCartButton from "./add-to-cart";
 import PriceTrend from "@/components/price-trend";
+import ProductVideo from "@/components/product-video";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -153,6 +154,16 @@ export default async function ListingDetailPage({ params }: Props) {
           </div>
         </div>
       </div>
+
+      {/* 상품 영상 */}
+      {item.video_url && (
+        <section className="mt-12 max-w-3xl">
+          <h2 className="text-sm font-semibold tracking-widest uppercase opacity-70 mb-3">
+            상품 영상
+          </h2>
+          <ProductVideo url={item.video_url} title={item.title} />
+        </section>
+      )}
 
       {/* 시세 추이 (연결된 카드일 때) */}
       {priceHistory.length > 0 && (
