@@ -1,11 +1,9 @@
 // ===============================================================
 // 결제 수수료 공식 — PayPal cross-border 실비 패스스루
 //
-// Kikidult 는 직판(reseller) 모델이라 "대행수수료"는 받지 않음.
-// PayPal 해외 결제 표준 수수료를 그대로 패스스루:
+// 배송비는 추가 정산이므로 1차 결제에 포함하지 않음.
+// 수수료는 상품 합계만 기준으로 계산.
 //   PayPal cross-border: 4.4% + $0.30 per transaction
-//
-// 비율/고정수수료 변경 시 아래 상수만 수정.
 // ===============================================================
 
 export const PAYMENT_FEE_RATE = 0.044;   // 4.4%
@@ -15,7 +13,7 @@ export interface FeeBreakdown {
   subtotal_usd: number;
   shipping_usd: number;
   payment_fee_usd: number;
-  total_usd: number;
+  total_usd: number; // 1차 결제금액 = 상품 + 수수료 (배송비 미포함)
 }
 
 function round2(n: number): number {
@@ -23,11 +21,10 @@ function round2(n: number): number {
 }
 
 export function calcFees(subtotalUsd: number, shippingUsd: number): FeeBreakdown {
-  // PayPal 수수료는 결제 전체 금액(상품 + 배송) 기준으로 발생.
-  // 4.4% × (상품 + 배송) + $0.30
-  const baseForFee = subtotalUsd + shippingUsd;
-  const payment = round2(baseForFee * PAYMENT_FEE_RATE + PAYMENT_FEE_FIXED_USD);
-  const total = round2(subtotalUsd + shippingUsd + payment);
+  // 수수료는 상품 합계 기준 (배송비 제외)
+  const payment = round2(subtotalUsd * PAYMENT_FEE_RATE + PAYMENT_FEE_FIXED_USD);
+  // 1차 결제 = 상품 + 수수료 (배송비는 추가 정산)
+  const total = round2(subtotalUsd + payment);
   return {
     subtotal_usd: round2(subtotalUsd),
     shipping_usd: round2(shippingUsd),
