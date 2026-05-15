@@ -126,20 +126,6 @@ export default function CartPage() {
 
         <div className="flex justify-between text-sm mt-1.5">
           <span className="opacity-60">
-            국제 배송비
-            {data?.shipping?.weight_g ? (
-              <span className="text-[11px] opacity-50 ml-1">
-                ({data.shipping.weight_g}g · {data.shipping.zone_label})
-              </span>
-            ) : null}
-          </span>
-          <span className="font-bold">
-            {hasAddress ? `$${shippingUsd.toFixed(2)}` : "배송지 등록 필요"}
-          </span>
-        </div>
-
-        <div className="flex justify-between text-sm mt-1.5">
-          <span className="opacity-60">
             결제 수수료
             <span className="text-[11px] opacity-50 ml-1">
               (PayPal {(feeRate * 100).toFixed(1)}% + $0.30)
@@ -150,13 +136,33 @@ export default function CartPage() {
 
         <hr className="my-3 border-[var(--border)]" />
         <div className="flex justify-between text-base">
-          <span className="font-bold">총 결제금액</span>
-          <span className="font-black">${total.toFixed(2)}</span>
+          <span className="font-bold">결제 금액 (상품+수수료)</span>
+          <span className="font-black">${(subtotal + paymentFee).toFixed(2)}</span>
         </div>
 
-        <p className="text-[10px] opacity-40 mt-2">
-          배송비는 우체국 국제우편(K-Packet) 기준 예상치입니다.
-        </p>
+        {/* 예상 배송비 안내 */}
+        <div className="mt-4 p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
+          <p className="text-xs font-semibold mb-1">배송비 안내</p>
+          {hasAddress ? (
+            <>
+              <div className="flex justify-between text-xs">
+                <span className="opacity-60">
+                  예상 배송비
+                  <span className="opacity-50 ml-1">
+                    (K-Packet · {data?.shipping?.weight_g ?? 0}g · {data?.shipping?.zone_label ?? ""})
+                  </span>
+                </span>
+                <span className="font-bold">${shippingUsd.toFixed(2)}</span>
+              </div>
+              <p className="text-[10px] opacity-50 mt-1.5 leading-relaxed">
+                배송비는 실제 포장 후 중량 측정하여 확정됩니다.<br />
+                확정된 배송비는 이메일로 안내드리며, 추가 결제 후 발송됩니다.
+              </p>
+            </>
+          ) : (
+            <p className="text-xs opacity-50">배송지 등록 후 예상 배송비를 확인할 수 있습니다.</p>
+          )}
+        </div>
       </div>
 
       {hasAddress ? (

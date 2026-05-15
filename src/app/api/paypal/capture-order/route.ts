@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSsrClient } from "@/lib/supabase/ssr";
 import { createServerClient } from "@/lib/supabase/server";
 import { capturePayPalOrder } from "@/lib/paypal";
+import { sendOrderConfirmation } from "@/lib/mail";
 
 export async function POST(request: NextRequest) {
   const ssrClient = await createSsrClient();
@@ -79,6 +80,31 @@ export async function POST(request: NextRequest) {
 
     // 장바구니 비우기
     await db.from("cart_items").delete().eq("user_id", user.id);
+
+    // 주문 확인 이메일 발송
+    try {
+      const { data: orderData } = await db
+        .from("orders")
+        .select("total_usd, shipping_usd, order_no")
+        .eq("id", orderId)
+        .single();
+      const { data: items } = await db
+        .from("order_items")
+        .select("title, quantity")
+        .eq("order_id", orderId);
+      const itemsSummary = (items ?? []).map((i) => `${i.title} × ${i.quantity}`).join("<br/>");
+      const orderNo = orderData?.order_no ?? orderId.slice(0, 8).toUpperCase();
+
+      await sendOrderConfirmation({
+        to: user.email!,
+        orderNo,
+        itemsSummary,
+        totalUsd: orderData?.total_usd ?? 0,
+        estimatedShippingUsd: orderData?.shipping_usd ?? 0,
+      });
+    } catch (e) {
+      console.error("Order confirmation email failed:", e);
+    }
 
     return NextResponse.json({ ok: true, orderId, captureId });
   }
