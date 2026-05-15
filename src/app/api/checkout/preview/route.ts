@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import { createSsrClient } from "@/lib/supabase/ssr";
 import { createServerClient } from "@/lib/supabase/server";
-import { getUsdToKrw, quoteShipping, ZONE_LABEL, DOMESTIC_LABEL } from "@/lib/shipping";
+import { getUsdToKrw, quoteShipping, calcShippingKRW, getShippingZone, isKorea, ZONE_LABEL, DOMESTIC_LABEL } from "@/lib/shipping";
 import { calcFees, PAYMENT_FEE_RATE } from "@/lib/fees";
 
 // 결제 직전 견적: 장바구니 + 회원 배송지로 배송비/예상중량 계산
-export async function GET() {
+export async function GET(request: Request) {
+  const weightOverride = new URL(request.url).searchParams.get("weight");
   const ssr = await createSsrClient();
   const { data: { user } } = await ssr.auth.getUser();
   if (!user) {
@@ -52,7 +53,22 @@ export async function GET() {
     ) * 100,
   ) / 100;
 
-  const quote = quoteShipping(profile?.country, totalQty, rate);
+  // weight override가 있으면 해당 중량으로 배송비 재계산
+  let quote;
+  if (weightOverride && !isNaN(Number(weightOverride))) {
+    const weightG = Number(weightOverride);
+    const country = profile?.country ?? null;
+    if (isKorea(country)) {
+      quote = { zone: 1 as const, country: "KR", weight_g: weightG, shipping_krw: 4000, shipping_usd: Math.round((4000 / rate) * 100) / 100, exchange_rate: rate, domestic: true };
+    } else {
+      const zone = getShippingZone(country);
+      const shipping_krw = calcShippingKRW(zone, weightG);
+      const shipping_usd = Math.round((shipping_krw / rate) * 100) / 100;
+      quote = { zone, country: (country ?? "").toUpperCase() || "??", weight_g: weightG, shipping_krw, shipping_usd, exchange_rate: rate, domestic: false };
+    }
+  } else {
+    quote = quoteShipping(profile?.country, totalQty, rate);
+  }
   const fees = calcFees(subtotal_usd, quote.shipping_usd);
 
   // 묶음 배송 절약: 개별 발송 시 배송비 합산 vs 묶음 발송

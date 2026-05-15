@@ -96,14 +96,36 @@ export default function CartPage() {
   const hasAddress = !!p?.country && !!p?.postal_code && !!p?.address1;
 
   const [selectedWeight, setSelectedWeight] = useState("auto");
+  const [customShipping, setCustomShipping] = useState<number | null>(null);
+
   const WEIGHT_OPTIONS = [
     { value: "auto", label: `자동 추정 (${data?.shipping?.weight_g ?? 0}g)` },
-    { value: "100", label: "~100g (카드 1~2장)" },
-    { value: "250", label: "~250g (카드 5~8장)" },
-    { value: "500", label: "~500g (카드 10장+)" },
-    { value: "1000", label: "~1kg (소형 박스)" },
-    { value: "2000", label: "~2kg (중형 박스)" },
+    { value: "500", label: "0.5 kg" },
+    { value: "1000", label: "1 kg" },
+    { value: "1500", label: "1.5 kg" },
+    { value: "2000", label: "2 kg" },
+    { value: "2500", label: "2.5 kg" },
+    { value: "3000", label: "3 kg" },
+    { value: "3500", label: "3.5 kg" },
+    { value: "4000", label: "4 kg" },
+    { value: "4500", label: "4.5 kg" },
+    { value: "5000", label: "5 kg" },
+    { value: "5500", label: "5.5 kg" },
   ];
+
+  async function onWeightChange(val: string) {
+    setSelectedWeight(val);
+    if (val === "auto") {
+      setCustomShipping(null);
+      return;
+    }
+    // 선택 중량으로 배송비 재계산
+    const resp = await fetch(`/api/checkout/preview?weight=${val}`);
+    if (resp.ok) {
+      const d = await resp.json();
+      setCustomShipping(d.shipping?.shipping_usd ?? null);
+    }
+  }
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
@@ -181,7 +203,7 @@ export default function CartPage() {
                 <label className="text-[11px] font-semibold opacity-60 block mb-1">예상 중량 선택</label>
                 <select
                   value={selectedWeight}
-                  onChange={(e) => setSelectedWeight(e.target.value)}
+                  onChange={(e) => onWeightChange(e.target.value)}
                   className="w-full px-3 py-2 text-xs rounded-lg border border-[var(--border)] bg-[var(--card-bg)]"
                 >
                   {WEIGHT_OPTIONS.map((o) => (
@@ -196,15 +218,15 @@ export default function CartPage() {
               <span className="font-bold">
                 {selectedWeight === "auto"
                   ? `${data?.shipping?.weight_g ?? 0}g`
-                  : `${selectedWeight}g`}
+                  : `${(Number(selectedWeight) / 1000).toFixed(1)}kg`}
               </span>
             </div>
             <div className="flex justify-between text-xs mt-1">
               <span className="opacity-60">
-                {isDomestic ? "예상 국내 택배비" : `예상 국제운송료`}
+                {isDomestic ? "예상 국내 택배비" : "예상 국제운송료"}
                 <span className="opacity-50 ml-1">({zoneLabel})</span>
               </span>
-              <span className="font-bold">${shippingUsd.toFixed(2)}</span>
+              <span className="font-bold">${(customShipping ?? shippingUsd).toFixed(2)}</span>
             </div>
 
             {bundleSaving > 0 && (
