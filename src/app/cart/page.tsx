@@ -16,15 +16,31 @@ interface CartItem {
   };
 }
 
+interface Preview {
+  items: CartItem[];
+  subtotal_usd: number;
+  payment_fee_usd: number;
+  fee_rates: { payment: number };
+  shipping: {
+    zone_label: string;
+    country: string;
+    weight_g: number;
+    shipping_usd: number;
+    shipping_krw: number;
+  };
+  total_usd: number;
+  profile: { country: string | null } | null;
+}
+
 export default function CartPage() {
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [data, setData] = useState<Preview | null>(null);
   const [loading, setLoading] = useState(true);
 
   async function fetchCart() {
-    const resp = await fetch("/api/cart");
+    const resp = await fetch("/api/checkout/preview");
     if (resp.ok) {
-      const data = await resp.json();
-      setItems(data.items ?? []);
+      const d = await resp.json();
+      setData(d);
     }
     setLoading(false);
   }
@@ -37,10 +53,9 @@ export default function CartPage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ cartItemId: itemId }),
     });
-    setItems((prev) => prev.filter((i) => i.id !== itemId));
+    // 다시 불러오기
+    fetchCart();
   }
-
-  const subtotal = items.reduce((s, i) => s + i.listing.price_usd * i.quantity, 0);
 
   if (loading) {
     return (
@@ -49,6 +64,8 @@ export default function CartPage() {
       </div>
     );
   }
+
+  const items = (data?.items ?? []) as CartItem[];
 
   if (!items.length) {
     return (
@@ -59,19 +76,26 @@ export default function CartPage() {
     );
   }
 
+  const subtotal = data?.subtotal_usd ?? 0;
+  const shippingUsd = data?.shipping?.shipping_usd ?? 0;
+  const paymentFee = data?.payment_fee_usd ?? 0;
+  const total = data?.total_usd ?? 0;
+  const feeRate = data?.fee_rates?.payment ?? 0;
+  const hasAddress = !!data?.profile?.country;
+
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
       <h1 className="text-xl font-bold mb-6">장바구니</h1>
 
       <div className="flex flex-col gap-3">
         {items.map((item) => (
-          <div key={item.id} className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--card-bg)]">
+          <div key={item.id} className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border border-[var(--border)] bg-[var(--card-bg)]">
             {item.listing.image_url && (
               <Image
                 src={item.listing.image_url}
                 alt={item.listing.title}
-                width={64}
-                height={64}
+                width={56}
+                height={56}
                 className="rounded-lg object-cover flex-shrink-0"
                 unoptimized
               />
@@ -96,26 +120,60 @@ export default function CartPage() {
       {/* 합계 */}
       <div className="mt-6 p-4 rounded-xl border border-[var(--border)] bg-[var(--card-bg)]">
         <div className="flex justify-between text-sm">
-          <span className="opacity-60">소계</span>
+          <span className="opacity-60">상품 합계</span>
           <span className="font-bold">${subtotal.toFixed(2)}</span>
         </div>
-        <div className="flex justify-between text-sm mt-1">
-          <span className="opacity-60">배송비</span>
-          <span className="font-bold">무료</span>
+
+        <div className="flex justify-between text-sm mt-1.5">
+          <span className="opacity-60">
+            국제 배송비
+            {data?.shipping?.weight_g ? (
+              <span className="text-[11px] opacity-50 ml-1">
+                ({data.shipping.weight_g}g · {data.shipping.zone_label})
+              </span>
+            ) : null}
+          </span>
+          <span className="font-bold">
+            {hasAddress ? `$${shippingUsd.toFixed(2)}` : "배송지 등록 필요"}
+          </span>
         </div>
+
+        <div className="flex justify-between text-sm mt-1.5">
+          <span className="opacity-60">
+            결제 수수료
+            <span className="text-[11px] opacity-50 ml-1">
+              (PayPal {(feeRate * 100).toFixed(1)}% + $0.30)
+            </span>
+          </span>
+          <span className="font-bold">${paymentFee.toFixed(2)}</span>
+        </div>
+
         <hr className="my-3 border-[var(--border)]" />
         <div className="flex justify-between text-base">
           <span className="font-bold">총 결제금액</span>
-          <span className="font-black">${subtotal.toFixed(2)}</span>
+          <span className="font-black">${total.toFixed(2)}</span>
         </div>
+
+        <p className="text-[10px] opacity-40 mt-2">
+          배송비는 우체국 국제우편(K-Packet) 기준 예상치입니다.
+        </p>
       </div>
 
-      <Link
-        href="/checkout"
-        className="block mt-4 w-full py-3.5 rounded-xl bg-[var(--primary)] text-white text-center text-sm font-semibold hover:opacity-90 transition"
-      >
-        결제하기
-      </Link>
+      {hasAddress ? (
+        <Link
+          href="/checkout"
+          className="block mt-4 w-full py-3.5 rounded-xl bg-[var(--primary)] text-white text-center text-sm font-semibold hover:opacity-90 transition"
+        >
+          결제하기
+        </Link>
+      ) : (
+        <Link
+          href="/mypage/profile"
+          className="block mt-4 w-full py-3.5 rounded-xl bg-[var(--accent)] text-white text-center text-sm font-semibold hover:opacity-90 transition"
+        >
+          배송지 등록하기
+        </Link>
+      )}
     </div>
   );
 }
