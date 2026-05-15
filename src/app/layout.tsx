@@ -19,9 +19,53 @@ const inter = Inter({
   weight: ["700", "900"],
 });
 
+const SITE_URL = "https://kikidult.vercel.app";
+
 export const metadata: Metadata = {
-  title: "Kikidult — 포켓몬 · 원피스 카드 마켓",
-  description: "Kikidult. 포켓몬·원피스 트레이딩 카드의 실시간 시세와 거래.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Kikidult — Pokemon · One Piece TCG Market",
+    template: "%s · Kikidult",
+  },
+  description:
+    "포켓몬 · 원피스 트레이딩 카드를 전 세계로. PayPal 결제와 EMS 등기 국제 배송. Authentic Pokemon and One Piece TCG cards shipped worldwide from Korea.",
+  keywords: [
+    "포켓몬 카드",
+    "원피스 카드",
+    "Pokemon TCG",
+    "One Piece TCG",
+    "trading cards",
+    "Charizard",
+    "Pikachu",
+    "Kikidult",
+    "TCG market",
+    "international shipping",
+    "PayPal",
+  ],
+  openGraph: {
+    type: "website",
+    url: SITE_URL,
+    title: "Kikidult — Pokemon · One Piece TCG Market",
+    description:
+      "Authentic Pokemon and One Piece TCG cards shipped worldwide from Korea. PayPal · EMS tracking.",
+    siteName: "Kikidult",
+    locale: "ko_KR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Kikidult — Pokemon · One Piece TCG Market",
+    description:
+      "Authentic Pokemon and One Piece TCG cards shipped worldwide from Korea.",
+  },
+  alternates: { canonical: SITE_URL },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
+  verification: {
+    google: "-GBKhnr3v7rnHBVsa9cM9xnIQ2sjG9p7Vq40l9WhVAA",
+  },
 };
 
 export const viewport: Viewport = {

@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSsrClient } from "@/lib/supabase/ssr";
@@ -16,6 +17,48 @@ interface Props {
 // UUID 형식 판별
 function isUuid(s: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
+}
+
+async function getListing(id: string): Promise<Listing | null> {
+  const supabase = await createSsrClient();
+  const column = isUuid(id) ? "id" : "short_id";
+  const { data } = await supabase
+    .from("listings")
+    .select("*")
+    .eq(column, id)
+    .maybeSingle();
+  return data as Listing | null;
+}
+
+export async function generateMetadata({ params }: Props): Promise<Metadata> {
+  const { id } = await params;
+  const item = await getListing(id);
+  if (!item) return { title: "상품을 찾을 수 없습니다" };
+
+  const title = item.title_en
+    ? `${item.title_en} (${item.title})`
+    : item.title;
+  const desc =
+    item.description_en?.slice(0, 160) ||
+    item.description?.slice(0, 160) ||
+    `${CATEGORY_LABEL[item.category]} TCG card · ${formatUSD(item.price_usd)} · Worldwide shipping from Korea`;
+
+  return {
+    title,
+    description: desc,
+    openGraph: {
+      title,
+      description: desc,
+      images: item.image_url ? [{ url: item.image_url }] : [],
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description: desc,
+      images: item.image_url ? [item.image_url] : [],
+    },
+  };
 }
 
 export default async function ListingDetailPage({ params }: Props) {
