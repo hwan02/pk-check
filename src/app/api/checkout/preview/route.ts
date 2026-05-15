@@ -55,6 +55,13 @@ export async function GET() {
   const quote = quoteShipping(profile?.country, totalQty, rate);
   const fees = calcFees(subtotal_usd, quote.shipping_usd);
 
+  // 묶음 배송 절약: 개별 발송 시 배송비 합산 vs 묶음 발송
+  const individualShippingTotal = items.reduce((sum, item) => {
+    const q = quoteShipping(profile?.country, item.quantity, rate);
+    return sum + q.shipping_usd;
+  }, 0);
+  const bundleSavingUsd = Math.round((individualShippingTotal - quote.shipping_usd) * 100) / 100;
+
   return NextResponse.json({
     items: cartRes.data ?? [],
     profile,
@@ -67,6 +74,7 @@ export async function GET() {
       ...quote,
       zone_label: ZONE_LABEL[quote.zone],
     },
+    bundle_saving_usd: bundleSavingUsd,
     total_usd: fees.total_usd,
   });
 }

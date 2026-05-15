@@ -78,6 +78,7 @@ export default function CartPage() {
 
   const subtotal = data?.subtotal_usd ?? 0;
   const shippingUsd = data?.shipping?.shipping_usd ?? 0;
+  const bundleSaving = (data as Record<string, unknown>)?.bundle_saving_usd as number ?? 0;
   const paymentFee = data?.payment_fee_usd ?? 0;
   const total = data?.total_usd ?? 0;
   const feeRate = data?.fee_rates?.payment ?? 0;
@@ -150,6 +151,14 @@ export default function CartPage() {
                 </span>
                 <span className="font-bold">${shippingUsd.toFixed(2)}</span>
               </div>
+              {bundleSaving > 0 && (
+                <div className="flex items-center gap-1.5 mt-2 text-xs">
+                  <span className="px-1.5 py-0.5 rounded bg-green-100 text-green-700 font-bold text-[10px]">묶음 배송</span>
+                  <span className="text-green-700 font-medium">
+                    개별 발송 대비 ${bundleSaving.toFixed(2)} 절약!
+                  </span>
+                </div>
+              )}
               <p className="text-[10px] opacity-50 mt-1.5 leading-relaxed">
                 배송비는 실제 포장 후 중량 측정하여 확정됩니다.<br />
                 확정된 배송비는 이메일로 안내드리며, 추가 결제 후 발송됩니다.
