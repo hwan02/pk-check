@@ -4,8 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createSsrClient } from "@/lib/supabase/ssr";
+import ShippingTimeline from "@/components/shipping-timeline";
 import {
-  CUSTOMS_STATUS_LABEL,
   ORDER_STATUS_LABEL,
   formatKRW,
   formatOrderDate,
@@ -123,48 +123,35 @@ export default async function OrderDetailPage({ params }: Props) {
         </ul>
       </section>
 
-      {/* 통관 */}
+      {/* 배송 추적 */}
       <section className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] mb-4 p-5">
-        <h2 className="text-sm font-semibold mb-3">통관 (Customs)</h2>
-        <dl className="grid grid-cols-[110px_1fr] gap-y-2 text-xs">
-          <dt className="opacity-60">통관 상태</dt>
-          <dd className="font-medium">
-            {order.customs_status
-              ? CUSTOMS_STATUS_LABEL[order.customs_status]
-              : "-"}
-          </dd>
-          <dt className="opacity-60">통관 완료</dt>
-          <dd className="font-medium">
-            {order.customs_cleared_at
-              ? formatOrderDate(order.customs_cleared_at)
-              : "-"}
-          </dd>
-          <dt className="opacity-60">배송사</dt>
-          <dd className="font-medium">{order.tracking_carrier ?? "-"}</dd>
-          <dt className="opacity-60">송장번호</dt>
-          <dd className="font-medium font-mono">
-            {order.tracking_no ? (
+        <h2 className="text-sm font-semibold mb-4">배송 추적</h2>
+
+        {/* 송장 정보 */}
+        {order.tracking_no && (
+          <div className="flex items-center justify-between mb-4 p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
+            <div className="text-xs">
+              <span className="opacity-60">배송사</span>{" "}
+              <span className="font-medium">{order.tracking_carrier ?? "우체국"}</span>
+              <span className="mx-2 opacity-30">·</span>
+              <span className="opacity-60">송장</span>{" "}
+              <span className="font-mono font-medium">{order.tracking_no}</span>
+            </div>
+            {order.tracking_url && (
               <a
-                href={order.tracking_url ?? "#"}
+                href={order.tracking_url}
                 target="_blank"
                 rel="noreferrer"
-                className="text-[var(--accent)] underline underline-offset-2"
+                className="text-[11px] px-3 py-1 rounded-full bg-[var(--primary)] text-white font-semibold"
               >
-                {order.tracking_no}
+                추적하기
               </a>
-            ) : (
-              "-"
             )}
-          </dd>
-          <dt className="opacity-60">발송일</dt>
-          <dd className="font-medium">
-            {order.shipped_at ? formatOrderDate(order.shipped_at) : "-"}
-          </dd>
-          <dt className="opacity-60">수령일</dt>
-          <dd className="font-medium">
-            {order.delivered_at ? formatOrderDate(order.delivered_at) : "-"}
-          </dd>
-        </dl>
+          </div>
+        )}
+
+        {/* 타임라인 */}
+        <ShippingTimeline order={order} isDomestic={order.shipping_country === "KR"} />
       </section>
 
       {/* 배송지 */}
