@@ -11,7 +11,6 @@ import {
   type Order,
   type OrderItem,
 } from "@/lib/shop";
-import { getDemoOrders } from "@/lib/orders-mock";
 
 interface Props {
   searchParams: Promise<Record<string, string | undefined>>;
@@ -43,10 +42,7 @@ export default async function OrdersPage({ searchParams }: Props) {
 
   const orders = (ordersData ?? []) as Order[];
 
-  // 주문이 비어있으면 데모 주문을 보여줘서 UI를 확인할 수 있게 함
-  const demoBundles = orders.length === 0 ? getDemoOrders() : [];
-
-  let itemsByOrder = new Map<string, OrderItem[]>();
+  const itemsByOrder = new Map<string, OrderItem[]>();
   if (orders.length > 0) {
     const ids = orders.map((o) => o.id);
     const { data: itemRows } = await supabase
@@ -58,12 +54,9 @@ export default async function OrdersPage({ searchParams }: Props) {
       arr.push(it);
       itemsByOrder.set(it.order_id, arr);
     }
-  } else {
-    itemsByOrder = new Map(demoBundles.map((b) => [b.order.id, b.items]));
   }
 
-  const displayOrders: Order[] =
-    orders.length > 0 ? orders : demoBundles.map((b) => b.order);
+  const displayOrders = orders;
 
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
@@ -191,11 +184,6 @@ export default async function OrdersPage({ searchParams }: Props) {
         </ul>
       )}
 
-      {orders.length === 0 && demoBundles.length > 0 && (
-        <p className="mt-4 text-[11px] text-amber-700">
-          * 샘플 주문입니다. 실제 결제가 발생하면 이 화면에 표시됩니다.
-        </p>
-      )}
     </div>
   );
 }

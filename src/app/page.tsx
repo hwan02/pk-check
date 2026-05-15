@@ -6,7 +6,6 @@ import { createSsrClient } from "@/lib/supabase/ssr";
 import ShopGrid from "@/components/shop-grid";
 import ShopSearchBar from "@/components/shop-search-bar";
 import type { Listing } from "@/lib/shop";
-import { getTopPricedCardsAsListings, type ShopItem } from "@/lib/shop-data";
 
 export default async function HomePage() {
   const supabase = await createSsrClient();
@@ -30,18 +29,8 @@ export default async function HomePage() {
       .limit(8),
   ]);
 
-  let newest: ShopItem[] = ((newestRes.data ?? []) as Listing[]).map((l) => ({ ...l, isDemo: false }));
-  let priciest: ShopItem[] = ((priciestRes.data ?? []) as Listing[]).map((l) => ({ ...l, isDemo: false }));
-
-  // listings 비어있으면 cards 데모로 채움
-  if (newest.length === 0) {
-    const demos = await getTopPricedCardsAsListings(supabase, 8);
-    newest = demos;
-  }
-  if (priciest.length === 0) {
-    const demos = await getTopPricedCardsAsListings(supabase, 8);
-    priciest = [...demos].sort((a, b) => b.price_usd - a.price_usd);
-  }
+  const newest = (newestRes.data ?? []) as Listing[];
+  const priciest = (priciestRes.data ?? []) as Listing[];
 
   return (
     <div>

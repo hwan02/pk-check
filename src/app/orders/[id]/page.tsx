@@ -13,7 +13,6 @@ import {
   type Order,
   type OrderItem,
 } from "@/lib/shop";
-import { getDemoOrderById } from "@/lib/orders-mock";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -34,34 +33,19 @@ export default async function OrderDetailPage({ params }: Props) {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect(`/login?redirect=/orders/${id}`);
 
-  let order: Order | null = null;
-  let items: OrderItem[] = [];
-
-  // 데모 주문 id
-  if (id.startsWith("demo-")) {
-    const demo = getDemoOrderById(id);
-    if (demo) {
-      order = demo.order;
-      items = demo.items;
-    }
-  } else {
-    const { data: o } = await supabase
-      .from("orders")
-      .select("*")
-      .eq("id", id)
-      .eq("user_id", user.id)
-      .maybeSingle();
-    if (o) {
-      order = o as Order;
-      const { data: rows } = await supabase
-        .from("order_items")
-        .select("*")
-        .eq("order_id", id);
-      items = (rows ?? []) as OrderItem[];
-    }
-  }
-
-  if (!order) notFound();
+  const { data: o } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+  if (!o) notFound();
+  const order = o as Order;
+  const { data: rows } = await supabase
+    .from("order_items")
+    .select("*")
+    .eq("order_id", id);
+  const items = (rows ?? []) as OrderItem[];
 
   const totalQty = items.reduce((s, i) => s + i.quantity, 0);
   const rate = order.exchange_rate ?? 0;

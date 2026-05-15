@@ -1,14 +1,13 @@
 export const dynamic = "force-dynamic";
 
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSsrClient } from "@/lib/supabase/ssr";
 import { CATEGORY_LABEL, CONDITION_LABEL, LANGUAGE_LABEL, formatUSD, type Listing } from "@/lib/shop";
-import { getTopCardAsListing, isUuidLike, type ShopItem } from "@/lib/shop-data";
 import AddToCartButton from "./add-to-cart";
 import PriceTrend from "@/components/price-trend";
 import ProductVideo from "@/components/product-video";
+import ProductGallery from "@/components/product-gallery";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -18,23 +17,12 @@ export default async function ListingDetailPage({ params }: Props) {
   const { id } = await params;
   const supabase = await createSsrClient();
 
-  let item: ShopItem | null = null;
-
-  // 1) listings(uuid) 우선
-  if (isUuidLike(id)) {
-    const { data } = await supabase
-      .from("listings")
-      .select("*")
-      .eq("id", id)
-      .maybeSingle();
-    if (data) item = { ...(data as Listing), isDemo: false };
-  }
-
-  // 2) 없으면 cards 데모 fallback
-  if (!item) {
-    item = await getTopCardAsListing(supabase, id);
-  }
-
+  const { data } = await supabase
+    .from("listings")
+    .select("*")
+    .eq("id", id)
+    .maybeSingle();
+  const item = data as Listing | null;
   if (!item) notFound();
 
   const { data: { user } } = await supabase.auth.getUser();
@@ -67,22 +55,12 @@ export default async function ListingDetailPage({ params }: Props) {
       <div className="grid grid-cols-1 md:grid-cols-[1.1fr_1fr] gap-8 lg:gap-12">
         {/* Image */}
         <div>
-          <div className="aspect-square relative rounded-2xl overflow-hidden bg-[var(--card-bg)] border border-[var(--border)]">
-            {item.image_url ? (
-              <Image
-                src={item.image_url}
-                alt={item.title}
-                fill
-                className="object-contain"
-                sizes="(max-width: 768px) 100vw, 50vw"
-                priority
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-sm opacity-40">
-                이미지 없음
-              </div>
+          <ProductGallery
+            images={[item.image_url, ...(item.image_urls ?? [])].filter(
+              (s): s is string => !!s,
             )}
-          </div>
+            title={item.title}
+          />
         </div>
 
         {/* Info / Price */}
@@ -149,7 +127,6 @@ export default async function ListingDetailPage({ params }: Props) {
               listingId={item.id}
               disabled={item.stock <= 0}
               loggedIn={!!user}
-              isDemo={item.isDemo}
             />
           </div>
         </div>

@@ -7,7 +7,6 @@ import ShopGrid from "@/components/shop-grid";
 import ShopSearchBar from "@/components/shop-search-bar";
 import CategoryTabs from "@/components/category-tabs";
 import type { Listing } from "@/lib/shop";
-import { getTopPricedCardsAsListings, type ShopItem } from "@/lib/shop-data";
 import { ITEMS_PER_PAGE } from "@/lib/constants";
 
 interface Props {
@@ -56,24 +55,8 @@ export default async function ShopPage({ searchParams }: Props) {
   query = query.range(from, from + ITEMS_PER_PAGE - 1);
 
   const { data, count } = await query;
-  let items: ShopItem[] = ((data ?? []) as Listing[]).map((l) => ({ ...l, isDemo: false }));
-  let total = count ?? 0;
-
-  // listings 비어있고 원피스가 아니면 cards top 10 데모로 채움
-  if (items.length === 0 && page === 1 && category !== "onepiece") {
-    const demos = await getTopPricedCardsAsListings(supabase, 10);
-    const filtered = q
-      ? demos.filter(
-          (d) =>
-            d.title.toLowerCase().includes(q.toLowerCase()) ||
-            d.title_en?.toLowerCase().includes(q.toLowerCase()),
-        )
-      : demos;
-    if (sort === "price_asc") filtered.sort((a, b) => a.price_usd - b.price_usd);
-    else if (sort === "price_desc") filtered.sort((a, b) => b.price_usd - a.price_usd);
-    items = filtered;
-    total = filtered.length;
-  }
+  const items = (data ?? []) as Listing[];
+  const total = count ?? 0;
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
   function buildUrl(overrides: Record<string, string | undefined>) {

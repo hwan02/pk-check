@@ -7,12 +7,10 @@ export default function AddToCartButton({
   listingId,
   disabled,
   loggedIn,
-  isDemo = false,
 }: {
   listingId: string;
   disabled: boolean;
   loggedIn: boolean;
-  isDemo?: boolean;
 }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
@@ -30,34 +28,13 @@ export default function AddToCartButton({
     );
   }
 
-  // UUID 형식이면 실제 listing, 아니면 데모(cardId) → ensure 필요
-  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-/.test(listingId);
-
-  async function ensureListing(): Promise<string | null> {
-    if (isUuid) return listingId;
-    // cardId → listings에 자동 생성
-    const resp = await fetch("/api/listings/ensure", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ cardId: listingId }),
-    });
-    if (resp.ok) {
-      const data = await resp.json();
-      return data.listingId;
-    }
-    return null;
-  }
-
   async function addToCart() {
     setLoading(true);
     setMsg("");
-    const realId = await ensureListing();
-    if (!realId) { setMsg("상품 준비 실패"); setLoading(false); return; }
-
     const resp = await fetch("/api/cart", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ listing_id: realId, quantity: 1 }),
+      body: JSON.stringify({ listing_id: listingId, quantity: 1 }),
     });
     setLoading(false);
     if (resp.ok) {
@@ -72,13 +49,10 @@ export default function AddToCartButton({
   async function buyNow() {
     setBuyLoading(true);
     setMsg("");
-    const realId = await ensureListing();
-    if (!realId) { setMsg("상품 준비 실패"); setBuyLoading(false); return; }
-
     const resp = await fetch("/api/cart", {
       method: "POST",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ listing_id: realId, quantity: 1 }),
+      body: JSON.stringify({ listing_id: listingId, quantity: 1 }),
     });
     setBuyLoading(false);
     if (resp.ok) {

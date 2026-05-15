@@ -2,11 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { CATEGORY_LABEL, LANGUAGE_LABEL, formatUSD, type Listing } from "@/lib/shop";
 
-interface ShopItemView extends Listing {
-  isDemo?: boolean;
-}
-
-export default function ShopGrid({ listings }: { listings: ShopItemView[] }) {
+export default function ShopGrid({ listings }: { listings: Listing[] }) {
   if (listings.length === 0) {
     return (
       <div className="py-20 text-center text-sm opacity-50">
@@ -37,11 +33,6 @@ export default function ShopGrid({ listings }: { listings: ShopItemView[] }) {
                   <div className="w-full h-full flex items-center justify-center text-xs opacity-40">
                     no image
                   </div>
-                )}
-                {l.isDemo && (
-                  <span className="absolute top-2 left-2 text-[10px] font-semibold px-1.5 py-0.5 rounded bg-black/85 text-white">
-                    SAMPLE
-                  </span>
                 )}
               </div>
             </div>
