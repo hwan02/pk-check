@@ -3,6 +3,7 @@ export const dynamic = "force-dynamic";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSsrClient } from "@/lib/supabase/ssr";
+import SuccessToast from "@/components/success-toast";
 import type { Order, OrderItem } from "@/lib/shop";
 import OrdersList from "./orders-list";
 
@@ -49,9 +50,7 @@ export default async function OrdersPage({ searchParams }: Props) {
       </header>
 
       {success && (
-        <div className="mb-6 p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm text-center">
-          결제가 완료되었습니다! 감사합니다.
-        </div>
+        <SuccessToast message="결제가 완료되었습니다! 감사합니다." />
       )}
 
       {orders.length === 0 ? (
