@@ -4,22 +4,22 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 const COUNTRIES = [
-  { code: "KR", label: "대한민국" },
-  { code: "JP", label: "일본" },
-  { code: "US", label: "미국" },
-  { code: "CA", label: "캐나다" },
-  { code: "GB", label: "영국" },
-  { code: "AU", label: "호주" },
-  { code: "DE", label: "독일" },
-  { code: "FR", label: "프랑스" },
-  { code: "SG", label: "싱가포르" },
-  { code: "TW", label: "대만" },
-  { code: "HK", label: "홍콩" },
-  { code: "TH", label: "태국" },
-  { code: "VN", label: "베트남" },
-  { code: "PH", label: "필리핀" },
-  { code: "MY", label: "말레이시아" },
-  { code: "ID", label: "인도네시아" },
+  { code: "KR", label: "대한민국", dial: "+82" },
+  { code: "JP", label: "일본", dial: "+81" },
+  { code: "US", label: "미국", dial: "+1" },
+  { code: "CA", label: "캐나다", dial: "+1" },
+  { code: "GB", label: "영국", dial: "+44" },
+  { code: "AU", label: "호주", dial: "+61" },
+  { code: "DE", label: "독일", dial: "+49" },
+  { code: "FR", label: "프랑스", dial: "+33" },
+  { code: "SG", label: "싱가포르", dial: "+65" },
+  { code: "TW", label: "대만", dial: "+886" },
+  { code: "HK", label: "홍콩", dial: "+852" },
+  { code: "TH", label: "태국", dial: "+66" },
+  { code: "VN", label: "베트남", dial: "+84" },
+  { code: "PH", label: "필리핀", dial: "+63" },
+  { code: "MY", label: "말레이시아", dial: "+60" },
+  { code: "ID", label: "인도네시아", dial: "+62" },
 ];
 
 interface Props {
@@ -119,13 +119,18 @@ export default function ProfileForm(props: Props) {
         </Field>
 
         <Field label="연락처">
-          <input
-            type="tel"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            placeholder={isKorea ? "010-0000-0000" : "+1 234 567 8900"}
-            className={inp}
-          />
+          <div className="flex gap-2">
+            <span className="flex items-center px-3 rounded-lg border border-[var(--border)] bg-[var(--surface)] text-sm opacity-70 flex-shrink-0">
+              {COUNTRIES.find((c) => c.code === country)?.dial ?? "+82"}
+            </span>
+            <input
+              type="tel"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              placeholder={isKorea ? "010-0000-0000" : "234 567 8900"}
+              className={inp}
+            />
+          </div>
         </Field>
 
         <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-3">
