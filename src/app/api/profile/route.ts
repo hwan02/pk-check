@@ -32,6 +32,7 @@ export async function PATCH(request: Request) {
     postal_code: optStr(body.postal_code),
     address1: optStr(body.address1),
     address2: optStr(body.address2),
+    country: optStr(body.country),
   };
 
   const { error } = await supabase
