@@ -197,38 +197,35 @@ export default function CheckoutPage() {
         ))}
         <div className="border-t border-[var(--border)] mt-3 pt-3 space-y-1.5 text-sm">
           <Row label="상품 합계" value={`$${data.subtotal_usd.toFixed(2)}`} />
-          <Row
-            label={
-              <span>
-                국제 배송비{" "}
-                <span className="opacity-50 text-[11px]">
-                  (K-Packet · {data.shipping.weight_g}g)
-                </span>
-              </span>
-            }
-            value={`$${data.shipping.shipping_usd.toFixed(2)}`}
-            sub={`₩${data.shipping.shipping_krw.toLocaleString()} · ${data.shipping.zone_label}`}
-          />
-          <Row
-            label={
-              <span>
-                결제 수수료{" "}
-                <span className="opacity-50 text-[11px]">
-                  (PayPal {(data.fee_rates.payment * 100).toFixed(1)}% + $0.30)
-                </span>
-              </span>
-            }
-            value={`$${data.payment_fee_usd.toFixed(2)}`}
-          />
+          <Row label="결제 수수료" value={`$${data.payment_fee_usd.toFixed(2)}`} />
         </div>
         <div className="border-t border-[var(--border-strong)] mt-3 pt-3 flex justify-between text-base font-bold">
           <span>총 결제금액</span>
-          <span>${data.total_usd.toFixed(2)}</span>
+          <span>${(data.subtotal_usd + data.payment_fee_usd).toFixed(2)}</span>
         </div>
-        <p className="text-[10px] opacity-50 mt-2 leading-relaxed">
-          배송비는 우체국 국제우편 요금 기준 예상치이며, 실제 발송 시 무게/통관에 따라
-          소폭 변동될 수 있습니다.
-        </p>
+
+        {/* 배송비 별도 안내 */}
+        <div className="mt-4 p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
+          {data.shipping.domestic ? (
+            <>
+              <Row label="국내 배송비" value="₩3,000" />
+              <p className="text-[10px] opacity-50 mt-2">
+                국내 배송비 ₩3,000은 실제 발송 시 추가 정산됩니다.
+              </p>
+            </>
+          ) : (
+            <>
+              <Row
+                label="예상 국제운송료"
+                value={`$${data.shipping.shipping_usd.toFixed(2)}`}
+                sub={`${data.shipping.zone_label} · ${data.shipping.weight_g}g`}
+              />
+              <p className="text-[10px] opacity-50 mt-2">
+                국제운송료는 상품의 실제 중량 측정 후 추가 정산 시 결제합니다.
+              </p>
+            </>
+          )}
+        </div>
       </section>
 
       {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
