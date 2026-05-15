@@ -59,6 +59,18 @@ export default async function ShopPage({ searchParams }: Props) {
   const total = count ?? 0;
   const totalPages = Math.ceil(total / ITEMS_PER_PAGE);
 
+  // 로그인 유저의 찜 목록을 한번에 조회 (현재 페이지의 listing_id 만)
+  const { data: { user } } = await supabase.auth.getUser();
+  let wishlistedIds: Set<string> | undefined;
+  if (user && items.length > 0) {
+    const { data: wl } = await supabase
+      .from("wishlists")
+      .select("listing_id")
+      .eq("user_id", user.id)
+      .in("listing_id", items.map((i) => i.id));
+    wishlistedIds = new Set((wl ?? []).map((w) => w.listing_id as string));
+  }
+
   function buildUrl(overrides: Record<string, string | undefined>) {
     const sp = new URLSearchParams();
     const merged = { q, category, sort, ...overrides };
@@ -101,7 +113,7 @@ export default async function ShopPage({ searchParams }: Props) {
         </div>
       </div>
 
-      <ShopGrid listings={items} />
+      <ShopGrid listings={items} wishlistedIds={wishlistedIds} loggedIn={!!user} />
 
       {totalPages > 1 && (
         <div className="flex justify-center gap-1 mt-8">

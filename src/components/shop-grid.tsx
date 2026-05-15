@@ -1,8 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CATEGORY_LABEL, LANGUAGE_LABEL, formatUSD, type Listing } from "@/lib/shop";
+import WishlistButton from "@/components/wishlist-button";
 
-export default function ShopGrid({ listings }: { listings: Listing[] }) {
+interface Props {
+  listings: Listing[];
+  wishlistedIds?: Set<string>;
+  loggedIn?: boolean;
+}
+
+export default function ShopGrid({ listings, wishlistedIds, loggedIn = false }: Props) {
   if (listings.length === 0) {
     return (
       <div className="py-20 text-center text-sm opacity-50">
@@ -17,9 +24,10 @@ export default function ShopGrid({ listings }: { listings: Listing[] }) {
         const primary = l.title_en || l.title;
         const secondary = l.title_en && l.title !== l.title_en ? l.title : null;
         const meta = [CATEGORY_LABEL[l.category], l.language && LANGUAGE_LABEL[l.language]].filter(Boolean).join(" · ");
+        const wishlisted = wishlistedIds?.has(l.id) ?? false;
         return (
           <Link key={l.id} href={`/shop/${l.short_id ?? l.id}`} className="block group">
-            <div className="rounded-xl overflow-hidden bg-[var(--surface)] border border-[var(--border)] group-hover:border-[var(--border-strong)] transition-colors">
+            <div className="rounded-xl overflow-hidden bg-[var(--surface)] border border-[var(--border)] group-hover:border-[var(--border-strong)] transition-colors relative">
               <div className="aspect-square relative bg-white">
                 {l.image_url ? (
                   <Image
@@ -34,6 +42,14 @@ export default function ShopGrid({ listings }: { listings: Listing[] }) {
                     no image
                   </div>
                 )}
+              </div>
+              <div className="absolute top-2 right-2">
+                <WishlistButton
+                  listingId={l.id}
+                  initialWishlisted={wishlisted}
+                  loggedIn={loggedIn}
+                  className="w-8 h-8"
+                />
               </div>
             </div>
 

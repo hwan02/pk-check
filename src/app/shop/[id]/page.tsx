@@ -9,6 +9,7 @@ import AddToCartButton from "./add-to-cart";
 import PriceTrend from "@/components/price-trend";
 import ProductVideo from "@/components/product-video";
 import ProductGallery from "@/components/product-gallery";
+import WishlistButton from "@/components/wishlist-button";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -76,6 +77,18 @@ export default async function ListingDetailPage({ params }: Props) {
   if (!item) notFound();
 
   const { data: { user } } = await supabase.auth.getUser();
+
+  // 찜 여부
+  let wishlisted = false;
+  if (user) {
+    const { data: wl } = await supabase
+      .from("wishlists")
+      .select("id")
+      .eq("user_id", user.id)
+      .eq("listing_id", item.id)
+      .maybeSingle();
+    wishlisted = !!wl;
+  }
 
   // 시세 추이: card_id 연결돼있으면 price_history 조회
   let priceHistory: { recorded_at: string; tcg_market: number | null; snkrdunk_price: number | null }[] = [];
@@ -172,11 +185,17 @@ export default async function ListingDetailPage({ params }: Props) {
           </div>
 
           {/* CTA */}
-          <div className="mt-5">
+          <div className="mt-5 space-y-2">
             <AddToCartButton
               listingId={item.id}
               disabled={item.stock <= 0}
               loggedIn={!!user}
+            />
+            <WishlistButton
+              listingId={item.id}
+              initialWishlisted={wishlisted}
+              loggedIn={!!user}
+              variant="full"
             />
           </div>
         </div>

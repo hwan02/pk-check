@@ -46,6 +46,11 @@ export default async function MyPage() {
         <MenuItem href="/support" label="고객센터 채팅" icon={<ChatIcon />} />
         <MenuItem href="/cart" label="장바구니" icon={<CartIcon />} />
         <MenuItem
+          href="/mypage/wishlist"
+          label="찜한 상품"
+          icon={<HeartIcon />}
+        />
+        <MenuItem
           href="/mypage/addresses"
           label="배송지 관리"
           icon={<PinIcon />}
@@ -143,6 +148,13 @@ function ChatIcon() {
   return (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    </svg>
+  );
+}
+function HeartIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
     </svg>
   );
 }
