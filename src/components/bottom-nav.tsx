@@ -37,7 +37,7 @@ export default async function BottomNav() {
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--card-bg)] border-t border-[var(--border)] pb-[env(safe-area-inset-bottom)]">
-      <ul className="grid grid-cols-5 max-w-md mx-auto">
+      <ul className={`grid max-w-md mx-auto ${items.length <= 4 ? "grid-cols-4" : "grid-cols-5"}`}>
         {items.map((it) => (
           <li key={it.href}>
             {it.isLogin ? (
@@ -53,8 +53,6 @@ export default async function BottomNav() {
             )}
           </li>
         ))}
-        {items.length < 5 &&
-          Array.from({ length: 5 - items.length }).map((_, i) => <li key={`pad-${i}`} />)}
       </ul>
     </nav>
   );

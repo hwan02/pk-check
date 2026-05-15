@@ -3,6 +3,25 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+const COUNTRIES = [
+  { code: "KR", label: "대한민국" },
+  { code: "JP", label: "일본" },
+  { code: "US", label: "미국" },
+  { code: "CA", label: "캐나다" },
+  { code: "GB", label: "영국" },
+  { code: "AU", label: "호주" },
+  { code: "DE", label: "독일" },
+  { code: "FR", label: "프랑스" },
+  { code: "SG", label: "싱가포르" },
+  { code: "TW", label: "대만" },
+  { code: "HK", label: "홍콩" },
+  { code: "TH", label: "태국" },
+  { code: "VN", label: "베트남" },
+  { code: "PH", label: "필리핀" },
+  { code: "MY", label: "말레이시아" },
+  { code: "ID", label: "인도네시아" },
+];
+
 interface Props {
   defaultName: string;
   email: string;
@@ -12,6 +31,9 @@ interface Props {
   defaultPostalCode: string;
   defaultAddress1: string;
   defaultAddress2: string;
+  defaultCountry?: string;
+  defaultCity?: string;
+  defaultState?: string;
 }
 
 export default function ProfileForm(props: Props) {
@@ -20,20 +42,20 @@ export default function ProfileForm(props: Props) {
   const [customsIdNo, setCustomsIdNo] = useState(props.defaultCustomsIdNo);
   const [phone, setPhone] = useState(props.defaultPhone);
   const [recipientName, setRecipientName] = useState(props.defaultRecipientName);
+  const [country, setCountry] = useState(props.defaultCountry || "KR");
   const [postalCode, setPostalCode] = useState(props.defaultPostalCode);
   const [address1, setAddress1] = useState(props.defaultAddress1);
   const [address2, setAddress2] = useState(props.defaultAddress2);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<{ type: "ok" | "err"; text: string } | null>(null);
 
+  const isKorea = country === "KR";
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const cleanedCustoms = customsIdNo.trim().toUpperCase();
-    if (cleanedCustoms && !/^P\d{12}$/.test(cleanedCustoms)) {
-      setMessage({
-        type: "err",
-        text: "개인통관고유부호는 P + 숫자 12자리 형식입니다.",
-      });
+    if (isKorea && cleanedCustoms && !/^P\d{12}$/.test(cleanedCustoms)) {
+      setMessage({ type: "err", text: "개인통관고유부호는 P + 숫자 12자리 형식입니다." });
       return;
     }
     setSaving(true);
@@ -43,12 +65,13 @@ export default function ProfileForm(props: Props) {
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
         name: name.trim(),
-        customs_id_no: cleanedCustoms || null,
+        customs_id_no: isKorea ? (cleanedCustoms || null) : null,
         phone: phone.trim(),
         recipient_name: recipientName.trim() || null,
         postal_code: postalCode.trim(),
         address1: address1.trim(),
         address2: address2.trim() || null,
+        country,
       }),
     });
     setSaving(false);
@@ -64,109 +87,101 @@ export default function ProfileForm(props: Props) {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {/* 계정 */}
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] p-5 space-y-4">
-        <h2 className="text-xs font-semibold tracking-widest uppercase opacity-60">
-          계정
-        </h2>
+      <section className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] p-4 sm:p-5 space-y-4">
+        <h2 className="text-xs font-semibold tracking-widest uppercase opacity-60">계정</h2>
         <Field label="이메일">
-          <input
-            type="email"
-            value={props.email}
-            disabled
-            className={`${inp} bg-[var(--surface)] opacity-70`}
-          />
-          <p className="text-[11px] opacity-50 mt-1">이메일은 변경할 수 없습니다.</p>
+          <input type="email" value={props.email} disabled className={`${inp} bg-[var(--surface)] opacity-70`} />
         </Field>
         <Field label="이름">
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="이름"
-            className={inp}
-          />
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="이름" className={inp} />
         </Field>
       </section>
 
-      {/* 통관/배송 */}
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] p-5 space-y-4">
-        <h2 className="text-xs font-semibold tracking-widest uppercase opacity-60">
-          통관 · 배송정보
-        </h2>
+      {/* 배송지 */}
+      <section className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] p-4 sm:p-5 space-y-4">
+        <h2 className="text-xs font-semibold tracking-widest uppercase opacity-60">배송지</h2>
 
-        <Field label="개인통관고유부호">
-          <input
-            value={customsIdNo}
-            onChange={(e) => setCustomsIdNo(e.target.value.toUpperCase())}
-            placeholder="P012345678901"
-            maxLength={13}
-            className={`${inp} font-mono`}
-          />
-          <a
-            href="https://unipass.customs.go.kr/csp/persIndex.do"
-            target="_blank"
-            rel="noreferrer"
-            className="text-[11px] opacity-60 mt-1 inline-block underline underline-offset-2"
-          >
-            발급/조회 (관세청 UNI-PASS)
-          </a>
+        <Field label="국가">
+          <select value={country} onChange={(e) => setCountry(e.target.value)} className={inp}>
+            {COUNTRIES.map((c) => (
+              <option key={c.code} value={c.code}>{c.label}</option>
+            ))}
+          </select>
         </Field>
 
         <Field label="수령인">
           <input
             value={recipientName}
             onChange={(e) => setRecipientName(e.target.value)}
-            placeholder={name || "수령인 이름"}
+            placeholder={isKorea ? "수령인 이름" : "Full Name"}
             className={inp}
           />
         </Field>
 
-        <Field label="휴대폰">
+        <Field label="연락처">
           <input
             type="tel"
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
-            placeholder="010-0000-0000"
+            placeholder={isKorea ? "010-0000-0000" : "+1 234 567 8900"}
             className={inp}
           />
         </Field>
 
-        <div className="grid grid-cols-[120px_1fr] gap-2">
-          <Field label="우편번호">
+        <div className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-3">
+          <Field label={isKorea ? "우편번호" : "Postal / ZIP Code"}>
             <input
               inputMode="numeric"
               value={postalCode}
               onChange={(e) => setPostalCode(e.target.value)}
-              placeholder="04524"
-              maxLength={6}
+              placeholder={isKorea ? "04524" : "10001"}
+              maxLength={10}
               className={inp}
             />
           </Field>
-          <Field label="기본 주소">
+          <Field label={isKorea ? "기본 주소" : "Address Line 1"}>
             <input
               value={address1}
               onChange={(e) => setAddress1(e.target.value)}
-              placeholder="서울 중구 세종대로 110"
+              placeholder={isKorea ? "서울 중구 세종대로 110" : "Street address"}
               className={inp}
             />
           </Field>
         </div>
 
-        <Field label="상세 주소">
+        <Field label={isKorea ? "상세 주소" : "Address Line 2"}>
           <input
             value={address2}
             onChange={(e) => setAddress2(e.target.value)}
-            placeholder="동/호수"
+            placeholder={isKorea ? "동/호수" : "Apt, Suite, Unit (optional)"}
             className={inp}
           />
         </Field>
+
+        {/* 한국일 때만 통관고유부호 */}
+        {isKorea && (
+          <Field label="개인통관고유부호">
+            <input
+              value={customsIdNo}
+              onChange={(e) => setCustomsIdNo(e.target.value.toUpperCase())}
+              placeholder="P012345678901"
+              maxLength={13}
+              className={`${inp} font-mono`}
+            />
+            <a
+              href="https://unipass.customs.go.kr/csp/persIndex.do"
+              target="_blank"
+              rel="noreferrer"
+              className="text-[11px] opacity-60 mt-1 inline-block underline underline-offset-2"
+            >
+              발급/조회 (관세청 UNI-PASS)
+            </a>
+          </Field>
+        )}
       </section>
 
       {message && (
-        <p
-          className={`text-xs ${
-            message.type === "ok" ? "text-emerald-600" : "text-red-600"
-          }`}
-        >
+        <p className={`text-xs ${message.type === "ok" ? "text-emerald-600" : "text-red-600"}`}>
           {message.text}
         </p>
       )}
@@ -174,7 +189,7 @@ export default function ProfileForm(props: Props) {
       <button
         type="submit"
         disabled={saving}
-        className="w-full py-3 rounded-lg bg-[var(--primary)] text-white text-sm font-semibold disabled:opacity-50"
+        className="w-full py-3 rounded-xl bg-[var(--primary)] text-white text-sm font-semibold disabled:opacity-50 cursor-pointer"
       >
         {saving ? "저장 중..." : "저장"}
       </button>
@@ -188,9 +203,7 @@ const inp =
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block">
-      <span className="block text-xs font-semibold opacity-60 mb-1.5">
-        {label}
-      </span>
+      <span className="block text-xs font-semibold opacity-60 mb-1.5">{label}</span>
       {children}
     </label>
   );
