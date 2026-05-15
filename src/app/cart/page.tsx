@@ -98,7 +98,6 @@ export default function CartPage() {
   const hasAddress = !!p?.country && !!p?.postal_code && !!p?.address1;
 
   const WEIGHT_OPTIONS = [
-    { value: "auto", label: `자동 추정 (${data?.shipping?.weight_g ?? 0}g)` },
     { value: "500", label: "0.5 kg" },
     { value: "1000", label: "1 kg" },
     { value: "1500", label: "1.5 kg" },
@@ -195,38 +194,39 @@ export default function CartPage() {
         </div>
 
         {/* 예상 운송 정보 */}
-        {hasAddress && (
+        {hasAddress ? (
           <div className="mt-4 p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
-            {!isDomestic && (
-              <div className="mb-3">
-                <label className="text-[11px] font-semibold opacity-60 block mb-1">예상 중량 선택</label>
-                <select
-                  value={selectedWeight}
-                  onChange={(e) => onWeightChange(e.target.value)}
-                  className="w-full px-3 py-2 text-xs rounded-lg border border-[var(--border)] bg-[var(--card-bg)]"
-                >
-                  {WEIGHT_OPTIONS.map((o) => (
-                    <option key={o.value} value={o.value}>{o.label}</option>
-                  ))}
-                </select>
-              </div>
-            )}
+            <div className="mb-3">
+              <label className="text-[11px] font-semibold opacity-60 block mb-1">
+                예상 중량 선택
+              </label>
+              <select
+                value={selectedWeight}
+                onChange={(e) => onWeightChange(e.target.value)}
+                className="w-full px-3 py-2 text-xs rounded-lg border border-[var(--border)] bg-[var(--card-bg)]"
+              >
+                <option value="auto">선택해주세요</option>
+                {WEIGHT_OPTIONS.map((o) => (
+                  <option key={o.value} value={o.value}>{o.label}</option>
+                ))}
+              </select>
+            </div>
 
-            <div className="flex justify-between text-xs">
-              <span className="opacity-60">예상 중량</span>
-              <span className="font-bold">
-                {selectedWeight === "auto"
-                  ? `${data?.shipping?.weight_g ?? 0}g`
-                  : `${(Number(selectedWeight) / 1000).toFixed(1)}kg`}
-              </span>
-            </div>
-            <div className="flex justify-between text-xs mt-1">
-              <span className="opacity-60">
-                {isDomestic ? "예상 국내 택배비" : "예상 국제운송료"}
-                <span className="opacity-50 ml-1">({zoneLabel})</span>
-              </span>
-              <span className="font-bold">${(customShipping ?? shippingUsd).toFixed(2)}</span>
-            </div>
+            {selectedWeight !== "auto" && (
+              <>
+                <div className="flex justify-between text-xs">
+                  <span className="opacity-60">예상 중량</span>
+                  <span className="font-bold">{(Number(selectedWeight) / 1000).toFixed(1)} kg</span>
+                </div>
+                <div className="flex justify-between text-xs mt-1">
+                  <span className="opacity-60">
+                    {isDomestic ? "예상 국내 택배비" : "예상 국제운송료"}
+                    <span className="opacity-50 ml-1">({zoneLabel})</span>
+                  </span>
+                  <span className="font-bold">${(customShipping ?? shippingUsd).toFixed(2)}</span>
+                </div>
+              </>
+            )}
 
             {bundleSaving > 0 && (
               <div className="flex items-center gap-1.5 mt-2 text-xs">
@@ -243,9 +243,7 @@ export default function CartPage() {
                 : "국제운송료는 상품의 실제 중량 측정 후 추가 정산 시 결제합니다."}
             </p>
           </div>
-        )}
-
-        {!hasAddress && (
+        ) : (
           <div className="mt-4 p-3 rounded-lg bg-[var(--surface)] border border-[var(--border)]">
             <p className="text-xs opacity-50">배송지 등록 후 예상 운송료를 확인할 수 있습니다.</p>
           </div>
