@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 
 interface Props {
@@ -67,22 +66,6 @@ export default function ProfileForm(props: Props) {
             className={inp}
           />
         </Field>
-      </section>
-
-      {/* 배송지 안내 */}
-      <section className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] p-4 sm:p-5">
-        <div className="flex items-center justify-between">
-          <div>
-            <h2 className="text-xs font-semibold tracking-widest uppercase opacity-60 mb-1">배송지</h2>
-            <p className="text-xs opacity-70">여러 배송지를 등록하고 주 배송지를 설정할 수 있습니다.</p>
-          </div>
-          <Link
-            href="/mypage/addresses"
-            className="text-xs font-semibold px-3 py-2 rounded-lg border border-[var(--border)] hover:border-[var(--primary)] flex-shrink-0"
-          >
-            배송지 관리
-          </Link>
-        </div>
       </section>
 
       {/* 통관고유부호 */}
