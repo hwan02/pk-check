@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import Script from "next/script";
 
@@ -15,6 +16,33 @@ interface CartItem {
   };
 }
 
+interface PreviewProfile {
+  recipient_name: string | null;
+  phone: string | null;
+  postal_code: string | null;
+  address1: string | null;
+  address2: string | null;
+  country: string | null;
+}
+
+interface ShippingQuote {
+  zone: 1 | 2 | 3 | 4;
+  zone_label: string;
+  country: string;
+  weight_g: number;
+  shipping_krw: number;
+  shipping_usd: number;
+  exchange_rate: number;
+}
+
+interface Preview {
+  items: CartItem[];
+  profile: PreviewProfile | null;
+  subtotal_usd: number;
+  shipping: ShippingQuote;
+  total_usd: number;
+}
+
 declare global {
   interface Window {
     paypal?: {
@@ -25,25 +53,29 @@ declare global {
 
 export default function CheckoutPage() {
   const router = useRouter();
-  const [items, setItems] = useState<CartItem[]>([]);
+  const [data, setData] = useState<Preview | null>(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState("");
   const [sdkReady, setSdkReady] = useState(false);
   const [rendered, setRendered] = useState(false);
 
-  const subtotal = items.reduce((s, i) => s + i.listing.price_usd * i.quantity, 0);
   const clientId = process.env.NEXT_PUBLIC_PAYPAL_CLIENT_ID;
 
   useEffect(() => {
-    fetch("/api/cart")
+    fetch("/api/checkout/preview")
       .then((r) => r.json())
-      .then((d) => setItems(d.items ?? []))
+      .then((d: Preview) => setData(d))
       .finally(() => setLoading(false));
   }, []);
 
+  const addressReady =
+    !!data?.profile?.postal_code &&
+    !!data?.profile?.address1 &&
+    !!data?.profile?.country;
+
   const renderButtons = useCallback(() => {
-    if (!window.paypal || rendered || !items.length) return;
+    if (!window.paypal || rendered || !data?.items.length || !addressReady) return;
     setRendered(true);
 
     window.paypal.Buttons({
@@ -55,25 +87,22 @@ export default function CheckoutPage() {
         const resp = await fetch("/api/paypal/create-order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ shippingAddress: null }),
+          body: JSON.stringify({}),
         });
-        const data = await resp.json();
+        const json = await resp.json();
         if (!resp.ok) {
-          setError(data.error || "주문 생성 실패");
+          setError(json.error || "주문 생성 실패");
           setPaying(false);
-          throw new Error(data.error);
+          throw new Error(json.error);
         }
-        return data.paypalOrderId;
+        return json.paypalOrderId;
       },
 
-      onApprove: async (data: { orderID: string }) => {
+      onApprove: async (approval: { orderID: string }) => {
         const resp = await fetch("/api/paypal/capture-order", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            paypalOrderId: data.orderID,
-            orderId: undefined, // 서버에서 paypalOrderId로 매칭
-          }),
+          body: JSON.stringify({ paypalOrderId: approval.orderID }),
         });
         const result = await resp.json();
         setPaying(false);
@@ -93,19 +122,19 @@ export default function CheckoutPage() {
         setPaying(false);
       },
     }).render("#paypal-button-container");
-  }, [items, rendered, router]);
+  }, [data, rendered, router, addressReady]);
 
   useEffect(() => {
-    if (sdkReady && items.length && !rendered) {
+    if (sdkReady && data?.items.length && !rendered && addressReady) {
       renderButtons();
     }
-  }, [sdkReady, items, rendered, renderButtons]);
+  }, [sdkReady, data, rendered, renderButtons, addressReady]);
 
   if (loading) {
     return <div className="max-w-2xl mx-auto px-4 py-16 text-center text-sm opacity-50">로딩 중...</div>;
   }
 
-  if (!items.length) {
+  if (!data || data.items.length === 0) {
     return (
       <div className="max-w-2xl mx-auto px-4 py-16 text-center">
         <p className="font-semibold mb-2">장바구니가 비어있습니다</p>
@@ -113,43 +142,125 @@ export default function CheckoutPage() {
     );
   }
 
+  const p = data.profile;
+
   return (
     <div className="max-w-2xl mx-auto px-4 py-8">
       <h1 className="text-xl font-bold mb-6">결제</h1>
 
+      {/* 배송지 */}
+      <section className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] p-5 mb-4">
+        <div className="flex items-center justify-between mb-2">
+          <p className="text-xs font-semibold tracking-widest uppercase opacity-60">
+            배송지
+          </p>
+          <Link
+            href="/mypage/profile"
+            className="text-[11px] underline underline-offset-2 opacity-70 hover:opacity-100"
+          >
+            변경
+          </Link>
+        </div>
+        {addressReady ? (
+          <div className="text-xs leading-relaxed">
+            <p className="font-semibold text-sm">{p?.recipient_name || "—"}</p>
+            <p className="opacity-80 mt-0.5">
+              {p?.postal_code} {p?.address1}
+              {p?.address2 ? `, ${p.address2}` : ""}
+            </p>
+            <p className="opacity-80">{p?.country}</p>
+            {p?.phone && <p className="opacity-60 mt-1">{p.phone}</p>}
+          </div>
+        ) : (
+          <p className="text-xs text-red-600">
+            배송지가 등록되지 않았습니다. 마이페이지에서 먼저 등록해 주세요.
+          </p>
+        )}
+      </section>
+
       {/* 주문 요약 */}
-      <div className="rounded-xl border border-[var(--border)] bg-[var(--card-bg)] p-4 mb-6">
-        <p className="text-xs opacity-50 mb-3">주문 요약</p>
-        {items.map((item) => (
+      <section className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] p-5 mb-4">
+        <p className="text-xs font-semibold tracking-widest uppercase opacity-60 mb-3">
+          주문 요약
+        </p>
+        {data.items.map((item) => (
           <div key={item.id} className="flex justify-between text-sm py-1.5">
-            <span className="line-clamp-1 flex-1 mr-4">{item.listing.title} × {item.quantity}</span>
-            <span className="font-medium flex-shrink-0">${(item.listing.price_usd * item.quantity).toFixed(2)}</span>
+            <span className="line-clamp-1 flex-1 mr-4">
+              {item.listing.title} × {item.quantity}
+            </span>
+            <span className="font-medium flex-shrink-0">
+              ${(item.listing.price_usd * item.quantity).toFixed(2)}
+            </span>
           </div>
         ))}
-        <hr className="my-3 border-[var(--border)]" />
-        <div className="flex justify-between text-base font-bold">
-          <span>합계</span>
-          <span>${subtotal.toFixed(2)}</span>
+        <div className="border-t border-[var(--border)] mt-3 pt-3 space-y-1.5 text-sm">
+          <Row label="상품 합계" value={`$${data.subtotal_usd.toFixed(2)}`} />
+          <Row
+            label={
+              <span>
+                국제 배송비{" "}
+                <span className="opacity-50 text-[11px]">
+                  (우체국 K-Packet · {data.shipping.weight_g}g)
+                </span>
+              </span>
+            }
+            value={`$${data.shipping.shipping_usd.toFixed(2)}`}
+            sub={`₩${data.shipping.shipping_krw.toLocaleString()} · ${data.shipping.zone_label}`}
+          />
         </div>
-      </div>
+        <div className="border-t border-[var(--border-strong)] mt-3 pt-3 flex justify-between text-base font-bold">
+          <span>총 결제금액</span>
+          <span>${data.total_usd.toFixed(2)}</span>
+        </div>
+        <p className="text-[10px] opacity-50 mt-2 leading-relaxed">
+          배송비는 우체국 국제우편 요금 기준 예상치이며, 실제 발송 시 무게/통관에 따라
+          소폭 변동될 수 있습니다.
+        </p>
+      </section>
 
-      {error && (
-        <p className="text-sm text-[var(--sell)] mb-4">{error}</p>
-      )}
-
+      {error && <p className="text-sm text-red-600 mb-4">{error}</p>}
       {paying && (
         <p className="text-sm opacity-60 mb-4 text-center">결제 처리 중...</p>
       )}
 
       {/* PayPal 버튼 */}
-      <div id="paypal-button-container" className="min-h-[60px]" />
+      {addressReady ? (
+        <div id="paypal-button-container" className="min-h-[60px]" />
+      ) : (
+        <Link
+          href="/mypage/profile"
+          className="block w-full py-3 rounded-xl bg-[var(--primary)] text-white text-sm font-semibold text-center"
+        >
+          배송지 등록하기
+        </Link>
+      )}
 
-      {clientId && (
+      {clientId && addressReady && (
         <Script
           src={`https://www.paypal.com/sdk/js?client-id=${clientId}&currency=USD`}
           onReady={() => setSdkReady(true)}
         />
       )}
+    </div>
+  );
+}
+
+function Row({
+  label,
+  value,
+  sub,
+}: {
+  label: React.ReactNode;
+  value: string;
+  sub?: string;
+}) {
+  return (
+    <div className="flex justify-between items-start gap-3">
+      <span className="opacity-70">{label}</span>
+      <div className="text-right">
+        <span className="font-medium">{value}</span>
+        {sub && <p className="text-[10px] opacity-50">{sub}</p>}
+      </div>
     </div>
   );
 }

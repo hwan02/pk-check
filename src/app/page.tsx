@@ -93,7 +93,7 @@ export default async function HomePage() {
               <div className="relative w-20 sm:w-24 md:w-28 aspect-[5/7] rotate-[12deg] translate-y-2 drop-shadow-xl transition-transform duration-300 group-hover:rotate-[16deg] group-hover:-translate-y-1">
                 <Image
                   src="https://images.pokemontcg.io/sv4pt5/231_hires.png"
-                  alt="Pokémon card"
+                  alt="Pokemon card"
                   fill
                   sizes="120px"
                   className="object-contain"
@@ -104,7 +104,7 @@ export default async function HomePage() {
             {/* 텍스트 */}
             <div className="absolute inset-0 p-6 md:p-8 flex flex-col justify-end">
               <p className="text-[11px] font-bold tracking-[0.3em] uppercase text-amber-900/80">
-                Pokémon
+                Pokemon
               </p>
               <h2 className="text-2xl md:text-3xl font-black mt-1 text-amber-950">
                 포켓몬 카드
