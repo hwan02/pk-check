@@ -1,3 +1,5 @@
+export const revalidate = 86400; // 1일
+
 export const metadata = {
   title: "이용약관 · Kikidult",
 };

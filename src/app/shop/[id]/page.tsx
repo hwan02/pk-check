@@ -1,4 +1,4 @@
-export const dynamic = "force-dynamic";
+export const revalidate = 120; // 2분마다 재생성
 
 import type { Metadata } from "next";
 import Link from "next/link";
