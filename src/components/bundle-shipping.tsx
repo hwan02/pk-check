@@ -45,14 +45,13 @@ export default function BundleShipping({ paidOrders }: { paidOrders: Order[] }) 
   }
 
   async function handleUnbundleAll() {
+    if (!bundleGroupId) return;
     setLoading(true);
-    for (const o of bundled) {
-      await fetch("/api/orders/bundle", {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ orderId: o.id }),
-      });
-    }
+    await fetch("/api/orders/bundle", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ bundleGroup: bundleGroupId }),
+    });
     setLoading(false);
     router.refresh();
   }

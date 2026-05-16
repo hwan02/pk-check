@@ -54,33 +54,33 @@ export async function POST(request: NextRequest) {
   return NextResponse.json({ ok: true, bundleGroup, orderCount: orderIds.length });
 }
 
-// 묶음 해제
+// 묶음 해제: orderId 단건 또는 bundleGroup 전체 해제
 export async function DELETE(request: NextRequest) {
   const ssr = await createSsrClient();
   const { data: { user } } = await ssr.auth.getUser();
   if (!user) return NextResponse.json({ error: "로그인 필요" }, { status: 401 });
 
-  const { orderId } = await request.json();
-  if (!orderId) return NextResponse.json({ error: "orderId 필요" }, { status: 400 });
-
+  const { orderId, bundleGroup } = await request.json();
   const db = createServerClient();
 
-  const { data: order } = await db
-    .from("orders")
-    .select("id, status, user_id")
-    .eq("id", orderId)
-    .eq("user_id", user.id)
-    .single();
-
-  if (!order) return NextResponse.json({ error: "주문 없음" }, { status: 404 });
-  if (order.status !== "paid") {
-    return NextResponse.json({ error: "발송 전 주문만 해제 가능" }, { status: 400 });
+  if (bundleGroup) {
+    // 그룹 전체 해제
+    await db
+      .from("orders")
+      .update({ bundle_group: null })
+      .eq("bundle_group", bundleGroup)
+      .eq("user_id", user.id);
+    return NextResponse.json({ ok: true });
   }
 
-  await db
-    .from("orders")
-    .update({ bundle_group: null })
-    .eq("id", orderId);
+  if (orderId) {
+    await db
+      .from("orders")
+      .update({ bundle_group: null })
+      .eq("id", orderId)
+      .eq("user_id", user.id);
+    return NextResponse.json({ ok: true });
+  }
 
-  return NextResponse.json({ ok: true });
+  return NextResponse.json({ error: "orderId 또는 bundleGroup 필요" }, { status: 400 });
 }
