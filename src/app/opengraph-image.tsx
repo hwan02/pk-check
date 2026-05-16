@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "Kikidult — Pokemon · One Piece TCG Market";
+export const alt = "Kikidult — 100덱 + 랜덤팩 판매중";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -22,7 +22,7 @@ export default function OGImage() {
       >
         <div
           style={{
-            fontSize: 72,
+            fontSize: 64,
             fontWeight: 900,
             color: "#ffffff",
             letterSpacing: "-3px",
@@ -32,31 +32,71 @@ export default function OGImage() {
         </div>
         <div
           style={{
-            fontSize: 18,
-            color: "rgba(255,255,255,0.5)",
+            fontSize: 16,
+            color: "rgba(255,255,255,0.4)",
             letterSpacing: "8px",
-            marginTop: 12,
+            marginTop: 8,
           }}
         >
           TCG MARKET
         </div>
+
+        {/* 미끼 상품 */}
         <div
           style={{
-            fontSize: 24,
-            color: "rgba(255,255,255,0.7)",
-            marginTop: 60,
+            display: "flex",
+            alignItems: "center",
+            gap: "16px",
+            marginTop: 48,
+            padding: "20px 40px",
+            background: "rgba(255,255,255,0.08)",
+            borderRadius: "16px",
+            border: "1px solid rgba(255,255,255,0.15)",
           }}
         >
-          Pokemon · One Piece Trading Cards
+          <div
+            style={{
+              fontSize: 48,
+            }}
+          >
+            🎴
+          </div>
+          <div style={{ display: "flex", flexDirection: "column" }}>
+            <div
+              style={{
+                fontSize: 28,
+                fontWeight: 900,
+                color: "#ffffff",
+              }}
+            >
+              100덱 + 랜덤팩
+            </div>
+            <div
+              style={{
+                fontSize: 16,
+                color: "rgba(255,255,255,0.5)",
+                marginTop: 4,
+              }}
+            >
+              포켓몬 · 원피스 트레이딩 카드 판매중
+            </div>
+          </div>
         </div>
+
         <div
           style={{
-            fontSize: 18,
-            color: "rgba(255,255,255,0.4)",
-            marginTop: 12,
+            display: "flex",
+            gap: "24px",
+            marginTop: 32,
+            fontSize: 14,
+            color: "rgba(255,255,255,0.35)",
           }}
         >
-          Worldwide Shipping · PayPal
+          <span>Worldwide Shipping</span>
+          <span>·</span>
+          <span>PayPal</span>
+          <span>·</span>
+          <span>From Korea</span>
         </div>
       </div>
     ),
