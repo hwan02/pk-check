@@ -208,12 +208,8 @@ export default function OrdersList({
           candidates={candidates}
           itemsByOrder={itemsByOrder}
           onClose={() => setBundleSourceId(null)}
-          onSubmitted={(json) => {
+          onSubmitted={() => {
             setBundleSourceId(null);
-            setMessage({
-              type: "ok",
-              text: `통합배송 신청 완료 · ${json.orderCount}건 (${json.bundleGroup})`,
-            });
             router.refresh();
           }}
         />
