@@ -16,72 +16,67 @@ export default function TwitterImage() {
           width: "100%",
           height: "100%",
           display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
           background: "#1a1a1a",
           fontFamily: "Arial, Helvetica, sans-serif",
+          position: "relative",
         }}
       >
+        <img
+          src={PRODUCT_IMAGE}
+          alt=""
+          width={480}
+          height={480}
+          style={{
+            objectFit: "contain",
+            borderRadius: "20px",
+            position: "absolute",
+            left: "40px",
+            top: "75px",
+          }}
+        />
         <div
           style={{
-            width: "45%",
-            height: "100%",
+            position: "absolute",
+            right: "40px",
+            bottom: "40px",
             display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            padding: "40px",
+            flexDirection: "column",
+            alignItems: "flex-end",
           }}
         >
-          <img
-            src={PRODUCT_IMAGE}
-            alt=""
-            width={400}
-            height={400}
-            style={{ objectFit: "contain", borderRadius: "16px" }}
-          />
+          <div style={{ fontSize: 44, fontWeight: 900, color: "#ffffff", letterSpacing: "-2px" }}>
+            KIKIDULT
+          </div>
+          <div style={{ fontSize: 28, fontWeight: 800, color: "#ffffff", marginTop: 16 }}>
+            메가 스타트덱 100
+          </div>
+          <div style={{ fontSize: 18, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>
+            배틀컬렉션 + 랜덤팩 1팩 증정
+          </div>
+          <div style={{ fontSize: 36, fontWeight: 900, color: "#f15746", marginTop: 12 }}>
+            $13.33
+          </div>
         </div>
         <div
           style={{
-            width: "55%",
-            height: "100%",
+            position: "absolute",
+            right: "40px",
+            top: "40px",
             display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            padding: "40px 40px 40px 0",
+            gap: "8px",
+            fontSize: 14,
+            color: "rgba(255,255,255,0.4)",
           }}
         >
-          <div style={{ fontSize: 48, fontWeight: 900, color: "#ffffff", letterSpacing: "-2px" }}>
-            KIKIDULT
-          </div>
-          <div style={{ fontSize: 13, color: "rgba(255,255,255,0.4)", letterSpacing: "6px", marginTop: 4 }}>
-            TCG MARKET
-          </div>
-          <div
-            style={{
-              marginTop: 40,
-              padding: "16px 20px",
-              background: "rgba(255,255,255,0.08)",
-              borderRadius: "12px",
-              border: "1px solid rgba(255,255,255,0.12)",
-              display: "flex",
-              flexDirection: "column",
-            }}
-          >
-            <div style={{ fontSize: 24, fontWeight: 800, color: "#ffffff" }}>
-              메가 스타트덱 100
-            </div>
-            <div style={{ fontSize: 18, color: "rgba(255,255,255,0.6)", marginTop: 4 }}>
-              배틀컬렉션 + 랜덤팩 1팩 증정
-            </div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: "#f15746", marginTop: 12 }}>
-              $13.33
-            </div>
-          </div>
-          <div style={{ display: "flex", gap: "16px", marginTop: 24, fontSize: 13, color: "rgba(255,255,255,0.3)" }}>
-            <span>Worldwide Shipping</span>
-            <span>·</span>
-            <span>PayPal</span>
-            <span>·</span>
-            <span>From Korea</span>
-          </div>
+          <span style={{ padding: "6px 12px", background: "rgba(255,255,255,0.1)", borderRadius: "20px" }}>
+            Worldwide Shipping
+          </span>
+          <span style={{ padding: "6px 12px", background: "rgba(255,255,255,0.1)", borderRadius: "20px" }}>
+            PayPal
+          </span>
         </div>
       </div>
     ),
