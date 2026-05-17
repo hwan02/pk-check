@@ -18,7 +18,7 @@ export default function OGImage() {
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
-          background: "#ffffff",
+          background: "#1a1a1a",
         }}
       >
         <img
