@@ -97,6 +97,17 @@ export default function Footer() {
               <dd>{BUSINESS.contactPhone}</dd>
               <dt className="opacity-60">운영시간</dt>
               <dd>평일 10:00 – 18:00 (KST)</dd>
+              <dt className="opacity-60">Instagram</dt>
+              <dd>
+                <a
+                  href="https://www.instagram.com/kiki_dult"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:opacity-100"
+                >
+                  @kiki_dult
+                </a>
+              </dd>
             </dl>
           </div>
         </div>
