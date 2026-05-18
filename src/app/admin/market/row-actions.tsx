@@ -7,7 +7,7 @@ import {
   COMMON_GRADES,
   formatKRW,
   MARKET_CATEGORY_LABEL,
-  PARENT_TYPE_OF,
+  PARENT_TYPES_OF,
   PRODUCT_TYPE_LABEL,
   type MarketCard,
   type MarketPriceRow,
@@ -217,12 +217,13 @@ export function InlineParent({
   const [value, setValue] = useState(initialParentId ?? "");
   const [saving, setSaving] = useState(false);
 
-  const need = PARENT_TYPE_OF[productType];
-  if (!need) return null; // 박스는 부모 없음
+  const needTypes = PARENT_TYPES_OF[productType];
+  if (needTypes.length === 0) return null; // 박스는 부모 없음
 
   const allowed = parentOptions.filter(
-    (p) => p.product_type === need && p.category === category && p.id !== id,
+    (p) => needTypes.includes(p.product_type) && p.category === category && p.id !== id,
   );
+  const placeholderLabel = needTypes.map((t) => PRODUCT_TYPE_LABEL[t]).join("/");
 
   async function change(next: string) {
     if (next === value) return;
@@ -249,10 +250,10 @@ export function InlineParent({
       className={`text-[10px] px-1.5 py-0.5 rounded border border-[var(--border)] bg-[var(--background)] max-w-[160px] truncate ${saving ? "opacity-50" : ""}`}
       title={value ? allowed.find((p) => p.id === value)?.name : ""}
     >
-      <option value="">— {PRODUCT_TYPE_LABEL[need]} 미지정 —</option>
+      <option value="">— {placeholderLabel} 미지정 —</option>
       {allowed.map((p) => (
         <option key={p.id} value={p.id}>
-          {p.name}
+          [{PRODUCT_TYPE_LABEL[p.product_type]}] {p.name}
         </option>
       ))}
     </select>

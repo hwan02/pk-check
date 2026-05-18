@@ -38,6 +38,7 @@ export default function AdminMarketCardList({ cards, history, parentOptions }: P
   const [statusFilter, setStatusFilter] = useState<"all" | "active" | "hidden">("all");
   const [categoryFilter, setCategoryFilter] = useState<"all" | "pokemon" | "onepiece">("all");
   const [pricedFilter, setPricedFilter] = useState<"all" | "yes" | "no">("all");
+  const [rarityFilter, setRarityFilter] = useState<string>("");
 
   // 박스(set_name) 목록 추출
   const setOptions = useMemo(() => {
@@ -48,12 +49,37 @@ export default function AdminMarketCardList({ cards, history, parentOptions }: P
     return [...set].sort((a, b) => a.localeCompare(b, "ko"));
   }, [cards]);
 
+  // 등급 목록 — 비싼 순 우선순위 + 그 외는 알파벳
+  const rarityOptions = useMemo(() => {
+    const set = new Set<string>();
+    for (const c of cards) {
+      if (c.rarity) set.add(c.rarity);
+    }
+    const PRIORITY = [
+      "SAR", "UR", "HR", "SR", "AR", "RR",
+      "Special Illustration Rare",
+      "Illustration Rare",
+      "Hyper Rare",
+      "Ultra Rare",
+      "Double Rare",
+      "ACE SPEC Rare",
+      "Rare",
+      "Uncommon",
+      "Common",
+    ];
+    const rest = [...set]
+      .filter((r) => !PRIORITY.includes(r))
+      .sort((a, b) => a.localeCompare(b));
+    return [...PRIORITY.filter((p) => set.has(p)), ...rest];
+  }, [cards]);
+
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return cards.filter((c) => {
       if (categoryFilter !== "all" && c.category !== categoryFilter) return false;
       if (typeFilter !== "all" && c.product_type !== typeFilter) return false;
       if (setFilter && c.set_name !== setFilter) return false;
+      if (rarityFilter && c.rarity !== rarityFilter) return false;
       if (statusFilter === "active" && !c.is_active) return false;
       if (statusFilter === "hidden" && c.is_active) return false;
       if (pricedFilter !== "all") {
@@ -67,11 +93,12 @@ export default function AdminMarketCardList({ cards, history, parentOptions }: P
       }
       return true;
     });
-  }, [cards, q, setFilter, typeFilter, statusFilter, categoryFilter, pricedFilter, historyByCard]);
+  }, [cards, q, setFilter, rarityFilter, typeFilter, statusFilter, categoryFilter, pricedFilter, historyByCard]);
 
   const activeFilterCount =
     (q ? 1 : 0) +
     (setFilter ? 1 : 0) +
+    (rarityFilter ? 1 : 0) +
     (typeFilter !== "all" ? 1 : 0) +
     (statusFilter !== "all" ? 1 : 0) +
     (categoryFilter !== "all" ? 1 : 0) +
@@ -80,6 +107,7 @@ export default function AdminMarketCardList({ cards, history, parentOptions }: P
   function reset() {
     setQ("");
     setSetFilter("");
+    setRarityFilter("");
     setTypeFilter("all");
     setStatusFilter("all");
     setCategoryFilter("all");
@@ -113,6 +141,16 @@ export default function AdminMarketCardList({ cards, history, parentOptions }: P
             <option value="">박스 전체</option>
             {setOptions.map((s) => (
               <option key={s} value={s}>{s}</option>
+            ))}
+          </select>
+          <select
+            value={rarityFilter}
+            onChange={(e) => setRarityFilter(e.target.value)}
+            className="px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] max-w-[180px]"
+          >
+            <option value="">등급 전체</option>
+            {rarityOptions.map((r) => (
+              <option key={r} value={r}>{r}</option>
             ))}
           </select>
           <select

@@ -23,11 +23,18 @@ export const PRODUCT_TYPE_LABEL: Record<ProductType, string> = {
   single: "싱글",
 };
 
-// 부모로 허용되는 타입: single→pack, pack→box, box→null
+// 기본 부모 타입 (구버전 호환). 가능하면 PARENT_TYPES_OF 사용.
 export const PARENT_TYPE_OF: Record<ProductType, ProductType | null> = {
   single: "pack",
   pack: "box",
   box: null,
+};
+
+// 부모로 허용되는 모든 타입 — single 은 박스나 팩 둘 다 가능.
+export const PARENT_TYPES_OF: Record<ProductType, ProductType[]> = {
+  single: ["pack", "box"],
+  pack: ["box"],
+  box: [],
 };
 
 export interface MarketPriceRow {
