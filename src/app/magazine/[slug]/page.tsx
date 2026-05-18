@@ -36,8 +36,9 @@ function esc(s: string): string {
     .replace(/"/g, "&quot;");
 }
 
-function renderChipHtml(c: MarketCard): string {
-  const ch = priceChange(c);
+function renderChipHtml(c: MarketCard, history: MarketPriceRow[]): string {
+  const top = latestByGrade(history)[0];
+  const ch = top ? priceChangePct(top.latest, top.prev) : null;
   const changeHtml = ch
     ? ch.dir === "up"
       ? `<span class="mc-up">▲${ch.pct.toFixed(1)}%</span>`
@@ -48,11 +49,14 @@ function renderChipHtml(c: MarketCard): string {
   const img = c.image_url
     ? `<img src="${esc(c.image_url)}" alt="${esc(c.name)}" />`
     : `<span class="mc-img"></span>`;
+  const priceHtml = top
+    ? `<span class="mc-price">${formatKRW(top.latest)}</span>`
+    : `<span class="mc-price mc-no-price">시세 준비 중</span>`;
   return (
     `<a href="/market/${esc(c.id)}" class="market-chip">` +
     img +
     `<span class="mc-name">${esc(c.name)}</span>` +
-    `<span class="mc-price">${formatKRW(c.price_krw)}</span>` +
+    priceHtml +
     changeHtml +
     `<span class="mc-arrow">→</span>` +
     `</a>`
@@ -77,19 +81,31 @@ export default async function ContentDetailPage({ params }: Props) {
   const inlineIds = new Set<string>();
   for (const m of article.body_md.matchAll(TOKEN_RE)) inlineIds.add(m[1]);
   const inlineCardMap = new Map<string, MarketCard>();
+  const inlineHistoryMap = new Map<string, MarketPriceRow[]>();
   if (inlineIds.size > 0) {
-    const { data: inlineRows } = await supabase
-      .from("market_cards")
-      .select("*")
-      .in("id", [...inlineIds]);
-    for (const c of (inlineRows ?? []) as MarketCard[]) {
+    const ids = [...inlineIds];
+    const [cardsResult, histResult] = await Promise.all([
+      supabase.from("market_cards").select("*").in("id", ids),
+      supabase
+        .from("market_price_history")
+        .select("*")
+        .in("card_id", ids)
+        .order("recorded_at", { ascending: false })
+        .limit(500),
+    ]);
+    for (const c of (cardsResult.data ?? []) as MarketCard[]) {
       if (c.is_active) inlineCardMap.set(c.id, c);
+    }
+    for (const r of (histResult.data ?? []) as MarketPriceRow[]) {
+      const arr = inlineHistoryMap.get(r.card_id) ?? [];
+      arr.push(r);
+      inlineHistoryMap.set(r.card_id, arr);
     }
   }
   const bodyWithChips = article.body_md.replace(TOKEN_RE, (_, id: string) => {
     const c = inlineCardMap.get(id);
     if (!c) return `<span class="market-chip-missing">[카드 없음]</span>`;
-    return renderChipHtml(c);
+    return renderChipHtml(c, inlineHistoryMap.get(c.id) ?? []);
   });
   const html = await marked.parse(bodyWithChips, { gfm: true, breaks: true });
 
