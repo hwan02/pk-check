@@ -5,6 +5,7 @@ import { createSsrClient } from "@/lib/supabase/ssr";
 import { createServerClient } from "@/lib/supabase/server";
 import { type MarketCard, type MarketPriceRow } from "@/lib/market";
 import NewMarketCardForm from "./new-market-form";
+import BulkImportForm from "./import-form";
 import {
   DeleteMarketButton,
   ImageThumb,
@@ -36,7 +37,7 @@ export default async function AdminMarketPage() {
   }
 
   const admin = createServerClient();
-  const [{ data: cardRows }, { data: historyRows }] = await Promise.all([
+  const [{ data: cardRows }, { data: historyRows }, { data: setRows }] = await Promise.all([
     admin
       .from("market_cards")
       .select("*")
@@ -49,7 +50,39 @@ export default async function AdminMarketPage() {
       .select("*")
       .order("recorded_at", { ascending: false })
       .limit(2000),
+    admin
+      .from("sets")
+      .select("id, name, name_ja, release_date, region")
+      .eq("region", "kr")
+      .order("release_date", { ascending: false }),
   ]);
+
+  // 세트별 카드 수 — cards 테이블 단일 쿼리(in)로
+  type SetRow = {
+    id: string;
+    name: string;
+    name_ja: string | null;
+    release_date: string | null;
+    region: string | null;
+  };
+  const krSets = (setRows ?? []) as SetRow[];
+  const setCardCounts = new Map<string, number>();
+  if (krSets.length > 0) {
+    const { data: catalogRows } = await admin
+      .from("cards")
+      .select("set_id")
+      .in("set_id", krSets.map((s) => s.id));
+    for (const r of (catalogRows ?? []) as { set_id: string }[]) {
+      setCardCounts.set(r.set_id, (setCardCounts.get(r.set_id) ?? 0) + 1);
+    }
+  }
+  const setsForImport = krSets.map((s) => ({
+    id: s.id,
+    name: s.name_ja || s.name,
+    release_date: s.release_date,
+    region: s.region,
+    cardCount: setCardCounts.get(s.id) ?? 0,
+  }));
   const cards = (cardRows ?? []) as MarketCard[];
   const history = (historyRows ?? []) as MarketPriceRow[];
 
@@ -76,7 +109,10 @@ export default async function AdminMarketPage() {
         <p className="text-xs opacity-50">{cards.length}장 등록</p>
       </div>
 
-      <NewMarketCardForm parentOptions={parentOptions} />
+      <div className="flex flex-wrap gap-2">
+        <NewMarketCardForm parentOptions={parentOptions} />
+        <BulkImportForm sets={setsForImport} />
+      </div>
 
       <h2 className="text-sm font-semibold mt-8 mb-3">등록 카드</h2>
 
