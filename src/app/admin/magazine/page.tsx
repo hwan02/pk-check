@@ -61,7 +61,7 @@ export default async function AdminContentPage() {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold tracking-tight">매거진 관리</h1>
-        <Link href="/content" className="text-sm opacity-70 hover:opacity-100">
+        <Link href="/magazine" className="text-sm opacity-70 hover:opacity-100">
           매거진 페이지로 →
         </Link>
       </div>
@@ -89,7 +89,7 @@ export default async function AdminContentPage() {
             <div className="min-w-0 flex-1">
               <div className="flex items-center gap-2">
                 <PublishToggle id={a.id} published={a.is_published} />
-                <Link href={`/content/${a.slug}`} className="text-sm font-medium truncate hover:underline">
+                <Link href={`/magazine/${a.slug}`} className="text-sm font-medium truncate hover:underline">
                   {a.title}
                 </Link>
               </div>

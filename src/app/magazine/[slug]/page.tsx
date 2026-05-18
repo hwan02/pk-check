@@ -48,7 +48,7 @@ export default async function ContentDetailPage({ params }: Props) {
   return (
     <article className="max-w-3xl mx-auto px-4 py-8">
       <nav className="text-xs opacity-60 mb-4">
-        <Link href="/content" className="hover:opacity-100">← 매거진</Link>
+        <Link href="/magazine" className="hover:opacity-100">← 매거진</Link>
       </nav>
 
       <header className="mb-8">
