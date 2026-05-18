@@ -1,17 +1,18 @@
 export const dynamic = "force-dynamic";
 
-import Image from "next/image";
 import { redirect } from "next/navigation";
 import { createSsrClient } from "@/lib/supabase/ssr";
 import { createServerClient } from "@/lib/supabase/server";
-import {
-  formatKRW,
-  MARKET_CATEGORY_LABEL,
-  priceChange,
-  type MarketCard,
-} from "@/lib/market";
+import { type MarketCard, type MarketPriceRow } from "@/lib/market";
 import NewMarketCardForm from "./new-market-form";
-import { DeleteMarketButton, PriceInline, ToggleActiveButton } from "./row-actions";
+import {
+  DeleteMarketButton,
+  ImageThumb,
+  InlineCategory,
+  InlineText,
+  PriceHistoryPanel,
+  ToggleActiveButton,
+} from "./row-actions";
 
 export default async function AdminMarketPage() {
   const supabase = await createSsrClient();
@@ -32,107 +33,76 @@ export default async function AdminMarketPage() {
     );
   }
 
-  // service-role 로 비활성 카드도 같이 조회
   const admin = createServerClient();
-  const { data } = await admin
-    .from("market_cards")
-    .select("*")
-    .order("category", { ascending: true })
-    .order("display_order", { ascending: true })
-    .order("created_at", { ascending: false });
-  const cards = (data ?? []) as MarketCard[];
+  const [{ data: cardRows }, { data: historyRows }] = await Promise.all([
+    admin
+      .from("market_cards")
+      .select("*")
+      .order("is_active", { ascending: false })
+      .order("category", { ascending: true })
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: false }),
+    admin
+      .from("market_price_history")
+      .select("*")
+      .order("recorded_at", { ascending: false })
+      .limit(2000),
+  ]);
+  const cards = (cardRows ?? []) as MarketCard[];
+  const history = (historyRows ?? []) as MarketPriceRow[];
+  const historyByCard = new Map<string, MarketPriceRow[]>();
+  for (const r of history) {
+    const arr = historyByCard.get(r.card_id) ?? [];
+    arr.push(r);
+    historyByCard.set(r.card_id, arr);
+  }
 
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold tracking-tight">시세 관리</h1>
+        <p className="text-xs opacity-50">{cards.length}장 등록</p>
       </div>
 
       <NewMarketCardForm />
 
-      <h2 className="text-sm font-semibold mt-8 mb-3">등록 카드 ({cards.length})</h2>
+      <h2 className="text-sm font-semibold mt-8 mb-3">등록 카드</h2>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-xs opacity-60 border-b border-[var(--border)]">
-              <th className="text-left py-2 px-2">이미지</th>
-              <th className="text-left py-2 px-2">카테고리</th>
-              <th className="text-left py-2 px-2">이름 / 세트</th>
-              <th className="text-right py-2 px-2">현재가</th>
-              <th className="text-right py-2 px-2">직전가</th>
-              <th className="text-right py-2 px-2">변동</th>
-              <th className="text-left py-2 px-2">노출</th>
-              <th className="text-right py-2 px-2"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {cards.length === 0 && (
-              <tr>
-                <td colSpan={8} className="text-center text-xs opacity-50 py-8">
-                  등록된 시세 카드가 없습니다.
-                </td>
-              </tr>
-            )}
-            {cards.map((c) => {
-              const ch = priceChange(c);
-              return (
-                <tr key={c.id} className="border-b border-[var(--border)] hover:bg-[var(--surface)]/40">
-                  <td className="py-2 px-2 w-14">
-                    <div className="w-12 h-12 relative rounded overflow-hidden bg-gray-50">
-                      {c.image_url ? (
-                        <Image src={c.image_url} alt={c.name} fill className="object-cover" sizes="48px" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[10px] opacity-40">x</div>
-                      )}
-                    </div>
-                  </td>
-                  <td className="py-2 px-2 text-xs">
-                    <span className="px-1.5 py-0.5 rounded bg-[var(--primary)] text-white text-[10px]">
-                      {MARKET_CATEGORY_LABEL[c.category]}
-                    </span>
-                  </td>
-                  <td className="py-2 px-2">
-                    <p className="font-medium truncate max-w-[280px]">{c.name}</p>
-                    <p className="text-[11px] opacity-60 truncate max-w-[280px]">
-                      {[c.set_name, c.rarity].filter(Boolean).join(" · ")}
-                    </p>
-                  </td>
-                  <td className="py-2 px-2 text-right">
-                    <PriceInline id={c.id} initial={c.price_krw} />
-                  </td>
-                  <td className="py-2 px-2 text-right text-xs opacity-60">
-                    {c.prev_price_krw != null ? formatKRW(c.prev_price_krw) : "-"}
-                  </td>
-                  <td className="py-2 px-2 text-right text-xs">
-                    {ch ? (
-                      <span
-                        className={
-                          ch.dir === "up"
-                            ? "text-red-600"
-                            : ch.dir === "down"
-                              ? "text-blue-600"
-                              : "opacity-60"
-                        }
-                      >
-                        {ch.dir === "up" ? "▲" : ch.dir === "down" ? "▼" : "·"}{" "}
-                        {ch.pct.toFixed(1)}%
-                      </span>
-                    ) : (
-                      <span className="opacity-50">-</span>
-                    )}
-                  </td>
-                  <td className="py-2 px-2">
-                    <ToggleActiveButton id={c.id} active={c.is_active} />
-                  </td>
-                  <td className="py-2 px-2 text-right">
-                    <DeleteMarketButton id={c.id} />
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+      <div className="space-y-3">
+        {cards.length === 0 && (
+          <p className="text-center text-xs opacity-50 py-8">등록된 시세 카드가 없습니다.</p>
+        )}
+        {cards.map((c) => (
+          <div
+            key={c.id}
+            className="rounded-lg border border-[var(--border)] bg-[var(--card-bg)] p-3"
+          >
+            <div className="flex items-start gap-3">
+              <ImageThumb src={c.image_url} alt={c.name} />
+              <div className="flex-1 min-w-0">
+                {/* 1행: 카테고리 + 이름 */}
+                <div className="flex flex-wrap items-center gap-2">
+                  <InlineCategory id={c.id} initial={c.category} />
+                  <InlineText id={c.id} field="name" initial={c.name} placeholder="이름" className="font-semibold flex-1 min-w-[120px]" />
+                  <ToggleActiveButton id={c.id} active={c.is_active} />
+                  <DeleteMarketButton id={c.id} />
+                </div>
+                {/* 2행: 영문 / 세트 / 등급 */}
+                <div className="flex flex-wrap items-center gap-2 mt-1">
+                  <InlineText id={c.id} field="name_en" initial={c.name_en} placeholder="영문 (선택)" className="opacity-70 max-w-[180px]" />
+                  <InlineText id={c.id} field="set_name" initial={c.set_name} placeholder="세트명" className="opacity-70 max-w-[180px]" />
+                  <InlineText id={c.id} field="rarity" initial={c.rarity} placeholder="등급/레어" className="opacity-70 max-w-[120px]" />
+                </div>
+              </div>
+            </div>
+
+            {/* 가격 history 패널 */}
+            <PriceHistoryPanel
+              cardId={c.id}
+              history={historyByCard.get(c.id) ?? []}
+            />
+          </div>
+        ))}
       </div>
     </div>
   );

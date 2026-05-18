@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatKRW, MARKET_CATEGORY_LABEL, type MarketCard } from "@/lib/market";
+import { MARKET_CATEGORY_LABEL, type MarketCard } from "@/lib/market";
 
 export default function NewArticleForm({
   marketCards,
@@ -238,7 +238,9 @@ export default function NewArticleForm({
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-[11px] font-medium truncate">{c.name}</p>
-                        <p className="text-[10px] opacity-60">{formatKRW(c.price_krw)}</p>
+                        <p className="text-[10px] opacity-60 truncate">
+                          {[c.set_name, c.rarity].filter(Boolean).join(" · ") || "—"}
+                        </p>
                       </div>
                     </button>
                     <button

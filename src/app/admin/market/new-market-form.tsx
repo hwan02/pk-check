@@ -12,7 +12,6 @@ export default function NewMarketCardForm() {
   const [nameEn, setNameEn] = useState("");
   const [setNameField, setSetNameField] = useState("");
   const [rarity, setRarity] = useState("");
-  const [price, setPrice] = useState("");
   const [order, setOrder] = useState("0");
   const [notes, setNotes] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -31,7 +30,6 @@ export default function NewMarketCardForm() {
     setNameEn("");
     setSetNameField("");
     setRarity("");
-    setPrice("");
     setOrder("0");
     setNotes("");
     setFile(null);
@@ -42,7 +40,6 @@ export default function NewMarketCardForm() {
   function validate(): string[] {
     const errs: string[] = [];
     if (!name.trim()) errs.push("이름 필수");
-    if (!price || !/^\d+$/.test(price)) errs.push("가격은 정수(원)");
     if (file) {
       if (file.size > 5 * 1024 * 1024) errs.push("이미지 5MB 이하");
       if (!["image/png", "image/jpeg", "image/webp"].includes(file.type))
@@ -66,7 +63,6 @@ export default function NewMarketCardForm() {
     if (setNameField.trim()) form.append("set_name", setNameField.trim());
     if (rarity.trim()) form.append("rarity", rarity.trim());
     if (notes.trim()) form.append("notes", notes.trim());
-    form.append("price_krw", price);
     form.append("display_order", order);
     if (file) form.append("image", file);
     try {
@@ -126,15 +122,6 @@ export default function NewMarketCardForm() {
                 <option value="pokemon">포켓몬</option>
                 <option value="onepiece">원피스</option>
               </select>
-            </Field>
-            <Field label="가격 (원) *">
-              <input
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                className={inp}
-                placeholder="50000"
-                inputMode="numeric"
-              />
             </Field>
             <Field label="이름 (한국어) *">
               <input

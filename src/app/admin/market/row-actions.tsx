@@ -1,22 +1,77 @@
 "use client";
 
-import { useState } from "react";
+import Image from "next/image";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  COMMON_GRADES,
+  formatKRW,
+  MARKET_CATEGORY_LABEL,
+  type MarketCard,
+  type MarketPriceRow,
+} from "@/lib/market";
 
-export function PriceInline({ id, initial }: { id: string; initial: number }) {
+/* ───────────── 이미지 확대 모달 ───────────── */
+export function ImageThumb({ src, alt }: { src: string | null; alt: string }) {
+  const [open, setOpen] = useState(false);
+  if (!src) {
+    return (
+      <div className="w-14 h-14 rounded bg-gray-50 flex items-center justify-center text-[10px] opacity-40">
+        x
+      </div>
+    );
+  }
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="w-14 h-14 relative rounded overflow-hidden bg-gray-50 hover:ring-2 hover:ring-[var(--primary)]"
+        aria-label="이미지 확대"
+      >
+        <Image src={src} alt={alt} fill className="object-cover" sizes="56px" />
+      </button>
+      {open && (
+        <button
+          type="button"
+          onClick={() => setOpen(false)}
+          className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-6"
+        >
+          <div className="relative w-full max-w-3xl aspect-square">
+            <Image src={src} alt={alt} fill className="object-contain" sizes="100vw" />
+          </div>
+          <span className="absolute top-4 right-4 text-white/80 text-xs">클릭하여 닫기 (ESC)</span>
+        </button>
+      )}
+    </>
+  );
+}
+
+/* ───────────── inline 이름/세트/등급 편집 ───────────── */
+export function InlineText({
+  id,
+  field,
+  initial,
+  placeholder,
+  className = "",
+}: {
+  id: string;
+  field: "name" | "name_en" | "set_name" | "rarity";
+  initial: string | null;
+  placeholder?: string;
+  className?: string;
+}) {
   const router = useRouter();
-  const [value, setValue] = useState(String(initial));
+  const [value, setValue] = useState(initial ?? "");
   const [saving, setSaving] = useState(false);
 
   async function save() {
-    const n = parseInt(value, 10);
-    if (!Number.isInteger(n) || n < 0) return;
-    if (n === initial) return;
+    if ((value || "") === (initial ?? "")) return;
     setSaving(true);
     const resp = await fetch(`/api/admin/market/${id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ price_krw: n }),
+      body: JSON.stringify({ [field]: value }),
     });
     setSaving(false);
     if (resp.ok) router.refresh();
@@ -24,41 +79,46 @@ export function PriceInline({ id, initial }: { id: string; initial: number }) {
   }
 
   return (
-    <div className="flex items-center gap-1">
-      <input
-        type="text"
-        inputMode="numeric"
-        value={value}
-        onChange={(e) => setValue(e.target.value.replace(/[^0-9]/g, ""))}
-        onBlur={save}
-        onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
-        className="w-24 px-2 py-1 text-xs text-right rounded border border-[var(--border)] bg-[var(--background)]"
-      />
-      <span className="text-xs opacity-50">원</span>
-      {saving && <span className="text-[10px] opacity-50">저장 중</span>}
-    </div>
+    <input
+      type="text"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={save}
+      onKeyDown={(e) => { if (e.key === "Enter") (e.target as HTMLInputElement).blur(); }}
+      placeholder={placeholder}
+      className={`px-2 py-1 text-xs rounded border border-transparent hover:border-[var(--border)] focus:border-[var(--primary)] focus:outline-none bg-transparent w-full ${className} ${saving ? "opacity-50" : ""}`}
+    />
   );
 }
 
-export function DeleteMarketButton({ id }: { id: string }) {
+export function InlineCategory({ id, initial }: { id: string; initial: MarketCard["category"] }) {
   const router = useRouter();
-  const [loading, setLoading] = useState(false);
-  async function onDelete() {
-    if (!confirm("삭제할까요?")) return;
-    setLoading(true);
-    const resp = await fetch(`/api/admin/market/${id}`, { method: "DELETE" });
-    setLoading(false);
+  const [value, setValue] = useState(initial);
+  const [saving, setSaving] = useState(false);
+  async function change(v: MarketCard["category"]) {
+    if (v === value) return;
+    setValue(v);
+    setSaving(true);
+    const resp = await fetch(`/api/admin/market/${id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ category: v }),
+    });
+    setSaving(false);
     if (resp.ok) router.refresh();
-    else alert("삭제 실패");
   }
   return (
-    <button
-      onClick={onDelete}
-      disabled={loading}
-      className="text-xs px-2 py-1 rounded border border-red-200 text-red-700 hover:bg-red-50 disabled:opacity-50"
+    <select
+      value={value}
+      onChange={(e) => change(e.target.value as MarketCard["category"])}
+      className={`text-[10px] px-1.5 py-0.5 rounded bg-[var(--primary)] text-white ${saving ? "opacity-50" : ""}`}
     >
-      {loading ? "..." : "삭제"}
-    </button>
+      {(["pokemon", "onepiece"] as const).map((c) => (
+        <option key={c} value={c}>
+          {MARKET_CATEGORY_LABEL[c]}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -83,5 +143,182 @@ export function ToggleActiveButton({ id, active }: { id: string; active: boolean
     >
       {active ? "노출중" : "숨김"}
     </button>
+  );
+}
+
+export function DeleteMarketButton({ id }: { id: string }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+  async function onDelete() {
+    if (!confirm("삭제할까요? 가격 history도 함께 삭제됩니다.")) return;
+    setLoading(true);
+    const resp = await fetch(`/api/admin/market/${id}`, { method: "DELETE" });
+    setLoading(false);
+    if (resp.ok) router.refresh();
+    else alert("삭제 실패");
+  }
+  return (
+    <button
+      onClick={onDelete}
+      disabled={loading}
+      className="text-xs px-2 py-1 rounded border border-red-200 text-red-700 hover:bg-red-50 disabled:opacity-50"
+    >
+      {loading ? "..." : "삭제"}
+    </button>
+  );
+}
+
+/* ───────────── 가격 history 추가/관리 ───────────── */
+export function PriceHistoryPanel({
+  cardId,
+  history,
+}: {
+  cardId: string;
+  history: MarketPriceRow[];
+}) {
+  const router = useRouter();
+  const [grade, setGrade] = useState("PSA 10");
+  const [price, setPrice] = useState("");
+  const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [saving, setSaving] = useState(false);
+  const [open, setOpen] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  async function add() {
+    const p = parseInt(price.replace(/[^0-9]/g, ""), 10);
+    if (!grade.trim() || !Number.isFinite(p) || p < 0) {
+      alert("등급 / 가격을 확인해주세요");
+      return;
+    }
+    setSaving(true);
+    const resp = await fetch(`/api/admin/market/${cardId}/price`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ grade: grade.trim(), price_krw: p, recorded_at: date }),
+    });
+    setSaving(false);
+    if (resp.ok) {
+      setPrice("");
+      inputRef.current?.focus();
+      router.refresh();
+    } else {
+      alert("저장 실패");
+    }
+  }
+
+  async function del(rowId: string) {
+    if (!confirm("이 가격 기록을 삭제할까요?")) return;
+    const resp = await fetch(`/api/admin/market/${cardId}/price?row=${rowId}`, {
+      method: "DELETE",
+    });
+    if (resp.ok) router.refresh();
+  }
+
+  // 등급별 그룹화 (최신순)
+  const grouped = new Map<string, MarketPriceRow[]>();
+  for (const r of history) {
+    const arr = grouped.get(r.grade) ?? [];
+    arr.push(r);
+    grouped.set(r.grade, arr);
+  }
+  for (const arr of grouped.values()) {
+    arr.sort((a, b) => b.recorded_at.localeCompare(a.recorded_at));
+  }
+
+  return (
+    <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)]/40 p-3 mt-2">
+      <div className="flex items-center justify-between mb-2">
+        <p className="text-xs font-semibold">가격 기록 ({history.length})</p>
+        <button
+          type="button"
+          onClick={() => setOpen((o) => !o)}
+          className="text-[11px] opacity-60 hover:opacity-100"
+        >
+          {open ? "접기" : "펼치기"}
+        </button>
+      </div>
+
+      {/* 입력 행 (항상 노출) */}
+      <div className="flex flex-wrap items-center gap-1.5 mb-2">
+        <input
+          list={`grades-${cardId}`}
+          value={grade}
+          onChange={(e) => setGrade(e.target.value)}
+          placeholder="등급"
+          className="px-2 py-1 text-xs rounded border border-[var(--border)] bg-[var(--background)] w-24"
+        />
+        <datalist id={`grades-${cardId}`}>
+          {COMMON_GRADES.map((g) => <option key={g} value={g} />)}
+        </datalist>
+        <input
+          ref={inputRef}
+          type="text"
+          inputMode="numeric"
+          value={price}
+          onChange={(e) => setPrice(e.target.value.replace(/[^0-9]/g, ""))}
+          onKeyDown={(e) => { if (e.key === "Enter") add(); }}
+          placeholder="가격(원)"
+          className="px-2 py-1 text-xs rounded border border-[var(--border)] bg-[var(--background)] w-28 text-right"
+        />
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="px-2 py-1 text-xs rounded border border-[var(--border)] bg-[var(--background)]"
+        />
+        <button
+          type="button"
+          onClick={add}
+          disabled={saving}
+          className="text-xs px-3 py-1 rounded bg-[var(--primary)] text-white disabled:opacity-50"
+        >
+          {saving ? "..." : "추가"}
+        </button>
+      </div>
+
+      {/* 등급별 요약 (접혀있을 때) */}
+      {!open && (
+        <ul className="flex flex-wrap gap-1.5">
+          {[...grouped.entries()].map(([g, rows]) => (
+            <li key={g} className="text-[11px] px-2 py-0.5 rounded-full bg-white border border-[var(--border)]">
+              <span className="opacity-60">{g}</span>{" "}
+              <span className="font-semibold">{formatKRW(rows[0].price_krw)}</span>
+              <span className="opacity-50"> · {rows[0].recorded_at}</span>
+            </li>
+          ))}
+          {history.length === 0 && (
+            <li className="text-[11px] opacity-50">기록 없음</li>
+          )}
+        </ul>
+      )}
+
+      {/* 전체 펼침 */}
+      {open && (
+        <div className="space-y-2">
+          {[...grouped.entries()].map(([g, rows]) => (
+            <div key={g}>
+              <p className="text-[11px] font-semibold opacity-80 mb-1">{g}</p>
+              <ul className="text-[11px] space-y-0.5">
+                {rows.map((r) => (
+                  <li
+                    key={r.id}
+                    className="flex items-center justify-between gap-2 px-2 py-0.5 rounded hover:bg-white"
+                  >
+                    <span className="opacity-60">{r.recorded_at}</span>
+                    <span className="font-mono">{formatKRW(r.price_krw)}</span>
+                    <button
+                      onClick={() => del(r.id)}
+                      className="text-[10px] text-red-600 opacity-60 hover:opacity-100"
+                    >
+                      삭제
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }

@@ -17,8 +17,8 @@ async function requireAdmin() {
 
 interface Ctx { params: Promise<{ id: string }> }
 
-// 카드 메타 inline 편집
-export async function PATCH(request: NextRequest, { params }: Ctx) {
+// 가격 history 한 행 추가
+export async function POST(request: NextRequest, { params }: Ctx) {
   const auth = await requireAdmin();
   if ("error" in auth) {
     const status = auth.error === "unauthorized" ? 401 : 403;
@@ -26,41 +26,45 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
   }
   const { id } = await params;
   const body = await request.json();
+  const grade = typeof body.grade === "string" ? body.grade.trim() : "";
+  const priceKrw = typeof body.price_krw === "number" ? Math.round(body.price_krw) : NaN;
+  const recordedAt =
+    typeof body.recorded_at === "string" && /^\d{4}-\d{2}-\d{2}$/.test(body.recorded_at)
+      ? body.recorded_at
+      : null;
 
-  const updates: Record<string, unknown> = {};
-  if (typeof body.is_active === "boolean") updates.is_active = body.is_active;
-  if (typeof body.display_order === "number") updates.display_order = body.display_order;
-  if (typeof body.notes === "string") updates.notes = body.notes.trim() || null;
-  if (typeof body.name === "string" && body.name.trim()) updates.name = body.name.trim();
-  if (typeof body.name_en === "string") updates.name_en = body.name_en.trim() || null;
-  if (typeof body.set_name === "string") updates.set_name = body.set_name.trim() || null;
-  if (typeof body.rarity === "string") updates.rarity = body.rarity.trim() || null;
-  if (typeof body.category === "string" && ["pokemon", "onepiece"].includes(body.category))
-    updates.category = body.category;
-
-  if (Object.keys(updates).length === 0)
-    return NextResponse.json({ error: "no updates" }, { status: 400 });
+  if (!grade) return NextResponse.json({ error: "grade required" }, { status: 400 });
+  if (!Number.isFinite(priceKrw) || priceKrw < 0)
+    return NextResponse.json({ error: "invalid price" }, { status: 400 });
 
   const admin = createServerClient();
+  const payload: Record<string, unknown> = { card_id: id, grade, price_krw: priceKrw };
+  if (recordedAt) payload.recorded_at = recordedAt;
   const { data, error } = await admin
-    .from("market_cards")
-    .update(updates)
-    .eq("id", id)
+    .from("market_price_history")
+    .insert(payload)
     .select()
     .single();
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true, card: data });
+  return NextResponse.json({ ok: true, row: data });
 }
 
-export async function DELETE(_req: NextRequest, { params }: Ctx) {
+// 가격 history 한 행 삭제 (?row=<historyId>)
+export async function DELETE(request: NextRequest, { params }: Ctx) {
   const auth = await requireAdmin();
   if ("error" in auth) {
     const status = auth.error === "unauthorized" ? 401 : 403;
     return NextResponse.json({ error: auth.error }, { status });
   }
   const { id } = await params;
+  const rowId = new URL(request.url).searchParams.get("row");
+  if (!rowId) return NextResponse.json({ error: "row required" }, { status: 400 });
   const admin = createServerClient();
-  const { error } = await admin.from("market_cards").delete().eq("id", id);
+  const { error } = await admin
+    .from("market_price_history")
+    .delete()
+    .eq("id", rowId)
+    .eq("card_id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
   return NextResponse.json({ ok: true });
 }

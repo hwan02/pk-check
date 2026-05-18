@@ -31,7 +31,6 @@ export async function POST(request: NextRequest) {
   const setName = (form.get("set_name") as string | null)?.trim() || null;
   const rarity = (form.get("rarity") as string | null)?.trim() || null;
   const notes = (form.get("notes") as string | null)?.trim() || null;
-  const priceRaw = (form.get("price_krw") as string | null) ?? "";
   const orderRaw = (form.get("display_order") as string | null) ?? "0";
   const image = form.get("image") as File | null;
 
@@ -39,10 +38,7 @@ export async function POST(request: NextRequest) {
   if (!["pokemon", "onepiece"].includes(category))
     return NextResponse.json({ error: "invalid category" }, { status: 400 });
 
-  const priceKrw = parseInt(priceRaw, 10);
   const displayOrder = parseInt(orderRaw, 10) || 0;
-  if (!Number.isInteger(priceKrw) || priceKrw < 0)
-    return NextResponse.json({ error: "invalid price" }, { status: 400 });
 
   const admin = createServerClient();
 
@@ -72,7 +68,6 @@ export async function POST(request: NextRequest) {
       set_name: setName,
       rarity,
       notes,
-      price_krw: priceKrw,
       display_order: displayOrder,
       image_url: imageUrl,
       is_active: true,

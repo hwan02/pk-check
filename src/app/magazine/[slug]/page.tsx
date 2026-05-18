@@ -5,7 +5,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { marked } from "marked";
 import { createSsrClient } from "@/lib/supabase/ssr";
-import { formatKRW, MARKET_CATEGORY_LABEL, priceChange, type MarketCard } from "@/lib/market";
+import {
+  formatKRW,
+  latestByGrade,
+  MARKET_CATEGORY_LABEL,
+  priceChangePct,
+  type MarketCard,
+  type MarketPriceRow,
+} from "@/lib/market";
 
 interface Props {
   params: Promise<{ slug: string }>;
@@ -96,6 +103,22 @@ export default async function ContentDetailPage({ params }: Props) {
     .flatMap((r) => (Array.isArray(r.market_cards) ? r.market_cards : r.market_cards ? [r.market_cards] : []))
     .filter((c): c is MarketCard => !!c && c.is_active);
 
+  // 픽 카드들의 가격 history (등급별 최신가 표시용)
+  const pickHistoryByCard = new Map<string, MarketPriceRow[]>();
+  if (picks.length > 0) {
+    const { data: histRows } = await supabase
+      .from("market_price_history")
+      .select("*")
+      .in("card_id", picks.map((c) => c.id))
+      .order("recorded_at", { ascending: false })
+      .limit(500);
+    for (const r of (histRows ?? []) as MarketPriceRow[]) {
+      const arr = pickHistoryByCard.get(r.card_id) ?? [];
+      arr.push(r);
+      pickHistoryByCard.set(r.card_id, arr);
+    }
+  }
+
   return (
     <article className="max-w-3xl mx-auto px-4 py-8">
       <nav className="text-xs opacity-60 mb-4">
@@ -131,7 +154,9 @@ export default async function ContentDetailPage({ params }: Props) {
           </div>
           <ul className="grid grid-cols-2 sm:grid-cols-3 gap-x-3 gap-y-6">
             {picks.map((c) => {
-              const ch = priceChange(c);
+              const grades = latestByGrade(pickHistoryByCard.get(c.id) ?? []);
+              const top = grades[0];
+              const ch = top ? priceChangePct(top.latest, top.prev) : null;
               return (
                 <li key={c.id}>
                   <Link href={`/market/${c.id}`} className="block group">
@@ -155,19 +180,26 @@ export default async function ContentDetailPage({ params }: Props) {
                         {[MARKET_CATEGORY_LABEL[c.category], c.set_name].filter(Boolean).join(" · ")}
                       </p>
                       <p className="text-[13px] font-bold leading-snug line-clamp-1 mt-0.5">{c.name}</p>
-                      <div className="mt-1 flex items-baseline gap-2">
-                        <p className="text-[14px] font-extrabold tracking-tight">{formatKRW(c.price_krw)}</p>
-                        {ch && (
-                          <span
-                            className={`text-[11px] font-semibold ${
-                              ch.dir === "up" ? "text-red-600" : ch.dir === "down" ? "text-blue-600" : "opacity-50"
-                            }`}
-                          >
-                            {ch.dir === "up" ? "▲" : ch.dir === "down" ? "▼" : "·"}{" "}
-                            {Math.abs(ch.pct).toFixed(1)}%
-                          </span>
-                        )}
-                      </div>
+                      {top ? (
+                        <>
+                          <div className="mt-1 flex items-baseline gap-2">
+                            <p className="text-[14px] font-extrabold tracking-tight">{formatKRW(top.latest)}</p>
+                            {ch && (
+                              <span
+                                className={`text-[11px] font-semibold ${
+                                  ch.dir === "up" ? "text-red-600" : ch.dir === "down" ? "text-blue-600" : "opacity-50"
+                                }`}
+                              >
+                                {ch.dir === "up" ? "▲" : ch.dir === "down" ? "▼" : "·"}{" "}
+                                {Math.abs(ch.pct).toFixed(1)}%
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] opacity-50 mt-0.5">{top.grade} 기준</p>
+                        </>
+                      ) : (
+                        <p className="text-[11px] opacity-50 mt-1">시세 정보 없음</p>
+                      )}
                     </div>
                   </Link>
                 </li>
