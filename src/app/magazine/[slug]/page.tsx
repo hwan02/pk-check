@@ -21,6 +21,37 @@ interface Article {
   published_at: string;
 }
 
+function esc(s: string): string {
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function renderChipHtml(c: MarketCard): string {
+  const ch = priceChange(c);
+  const changeHtml = ch
+    ? ch.dir === "up"
+      ? `<span class="mc-up">▲${ch.pct.toFixed(1)}%</span>`
+      : ch.dir === "down"
+        ? `<span class="mc-down">▼${Math.abs(ch.pct).toFixed(1)}%</span>`
+        : ""
+    : "";
+  const img = c.image_url
+    ? `<img src="${esc(c.image_url)}" alt="${esc(c.name)}" />`
+    : `<span class="mc-img"></span>`;
+  return (
+    `<a href="/market/${esc(c.id)}" class="market-chip">` +
+    img +
+    `<span class="mc-name">${esc(c.name)}</span>` +
+    `<span class="mc-price">${formatKRW(c.price_krw)}</span>` +
+    changeHtml +
+    `<span class="mc-arrow">→</span>` +
+    `</a>`
+  );
+}
+
 export default async function ContentDetailPage({ params }: Props) {
   const { slug } = await params;
   const supabase = await createSsrClient();
@@ -33,7 +64,27 @@ export default async function ContentDetailPage({ params }: Props) {
 
   if (!data) notFound();
   const article = data as Article;
-  const html = await marked.parse(article.body_md, { gfm: true, breaks: true });
+
+  // 본문 안 인라인 카드 임베드 토큰 처리: {{card:UUID}}
+  const TOKEN_RE = /\{\{card:([0-9a-fA-F-]{8,})\}\}/g;
+  const inlineIds = new Set<string>();
+  for (const m of article.body_md.matchAll(TOKEN_RE)) inlineIds.add(m[1]);
+  const inlineCardMap = new Map<string, MarketCard>();
+  if (inlineIds.size > 0) {
+    const { data: inlineRows } = await supabase
+      .from("market_cards")
+      .select("*")
+      .in("id", [...inlineIds]);
+    for (const c of (inlineRows ?? []) as MarketCard[]) {
+      if (c.is_active) inlineCardMap.set(c.id, c);
+    }
+  }
+  const bodyWithChips = article.body_md.replace(TOKEN_RE, (_, id: string) => {
+    const c = inlineCardMap.get(id);
+    if (!c) return `<span class="market-chip-missing">[카드 없음]</span>`;
+    return renderChipHtml(c);
+  });
+  const html = await marked.parse(bodyWithChips, { gfm: true, breaks: true });
 
   // 시세 픽 카드 조회
   const { data: pickRows } = await supabase
@@ -83,7 +134,7 @@ export default async function ContentDetailPage({ params }: Props) {
               const ch = priceChange(c);
               return (
                 <li key={c.id}>
-                  <Link href={`/market?category=${c.category}`} className="block group">
+                  <Link href={`/market/${c.id}`} className="block group">
                     <div className="rounded-xl overflow-hidden bg-[var(--surface)] border border-[var(--border)]">
                       <div className="aspect-square relative bg-white">
                         {c.image_url ? (

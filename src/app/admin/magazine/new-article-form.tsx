@@ -25,6 +25,19 @@ export default function NewArticleForm({
 
   const [errors, setErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const [tokenCopied, setTokenCopied] = useState<string | null>(null);
+
+  async function copyToken(id: string) {
+    const token = `{{card:${id}}}`;
+    try {
+      await navigator.clipboard.writeText(token);
+      setTokenCopied(id);
+      setTimeout(() => setTokenCopied(null), 1500);
+    } catch {
+      // 클립보드 실패 시 텍스트 영역에 직접 추가
+      setBodyMd((b) => b + (b.endsWith("\n") ? "" : "\n") + token);
+    }
+  }
 
   function pickCover(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] ?? null;
@@ -152,8 +165,11 @@ export default function NewArticleForm({
           value={bodyMd}
           onChange={(e) => setBodyMd(e.target.value)}
           className={`${inp} h-56 font-mono text-xs leading-relaxed resize-y`}
-          placeholder={"## 이번 주 트렌드\n\n포켓몬 SV 시세 정리...\n\n- 메가리자몽Y SAR: 12만원\n- 피카츄 ex: 5만원"}
+          placeholder={"## 이번 주 트렌드\n\n메가 루카리오 시세 분석...\n\n{{card:UUID}}  ← 본문 안 카드 인라인 임베드"}
         />
+        <p className="text-[10px] opacity-50 mt-1">
+          본문 안에 <code className="px-1 bg-[var(--surface)] rounded">{"{{card:UUID}}"}</code> 적으면 그 자리에 카드 이미지+가격 칩이 인라인으로 렌더링돼요. 아래 카드 목록의 <strong>「{"{...}"}」</strong> 버튼으로 토큰을 클립보드에 복사할 수 있어요.
+        </p>
       </Field>
 
       <div>
@@ -202,25 +218,38 @@ export default function NewArticleForm({
               const on = picks.includes(c.id);
               return (
                 <li key={c.id}>
-                  <button
-                    type="button"
-                    onClick={() => togglePick(c.id)}
-                    className={`w-full flex items-center gap-2 p-2 rounded-lg border text-left transition ${
+                  <div
+                    className={`flex items-stretch gap-1 rounded-lg border transition ${
                       on
                         ? "border-[var(--primary)] bg-[var(--primary)]/10"
                         : "border-[var(--border)] hover:bg-[var(--surface)]"
                     }`}
                   >
-                    <div className="w-10 h-10 relative shrink-0 rounded bg-white border border-[var(--border)] overflow-hidden">
-                      {c.image_url ? (
-                        <Image src={c.image_url} alt={c.name} fill sizes="40px" className="object-contain" />
-                      ) : null}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-[11px] font-medium truncate">{c.name}</p>
-                      <p className="text-[10px] opacity-60">{formatKRW(c.price_krw)}</p>
-                    </div>
-                  </button>
+                    <button
+                      type="button"
+                      onClick={() => togglePick(c.id)}
+                      title={on ? "픽에서 빼기" : "픽으로 추가"}
+                      className="flex-1 flex items-center gap-2 p-2 text-left min-w-0"
+                    >
+                      <div className="w-10 h-10 relative shrink-0 rounded bg-white border border-[var(--border)] overflow-hidden">
+                        {c.image_url ? (
+                          <Image src={c.image_url} alt={c.name} fill sizes="40px" className="object-contain" />
+                        ) : null}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[11px] font-medium truncate">{c.name}</p>
+                        <p className="text-[10px] opacity-60">{formatKRW(c.price_krw)}</p>
+                      </div>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => copyToken(c.id)}
+                      title="본문용 인라인 토큰 복사"
+                      className="px-2 text-[11px] font-mono opacity-60 hover:opacity-100 hover:bg-[var(--background)] border-l border-[var(--border)] rounded-r-lg"
+                    >
+                      {tokenCopied === c.id ? "✓" : "{…}"}
+                    </button>
+                  </div>
                 </li>
               );
             })}

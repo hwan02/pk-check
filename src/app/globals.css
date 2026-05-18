@@ -106,3 +106,52 @@ main {
 .article-body pre { background: var(--surface); padding: 1rem; border-radius: 8px; overflow-x: auto; margin: 1.25rem 0; }
 .article-body hr { border-top: 1px solid var(--border); margin: 2rem 0; }
 .article-body strong { font-weight: 700; }
+
+/* inline 카드 임베드 ({{card:UUID}} 토큰) */
+.article-body .market-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.4rem 0.7rem 0.4rem 0.4rem;
+  border: 1px solid var(--border);
+  background: var(--card-bg);
+  border-radius: 999px;
+  text-decoration: none !important;
+  color: var(--foreground) !important;
+  font-size: 0.825rem;
+  line-height: 1.2;
+  vertical-align: middle;
+  transition: border-color 0.15s, background 0.15s;
+}
+.article-body .market-chip:hover {
+  border-color: var(--primary);
+  background: var(--surface);
+}
+.article-body .market-chip img,
+.article-body .market-chip .mc-img {
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: contain;
+  background: white;
+  margin: 0;
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+}
+.article-body .market-chip .mc-name { font-weight: 700; }
+.article-body .market-chip .mc-price { font-weight: 700; opacity: 0.85; tab-size: 2; }
+.article-body .market-chip .mc-up { color: #dc2626; font-weight: 600; font-size: 0.75rem; }
+.article-body .market-chip .mc-down { color: #2563eb; font-weight: 600; font-size: 0.75rem; }
+.article-body .market-chip .mc-arrow { opacity: 0.4; font-weight: 700; }
+.article-body .market-chip-missing {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  background: #fee2e2;
+  color: #991b1b;
+  font-size: 0.75rem;
+}
+
+/* 본문 안 카드 임베드를 줄 단독으로 쓸 때(블록처럼) 살짝 마진 */
+.article-body p > .market-chip:only-child { margin: 0.25rem 0; }
+
