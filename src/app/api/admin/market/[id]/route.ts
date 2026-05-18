@@ -37,11 +37,52 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
   if (typeof body.rarity === "string") updates.rarity = body.rarity.trim() || null;
   if (typeof body.category === "string" && ["pokemon", "onepiece"].includes(body.category))
     updates.category = body.category;
+  if (typeof body.product_type === "string" && ["box", "pack", "single"].includes(body.product_type))
+    updates.product_type = body.product_type;
+  // parent_id: null 보내면 해제
+  if (body.parent_id === null) updates.parent_id = null;
+  else if (typeof body.parent_id === "string" && body.parent_id.trim())
+    updates.parent_id = body.parent_id.trim();
 
   if (Object.keys(updates).length === 0)
     return NextResponse.json({ error: "no updates" }, { status: 400 });
 
   const admin = createServerClient();
+
+  // product_type / parent_id / category 가 바뀌면 위계 유효성 재검사
+  if ("product_type" in updates || "parent_id" in updates || "category" in updates) {
+    const { data: current } = await admin
+      .from("market_cards")
+      .select("product_type, parent_id, category")
+      .eq("id", id)
+      .maybeSingle();
+    if (!current) return NextResponse.json({ error: "not found" }, { status: 404 });
+
+    const nextType = (updates.product_type ?? current.product_type) as "box" | "pack" | "single";
+    const nextParentId =
+      "parent_id" in updates ? (updates.parent_id as string | null) : current.parent_id;
+    const nextCategory = (updates.category ?? current.category) as "pokemon" | "onepiece";
+
+    if (nextType === "box" && nextParentId) {
+      return NextResponse.json({ error: "box cannot have a parent" }, { status: 400 });
+    }
+    if (nextParentId) {
+      const need = nextType === "single" ? "pack" : nextType === "pack" ? "box" : null;
+      const { data: parentRow } = await admin
+        .from("market_cards")
+        .select("id, product_type, category")
+        .eq("id", nextParentId)
+        .maybeSingle();
+      if (!parentRow) return NextResponse.json({ error: "parent not found" }, { status: 400 });
+      if (parentRow.product_type !== need)
+        return NextResponse.json({ error: `parent must be a ${need}` }, { status: 400 });
+      if (parentRow.category !== nextCategory)
+        return NextResponse.json({ error: "parent category mismatch" }, { status: 400 });
+      if (parentRow.id === id)
+        return NextResponse.json({ error: "self parent" }, { status: 400 });
+    }
+  }
+
   const { data, error } = await admin
     .from("market_cards")
     .update(updates)

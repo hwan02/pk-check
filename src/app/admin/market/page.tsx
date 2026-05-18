@@ -9,6 +9,8 @@ import {
   DeleteMarketButton,
   ImageThumb,
   InlineCategory,
+  InlineParent,
+  InlineProductType,
   InlineText,
   PriceHistoryPanel,
   ToggleActiveButton,
@@ -90,15 +92,23 @@ export default async function AdminMarketPage() {
             <div className="flex items-start gap-3">
               <ImageThumb src={c.image_url} alt={c.name} />
               <div className="flex-1 min-w-0">
-                {/* 1행: 카테고리 + 이름 */}
+                {/* 1행: 카테고리 + 타입 + 이름 + 액션 */}
                 <div className="flex flex-wrap items-center gap-2">
                   <InlineCategory id={c.id} initial={c.category} />
+                  <InlineProductType id={c.id} initial={c.product_type} />
                   <InlineText id={c.id} field="name" initial={c.name} placeholder="이름" className="font-semibold flex-1 min-w-[120px]" />
                   <ToggleActiveButton id={c.id} active={c.is_active} />
                   <DeleteMarketButton id={c.id} />
                 </div>
-                {/* 2행: 영문 / 세트 / 등급 */}
+                {/* 2행: 부모 + 영문 / 세트 / 등급 */}
                 <div className="flex flex-wrap items-center gap-2 mt-1">
+                  <InlineParent
+                    id={c.id}
+                    initialParentId={c.parent_id}
+                    productType={c.product_type}
+                    category={c.category}
+                    parentOptions={parentOptions}
+                  />
                   <InlineText id={c.id} field="name_en" initial={c.name_en} placeholder="영문 (선택)" className="opacity-70 max-w-[180px]" />
                   <InlineText id={c.id} field="set_name" initial={c.set_name} placeholder="세트명" className="opacity-70 max-w-[180px]" />
                   <InlineText id={c.id} field="rarity" initial={c.rarity} placeholder="등급/레어" className="opacity-70 max-w-[120px]" />

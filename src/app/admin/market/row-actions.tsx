@@ -7,8 +7,11 @@ import {
   COMMON_GRADES,
   formatKRW,
   MARKET_CATEGORY_LABEL,
+  PARENT_TYPE_OF,
+  PRODUCT_TYPE_LABEL,
   type MarketCard,
   type MarketPriceRow,
+  type ProductType,
 } from "@/lib/market";
 
 /* ───────────── 이미지 확대 모달 ───────────── */
@@ -116,6 +119,130 @@ export function InlineCategory({ id, initial }: { id: string; initial: MarketCar
       {(["pokemon", "onepiece"] as const).map((c) => (
         <option key={c} value={c}>
           {MARKET_CATEGORY_LABEL[c]}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/* ───────────── 인라인 상품 타입 ───────────── */
+export function InlineProductType({
+  id,
+  initial,
+  onChanged,
+}: {
+  id: string;
+  initial: ProductType;
+  onChanged?: (next: ProductType) => void;
+}) {
+  const router = useRouter();
+  const [value, setValue] = useState(initial);
+  const [saving, setSaving] = useState(false);
+
+  async function change(v: ProductType) {
+    if (v === value) return;
+    setSaving(true);
+    // box로 바꿀 때는 parent_id 도 null 로 보냄
+    const body: Record<string, unknown> = { product_type: v };
+    if (v === "box") body.parent_id = null;
+    const resp = await fetch(`/api/admin/market/${id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    setSaving(false);
+    if (resp.ok) {
+      setValue(v);
+      onChanged?.(v);
+      router.refresh();
+    } else {
+      const j = await resp.json().catch(() => ({}));
+      alert(`타입 변경 실패: ${j.error ?? resp.statusText}`);
+    }
+  }
+
+  const colors: Record<ProductType, string> = {
+    box: "bg-amber-100 text-amber-900",
+    pack: "bg-sky-100 text-sky-900",
+    single: "bg-violet-100 text-violet-900",
+  };
+
+  return (
+    <select
+      value={value}
+      onChange={(e) => change(e.target.value as ProductType)}
+      className={`text-[10px] px-1.5 py-0.5 rounded font-semibold ${colors[value]} ${saving ? "opacity-50" : ""}`}
+    >
+      {(["box", "pack", "single"] as ProductType[]).map((t) => (
+        <option key={t} value={t}>
+          {PRODUCT_TYPE_LABEL[t]}
+        </option>
+      ))}
+    </select>
+  );
+}
+
+/* ───────────── 인라인 부모 picker ───────────── */
+export interface ParentOpt {
+  id: string;
+  name: string;
+  product_type: ProductType;
+  category: MarketCard["category"];
+}
+
+export function InlineParent({
+  id,
+  initialParentId,
+  productType,
+  category,
+  parentOptions,
+}: {
+  id: string;
+  initialParentId: string | null;
+  productType: ProductType;
+  category: MarketCard["category"];
+  parentOptions: ParentOpt[];
+}) {
+  const router = useRouter();
+  const [value, setValue] = useState(initialParentId ?? "");
+  const [saving, setSaving] = useState(false);
+
+  const need = PARENT_TYPE_OF[productType];
+  if (!need) return null; // 박스는 부모 없음
+
+  const allowed = parentOptions.filter(
+    (p) => p.product_type === need && p.category === category && p.id !== id,
+  );
+
+  async function change(next: string) {
+    if (next === value) return;
+    setSaving(true);
+    const resp = await fetch(`/api/admin/market/${id}`, {
+      method: "PATCH",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ parent_id: next || null }),
+    });
+    setSaving(false);
+    if (resp.ok) {
+      setValue(next);
+      router.refresh();
+    } else {
+      const j = await resp.json().catch(() => ({}));
+      alert(`부모 변경 실패: ${j.error ?? resp.statusText}`);
+    }
+  }
+
+  return (
+    <select
+      value={value}
+      onChange={(e) => change(e.target.value)}
+      className={`text-[10px] px-1.5 py-0.5 rounded border border-[var(--border)] bg-[var(--background)] max-w-[160px] truncate ${saving ? "opacity-50" : ""}`}
+      title={value ? allowed.find((p) => p.id === value)?.name : ""}
+    >
+      <option value="">— {PRODUCT_TYPE_LABEL[need]} 미지정 —</option>
+      {allowed.map((p) => (
+        <option key={p.id} value={p.id}>
+          {p.name}
         </option>
       ))}
     </select>
