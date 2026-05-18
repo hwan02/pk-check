@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   COMMON_GRADES,
@@ -168,6 +168,89 @@ export function DeleteMarketButton({ id }: { id: string }) {
   );
 }
 
+/* ───────────── 커스텀 등급 드롭다운 ───────────── */
+function GradeCombo({
+  value,
+  onChange,
+  history,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  history: MarketPriceRow[];
+}) {
+  const [open, setOpen] = useState(false);
+  const wrapRef = useRef<HTMLDivElement>(null);
+
+  // 기존 history 의 등급 + 자주 쓰는 등급 합집합 (history 우선)
+  const seenGrades = useMemo(() => {
+    const set = new Set<string>();
+    for (const r of history) set.add(r.grade);
+    return set;
+  }, [history]);
+  const options = useMemo(() => {
+    const arr: string[] = [];
+    for (const g of seenGrades) arr.push(g);
+    for (const g of COMMON_GRADES) {
+      if (!seenGrades.has(g)) arr.push(g);
+    }
+    return arr;
+  }, [seenGrades]);
+
+  useEffect(() => {
+    if (!open) return;
+    function onDoc(e: MouseEvent) {
+      if (!wrapRef.current?.contains(e.target as Node)) setOpen(false);
+    }
+    document.addEventListener("mousedown", onDoc);
+    return () => document.removeEventListener("mousedown", onDoc);
+  }, [open]);
+
+  return (
+    <div ref={wrapRef} className="relative w-28">
+      <input
+        type="text"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        onFocus={() => setOpen(true)}
+        placeholder="등급"
+        className="w-full pl-2 pr-6 py-1 text-xs rounded border border-[var(--border)] bg-[var(--background)]"
+      />
+      <button
+        type="button"
+        onClick={() => setOpen((o) => !o)}
+        className="absolute right-1 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center opacity-50 hover:opacity-100"
+        aria-label="등급 목록 열기"
+      >
+        <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+          <polyline points="6 9 12 15 18 9" />
+        </svg>
+      </button>
+      {open && options.length > 0 && (
+        <ul className="absolute z-20 top-full left-0 mt-1 w-32 max-h-48 overflow-y-auto rounded-lg border border-[var(--border)] bg-[var(--card-bg)] shadow-lg py-1">
+          {options.map((g) => (
+            <li key={g}>
+              <button
+                type="button"
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  onChange(g);
+                  setOpen(false);
+                }}
+                className={`w-full text-left px-2 py-1 text-xs hover:bg-[var(--surface)] ${
+                  g === value ? "bg-[var(--surface)] font-semibold" : ""
+                }`}
+              >
+                {g}
+                {seenGrades.has(g) && <span className="ml-1 text-[9px] opacity-50">●</span>}
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 /* ───────────── 가격 history 추가/관리 ───────────── */
 export function PriceHistoryPanel({
   cardId,
@@ -240,16 +323,7 @@ export function PriceHistoryPanel({
 
       {/* 입력 행 (항상 노출) */}
       <div className="flex flex-wrap items-center gap-1.5 mb-2">
-        <input
-          list={`grades-${cardId}`}
-          value={grade}
-          onChange={(e) => setGrade(e.target.value)}
-          placeholder="등급"
-          className="px-2 py-1 text-xs rounded border border-[var(--border)] bg-[var(--background)] w-24"
-        />
-        <datalist id={`grades-${cardId}`}>
-          {COMMON_GRADES.map((g) => <option key={g} value={g} />)}
-        </datalist>
+        <GradeCombo value={grade} onChange={setGrade} history={history} />
         <input
           ref={inputRef}
           type="text"
