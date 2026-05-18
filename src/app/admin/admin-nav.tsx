@@ -19,6 +19,16 @@ const ITEMS: { href: string; label: string; match: (p: string) => boolean }[] = 
     label: "상품 관리",
     match: (p) => p.startsWith("/admin/listings"),
   },
+  {
+    href: "/admin/market",
+    label: "시세 관리",
+    match: (p) => p.startsWith("/admin/market"),
+  },
+  {
+    href: "/admin/content",
+    label: "매거진 관리",
+    match: (p) => p.startsWith("/admin/content"),
+  },
 ];
 
 export default function AdminNav() {
