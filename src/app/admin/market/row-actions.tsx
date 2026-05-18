@@ -17,6 +17,16 @@ import {
 /* ───────────── 이미지 확대 모달 ───────────── */
 export function ImageThumb({ src, alt }: { src: string | null; alt: string }) {
   const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [open]);
+
   if (!src) {
     return (
       <div className="w-14 h-14 rounded bg-gray-50 flex items-center justify-center text-[10px] opacity-40">
