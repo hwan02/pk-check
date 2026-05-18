@@ -50,6 +50,16 @@ export default async function AdminMarketPage() {
   ]);
   const cards = (cardRows ?? []) as MarketCard[];
   const history = (historyRows ?? []) as MarketPriceRow[];
+
+  // 부모 picker용 옵션 (활성 박스/팩만)
+  const parentOptions = cards
+    .filter((c) => c.is_active && (c.product_type === "box" || c.product_type === "pack"))
+    .map((c) => ({
+      id: c.id,
+      name: c.name,
+      product_type: c.product_type,
+      category: c.category,
+    }));
   const historyByCard = new Map<string, MarketPriceRow[]>();
   for (const r of history) {
     const arr = historyByCard.get(r.card_id) ?? [];
@@ -64,7 +74,7 @@ export default async function AdminMarketPage() {
         <p className="text-xs opacity-50">{cards.length}장 등록</p>
       </div>
 
-      <NewMarketCardForm />
+      <NewMarketCardForm parentOptions={parentOptions} />
 
       <h2 className="text-sm font-semibold mt-8 mb-3">등록 카드</h2>
 

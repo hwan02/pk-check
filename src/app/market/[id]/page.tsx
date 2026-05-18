@@ -9,6 +9,7 @@ import {
   formatKRW,
   latestByGrade,
   MARKET_CATEGORY_LABEL,
+  PRODUCT_TYPE_LABEL,
   priceChangePct,
   type MarketCard,
   type MarketPriceRow,
@@ -83,6 +84,72 @@ export default async function MarketDetailPage({ params }: Props) {
   const history = (histRows ?? []) as MarketPriceRow[];
   const grades = latestByGrade(history);
 
+  // 위계 관련 데이터: 부모(파ack→box) / 조부모(single→pack→box) / 자식(box→packs, pack→singles) / 손주(box→singles via packs)
+  let parent: MarketCard | null = null;
+  let grandparent: MarketCard | null = null;
+  let children: MarketCard[] = [];
+  let grandchildren: MarketCard[] = [];
+
+  if (card.parent_id) {
+    const { data: p } = await supabase
+      .from("market_cards")
+      .select("*")
+      .eq("id", card.parent_id)
+      .eq("is_active", true)
+      .maybeSingle();
+    parent = (p ?? null) as MarketCard | null;
+    if (parent?.parent_id) {
+      const { data: gp } = await supabase
+        .from("market_cards")
+        .select("*")
+        .eq("id", parent.parent_id)
+        .eq("is_active", true)
+        .maybeSingle();
+      grandparent = (gp ?? null) as MarketCard | null;
+    }
+  }
+
+  if (card.product_type !== "single") {
+    const { data: ch } = await supabase
+      .from("market_cards")
+      .select("*")
+      .eq("parent_id", id)
+      .eq("is_active", true)
+      .order("display_order", { ascending: true });
+    children = (ch ?? []) as MarketCard[];
+
+    // box → 손주(싱글)까지 끌어옴: 자식 팩들의 자식 싱글
+    if (card.product_type === "box" && children.length > 0) {
+      const packIds = children.filter((c) => c.product_type === "pack").map((c) => c.id);
+      if (packIds.length > 0) {
+        const { data: gch } = await supabase
+          .from("market_cards")
+          .select("*")
+          .in("parent_id", packIds)
+          .eq("is_active", true)
+          .order("display_order", { ascending: true });
+        grandchildren = (gch ?? []) as MarketCard[];
+      }
+    }
+  }
+
+  // 자식/손주들의 최신가 미니 표시용 history
+  const relatedIds = [...children, ...grandchildren].map((c) => c.id);
+  const relatedHistByCard = new Map<string, MarketPriceRow[]>();
+  if (relatedIds.length > 0) {
+    const { data: relHist } = await supabase
+      .from("market_price_history")
+      .select("*")
+      .in("card_id", relatedIds)
+      .order("recorded_at", { ascending: false })
+      .limit(2000);
+    for (const r of (relHist ?? []) as MarketPriceRow[]) {
+      const arr = relatedHistByCard.get(r.card_id) ?? [];
+      arr.push(r);
+      relatedHistByCard.set(r.card_id, arr);
+    }
+  }
+
   // 관련 매물 (이름으로 느슨하게 매칭)
   const { data: listingRows } = await supabase
     .from("listings")
@@ -107,7 +174,7 @@ export default async function MarketDetailPage({ params }: Props) {
   return (
     <div className="max-w-5xl mx-auto px-4 py-6">
       {/* breadcrumb */}
-      <nav className="text-xs opacity-60 mb-4 flex items-center gap-1.5">
+      <nav className="text-xs opacity-60 mb-4 flex items-center gap-1.5 flex-wrap">
         <Link href="/market" className="hover:opacity-100">
           MARKET
         </Link>
@@ -115,6 +182,29 @@ export default async function MarketDetailPage({ params }: Props) {
         <Link href={`/market?category=${card.category}`} className="hover:opacity-100">
           {MARKET_CATEGORY_LABEL[card.category]}
         </Link>
+        <span>/</span>
+        <Link
+          href={`/market?category=${card.category}&type=${card.product_type}`}
+          className="hover:opacity-100"
+        >
+          {PRODUCT_TYPE_LABEL[card.product_type]}
+        </Link>
+        {grandparent && (
+          <>
+            <span>/</span>
+            <Link href={`/market/${grandparent.id}`} className="hover:opacity-100 truncate max-w-[140px]">
+              {grandparent.name}
+            </Link>
+          </>
+        )}
+        {parent && (
+          <>
+            <span>/</span>
+            <Link href={`/market/${parent.id}`} className="hover:opacity-100 truncate max-w-[140px]">
+              {parent.name}
+            </Link>
+          </>
+        )}
         <span>/</span>
         <span className="opacity-80 truncate">{card.name}</span>
       </nav>
@@ -202,6 +292,34 @@ export default async function MarketDetailPage({ params }: Props) {
         </div>
       </div>
 
+      {/* 위계 — 자식 (박스→팩, 팩→싱글) 그리드 */}
+      {children.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-sm font-semibold tracking-widest uppercase opacity-70 mb-3">
+            {card.product_type === "box"
+              ? "이 박스에 들어있는 팩"
+              : "이 팩에서 나오는 카드"}
+            <span className="ml-2 opacity-50 normal-case tracking-normal text-xs">
+              {children.length}
+            </span>
+          </h2>
+          <RelatedGrid items={children} historyByCard={relatedHistByCard} />
+        </section>
+      )}
+
+      {/* 박스 → 손주 싱글(체이스 카드) 그리드 */}
+      {grandchildren.length > 0 && (
+        <section className="mt-10">
+          <h2 className="text-sm font-semibold tracking-widest uppercase opacity-70 mb-3">
+            이 박스에서 나오는 카드
+            <span className="ml-2 opacity-50 normal-case tracking-normal text-xs">
+              {grandchildren.length}
+            </span>
+          </h2>
+          <RelatedGrid items={grandchildren} historyByCard={relatedHistByCard} />
+        </section>
+      )}
+
       {/* 시세 추이 차트 */}
       <section className="mt-10">
         <h2 className="text-sm font-semibold tracking-widest uppercase opacity-70 mb-3">
@@ -287,5 +405,78 @@ export default async function MarketDetailPage({ params }: Props) {
         </section>
       )}
     </div>
+  );
+}
+
+function RelatedGrid({
+  items,
+  historyByCard,
+}: {
+  items: MarketCard[];
+  historyByCard: Map<string, MarketPriceRow[]>;
+}) {
+  return (
+    <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-3 gap-y-6">
+      {items.map((c) => {
+        const top = latestByGrade(historyByCard.get(c.id) ?? [])[0];
+        const ch = top ? priceChangePct(top.latest, top.prev) : null;
+        return (
+          <li key={c.id}>
+            <Link href={`/market/${c.id}`} className="block group">
+              <div className="rounded-xl overflow-hidden bg-[var(--surface)] border border-[var(--border)]">
+                <div className="aspect-square relative bg-white">
+                  {c.image_url ? (
+                    <Image
+                      src={c.image_url}
+                      alt={c.name}
+                      fill
+                      sizes="(max-width: 640px) 50vw, 25vw"
+                      className="object-contain p-3 group-hover:scale-[1.03] transition-transform"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-xs opacity-40">
+                      no image
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="mt-2 px-0.5">
+                {(c.set_name || c.rarity) && (
+                  <p className="text-[10px] tracking-widest uppercase opacity-50 truncate">
+                    {[c.set_name, c.rarity].filter(Boolean).join(" · ")}
+                  </p>
+                )}
+                <p className="text-[13px] font-bold leading-snug line-clamp-1 mt-0.5">
+                  {c.name}
+                </p>
+                {top ? (
+                  <div className="mt-1 flex items-baseline gap-2">
+                    <p className="text-[14px] font-extrabold tracking-tight">
+                      {formatKRW(top.latest)}
+                    </p>
+                    {ch && (
+                      <span
+                        className={`text-[11px] font-semibold ${
+                          ch.dir === "up"
+                            ? "text-red-600"
+                            : ch.dir === "down"
+                              ? "text-blue-600"
+                              : "opacity-50"
+                        }`}
+                      >
+                        {ch.dir === "up" ? "▲" : ch.dir === "down" ? "▼" : "·"}{" "}
+                        {Math.abs(ch.pct).toFixed(1)}%
+                      </span>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-[11px] opacity-50 mt-1">시세 준비 중</p>
+                )}
+              </div>
+            </Link>
+          </li>
+        );
+      })}
+    </ul>
   );
 }

@@ -26,6 +26,8 @@ export async function POST(request: NextRequest) {
 
   const form = await request.formData();
   const category = (form.get("category") as string | null) ?? "";
+  const productTypeRaw = (form.get("product_type") as string | null) ?? "single";
+  const parentIdRaw = (form.get("parent_id") as string | null)?.trim() || null;
   const name = (form.get("name") as string | null)?.trim();
   const nameEn = (form.get("name_en") as string | null)?.trim() || null;
   const setName = (form.get("set_name") as string | null)?.trim() || null;
@@ -37,10 +39,39 @@ export async function POST(request: NextRequest) {
   if (!name) return NextResponse.json({ error: "name required" }, { status: 400 });
   if (!["pokemon", "onepiece"].includes(category))
     return NextResponse.json({ error: "invalid category" }, { status: 400 });
+  if (!["box", "pack", "single"].includes(productTypeRaw))
+    return NextResponse.json({ error: "invalid product_type" }, { status: 400 });
+  const productType = productTypeRaw as "box" | "pack" | "single";
+
+  // 부모 타입 검증 (single→pack, pack→box). box 는 부모 없음.
+  const admin = createServerClient();
+  let parentId: string | null = null;
+  if (parentIdRaw) {
+    if (productType === "box") {
+      return NextResponse.json({ error: "box cannot have a parent" }, { status: 400 });
+    }
+    const need = productType === "single" ? "pack" : "box";
+    const { data: parentRow } = await admin
+      .from("market_cards")
+      .select("id, product_type, category")
+      .eq("id", parentIdRaw)
+      .maybeSingle();
+    if (!parentRow) {
+      return NextResponse.json({ error: "parent not found" }, { status: 400 });
+    }
+    if (parentRow.product_type !== need) {
+      return NextResponse.json(
+        { error: `parent must be a ${need}` },
+        { status: 400 },
+      );
+    }
+    if (parentRow.category !== category) {
+      return NextResponse.json({ error: "parent category mismatch" }, { status: 400 });
+    }
+    parentId = parentIdRaw;
+  }
 
   const displayOrder = parseInt(orderRaw, 10) || 0;
-
-  const admin = createServerClient();
 
   let imageUrl: string | null = null;
   if (image && image.size > 0) {
@@ -63,6 +94,8 @@ export async function POST(request: NextRequest) {
     .from("market_cards")
     .insert({
       category,
+      product_type: productType,
+      parent_id: parentId,
       name,
       name_en: nameEn,
       set_name: setName,

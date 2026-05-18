@@ -7,8 +7,10 @@ import {
   formatKRW,
   latestByGrade,
   MARKET_CATEGORY_LABEL,
+  PRODUCT_TYPE_LABEL,
   priceChangePct,
   type MarketCard,
+  type ProductType,
 } from "@/lib/market";
 import { fetchActiveMarketCards } from "@/lib/market-query";
 
@@ -21,14 +23,25 @@ const SORTS: { value: string; label: string }[] = [
   { value: "newest", label: "최신순" },
 ];
 
+const PRODUCT_TYPES: ProductType[] = ["single", "pack", "box"];
+
 export default async function MarketPage({ searchParams }: Props) {
   const params = await searchParams;
   const category =
     params.category === "onepiece" ? ("onepiece" as const) : ("pokemon" as const);
+  const productType: ProductType = (
+    PRODUCT_TYPES as readonly string[]
+  ).includes(params.type ?? "")
+    ? (params.type as ProductType)
+    : "single";
   const sort = params.sort ?? "order";
 
   const supabase = await createSsrClient();
-  const { cards, historyByCard } = await fetchActiveMarketCards(supabase, category);
+  const { cards, historyByCard } = await fetchActiveMarketCards(
+    supabase,
+    category,
+    productType,
+  );
 
   // 정렬 — newest 만 별도 처리
   let displayCards: MarketCard[] = cards;
@@ -38,9 +51,15 @@ export default async function MarketPage({ searchParams }: Props) {
 
   function buildUrl(overrides: Record<string, string | undefined>) {
     const sp = new URLSearchParams();
-    const merged = { category, sort, ...overrides };
+    const merged: Record<string, string | undefined> = {
+      category,
+      type: productType,
+      sort,
+      ...overrides,
+    };
     for (const [k, v] of Object.entries(merged)) {
       if (k === "category" && v === "pokemon") continue; // 기본값
+      if (k === "type" && v === "single") continue; // 기본값
       if (k === "sort" && v === "order") continue;
       if (v) sp.set(k, v);
     }
@@ -57,7 +76,7 @@ export default async function MarketPage({ searchParams }: Props) {
       </header>
 
       {/* 카테고리 탭 */}
-      <div className="flex justify-center gap-1 mb-5">
+      <div className="flex justify-center gap-1 mb-3">
         {(["pokemon", "onepiece"] as const).map((c) => (
           <Link
             key={c}
@@ -69,6 +88,23 @@ export default async function MarketPage({ searchParams }: Props) {
             }`}
           >
             {MARKET_CATEGORY_LABEL[c]}
+          </Link>
+        ))}
+      </div>
+
+      {/* 상품 타입 서브탭 */}
+      <div className="flex justify-center gap-1 mb-5">
+        {PRODUCT_TYPES.map((t) => (
+          <Link
+            key={t}
+            href={buildUrl({ type: t })}
+            className={`px-3.5 py-1 rounded-full text-xs font-semibold ${
+              productType === t
+                ? "bg-[var(--foreground)] text-[var(--background)]"
+                : "border border-[var(--border)] opacity-60 hover:opacity-100"
+            }`}
+          >
+            {PRODUCT_TYPE_LABEL[t]}
           </Link>
         ))}
       </div>

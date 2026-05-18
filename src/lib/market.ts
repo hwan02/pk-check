@@ -1,6 +1,10 @@
+export type ProductType = "box" | "pack" | "single";
+
 export interface MarketCard {
   id: string;
   category: "pokemon" | "onepiece";
+  product_type: ProductType;
+  parent_id: string | null;
   name: string;
   name_en: string | null;
   set_name: string | null;
@@ -12,6 +16,19 @@ export interface MarketCard {
   created_at: string;
   updated_at: string;
 }
+
+export const PRODUCT_TYPE_LABEL: Record<ProductType, string> = {
+  box: "박스",
+  pack: "팩",
+  single: "싱글",
+};
+
+// 부모로 허용되는 타입: single→pack, pack→box, box→null
+export const PARENT_TYPE_OF: Record<ProductType, ProductType | null> = {
+  single: "pack",
+  pack: "box",
+  box: null,
+};
 
 export interface MarketPriceRow {
   id: string;

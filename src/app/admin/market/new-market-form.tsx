@@ -1,13 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { PARENT_TYPE_OF, PRODUCT_TYPE_LABEL, type ProductType } from "@/lib/market";
 
-export default function NewMarketCardForm() {
+interface ParentOpt {
+  id: string;
+  name: string;
+  product_type: "box" | "pack" | "single";
+  category: "pokemon" | "onepiece";
+}
+
+export default function NewMarketCardForm({ parentOptions = [] }: { parentOptions?: ParentOpt[] }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
 
   const [category, setCategory] = useState<"pokemon" | "onepiece">("pokemon");
+  const [productType, setProductType] = useState<ProductType>("single");
+  const [parentId, setParentId] = useState("");
   const [name, setName] = useState("");
   const [nameEn, setNameEn] = useState("");
   const [setNameField, setSetNameField] = useState("");
@@ -18,6 +28,13 @@ export default function NewMarketCardForm() {
   const [preview, setPreview] = useState<string | null>(null);
   const [errors, setErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
+
+  // 현재 타입에서 허용되는 부모 타입 (single→pack, pack→box) 만 필터, 같은 카테고리만
+  const allowedParents = useMemo(() => {
+    const need = PARENT_TYPE_OF[productType];
+    if (!need) return [];
+    return parentOptions.filter((p) => p.product_type === need && p.category === category);
+  }, [productType, category, parentOptions]);
 
   function pickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0] ?? null;
@@ -35,6 +52,8 @@ export default function NewMarketCardForm() {
     setFile(null);
     setPreview(null);
     setErrors([]);
+    setProductType("single");
+    setParentId("");
   }
 
   function validate(): string[] {
@@ -58,6 +77,8 @@ export default function NewMarketCardForm() {
     setSubmitting(true);
     const form = new FormData();
     form.append("category", category);
+    form.append("product_type", productType);
+    if (parentId) form.append("parent_id", parentId);
     form.append("name", name.trim());
     if (nameEn.trim()) form.append("name_en", nameEn.trim());
     if (setNameField.trim()) form.append("set_name", setNameField.trim());
@@ -123,6 +144,38 @@ export default function NewMarketCardForm() {
                 <option value="onepiece">원피스</option>
               </select>
             </Field>
+            <Field label="상품 타입 *">
+              <select
+                value={productType}
+                onChange={(e) => {
+                  setProductType(e.target.value as ProductType);
+                  setParentId("");
+                }}
+                className={inp}
+              >
+                {(["single", "pack", "box"] as ProductType[]).map((t) => (
+                  <option key={t} value={t}>
+                    {PRODUCT_TYPE_LABEL[t]}
+                  </option>
+                ))}
+              </select>
+            </Field>
+            {PARENT_TYPE_OF[productType] && (
+              <Field label={`소속 ${PRODUCT_TYPE_LABEL[PARENT_TYPE_OF[productType]!]} (선택)`}>
+                <select value={parentId} onChange={(e) => setParentId(e.target.value)} className={inp}>
+                  <option value="">— 없음 —</option>
+                  {allowedParents.length === 0 ? (
+                    <option disabled>먼저 {PRODUCT_TYPE_LABEL[PARENT_TYPE_OF[productType]!]} 을(를) 등록하세요</option>
+                  ) : (
+                    allowedParents.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))
+                  )}
+                </select>
+              </Field>
+            )}
             <Field label="이름 (한국어) *">
               <input
                 value={name}
