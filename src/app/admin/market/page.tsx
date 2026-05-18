@@ -6,16 +6,7 @@ import { createServerClient } from "@/lib/supabase/server";
 import { type MarketCard, type MarketPriceRow } from "@/lib/market";
 import NewMarketCardForm from "./new-market-form";
 import BulkImportForm from "./import-form";
-import {
-  DeleteMarketButton,
-  ImageThumb,
-  InlineCategory,
-  InlineParent,
-  InlineProductType,
-  InlineText,
-  PriceHistoryPanel,
-  ToggleActiveButton,
-} from "./row-actions";
+import AdminMarketCardList from "./card-list";
 
 export default async function AdminMarketPage() {
   const supabase = await createSsrClient();
@@ -95,13 +86,6 @@ export default async function AdminMarketPage() {
       product_type: c.product_type,
       category: c.category,
     }));
-  const historyByCard = new Map<string, MarketPriceRow[]>();
-  for (const r of history) {
-    const arr = historyByCard.get(r.card_id) ?? [];
-    arr.push(r);
-    historyByCard.set(r.card_id, arr);
-  }
-
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
@@ -114,52 +98,11 @@ export default async function AdminMarketPage() {
         <BulkImportForm sets={setsForImport} />
       </div>
 
-      <h2 className="text-sm font-semibold mt-8 mb-3">등록 카드</h2>
-
-      <div className="space-y-3">
-        {cards.length === 0 && (
-          <p className="text-center text-xs opacity-50 py-8">등록된 시세 카드가 없습니다.</p>
-        )}
-        {cards.map((c) => (
-          <div
-            key={c.id}
-            className="rounded-lg border border-[var(--border)] bg-[var(--card-bg)] p-3"
-          >
-            <div className="flex items-start gap-3">
-              <ImageThumb src={c.image_url} alt={c.name} />
-              <div className="flex-1 min-w-0">
-                {/* 1행: 카테고리 + 타입 + 이름 + 액션 */}
-                <div className="flex flex-wrap items-center gap-2">
-                  <InlineCategory id={c.id} initial={c.category} />
-                  <InlineProductType id={c.id} initial={c.product_type} />
-                  <InlineText id={c.id} field="name" initial={c.name} placeholder="이름" className="font-semibold flex-1 min-w-[120px]" />
-                  <ToggleActiveButton id={c.id} active={c.is_active} />
-                  <DeleteMarketButton id={c.id} />
-                </div>
-                {/* 2행: 부모 + 영문 / 세트 / 등급 */}
-                <div className="flex flex-wrap items-center gap-2 mt-1">
-                  <InlineParent
-                    id={c.id}
-                    initialParentId={c.parent_id}
-                    productType={c.product_type}
-                    category={c.category}
-                    parentOptions={parentOptions}
-                  />
-                  <InlineText id={c.id} field="name_en" initial={c.name_en} placeholder="영문 (선택)" className="opacity-70 max-w-[180px]" />
-                  <InlineText id={c.id} field="set_name" initial={c.set_name} placeholder="세트명" className="opacity-70 max-w-[180px]" />
-                  <InlineText id={c.id} field="rarity" initial={c.rarity} placeholder="등급/레어" className="opacity-70 max-w-[120px]" />
-                </div>
-              </div>
-            </div>
-
-            {/* 가격 history 패널 */}
-            <PriceHistoryPanel
-              cardId={c.id}
-              history={historyByCard.get(c.id) ?? []}
-            />
-          </div>
-        ))}
-      </div>
+      <AdminMarketCardList
+        cards={cards}
+        history={history}
+        parentOptions={parentOptions}
+      />
     </div>
   );
 }
