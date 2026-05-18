@@ -274,11 +274,22 @@ export function ToggleActiveButton({ id, active }: { id: string; active: boolean
   }
   return (
     <button
+      type="button"
+      role="switch"
+      aria-checked={active}
+      aria-label={active ? "노출중 (클릭해서 숨김)" : "숨김 (클릭해서 노출)"}
       onClick={toggle}
       disabled={loading}
-      className={`text-[10px] px-2 py-1 rounded ${active ? "bg-emerald-50 text-emerald-700" : "bg-gray-100 text-gray-600"}`}
+      className={`relative inline-flex items-center h-5 w-10 rounded-full transition-colors disabled:opacity-50 ${
+        active ? "bg-emerald-500" : "bg-gray-300"
+      }`}
     >
-      {active ? "노출중" : "숨김"}
+      <span
+        className={`absolute h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
+          active ? "translate-x-[22px]" : "translate-x-1"
+        }`}
+      />
+      <span className="sr-only">{active ? "노출중" : "숨김"}</span>
     </button>
   );
 }
