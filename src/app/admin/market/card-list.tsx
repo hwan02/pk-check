@@ -217,7 +217,7 @@ export default function AdminMarketCardList({ cards, history, parentOptions }: P
               className="rounded-lg border border-[var(--border)] bg-[var(--card-bg)] p-3"
             >
               <div className="flex items-start gap-3">
-                <ImageThumb src={c.image_url} alt={c.name} />
+                <ImageThumb id={c.id} src={c.image_url} alt={c.name} />
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2">
                     <InlineCategory id={c.id} initial={c.category} />

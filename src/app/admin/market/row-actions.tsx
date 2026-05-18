@@ -14,9 +14,12 @@ import {
   type ProductType,
 } from "@/lib/market";
 
-/* ───────────── 이미지 확대 모달 ───────────── */
-export function ImageThumb({ src, alt }: { src: string | null; alt: string }) {
+/* ───────────── 이미지 확대 모달 + 교체/제거 ───────────── */
+export function ImageThumb({ id, src, alt }: { id: string; src: string | null; alt: string }) {
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -27,24 +30,88 @@ export function ImageThumb({ src, alt }: { src: string | null; alt: string }) {
     return () => document.removeEventListener("keydown", onKey);
   }, [open]);
 
-  if (!src) {
-    return (
-      <div className="w-14 h-14 rounded bg-gray-50 flex items-center justify-center text-[10px] opacity-40">
-        x
-      </div>
-    );
+  async function uploadFile(file: File) {
+    if (file.size > 5 * 1024 * 1024) { alert("이미지 5MB 이하"); return; }
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      alert("PNG/JPEG/WEBP 만 가능");
+      return;
+    }
+    setUploading(true);
+    const form = new FormData();
+    form.append("image", file);
+    const resp = await fetch(`/api/admin/market/${id}/image`, { method: "POST", body: form });
+    setUploading(false);
+    if (resp.ok) router.refresh();
+    else {
+      const j = await resp.json().catch(() => ({}));
+      alert(`업로드 실패: ${j.error ?? resp.statusText}`);
+    }
   }
+
+  async function removeImage() {
+    if (!confirm("이미지를 제거할까요?")) return;
+    const resp = await fetch(`/api/admin/market/${id}/image`, { method: "DELETE" });
+    if (resp.ok) router.refresh();
+  }
+
   return (
-    <>
-      <button
-        type="button"
-        onClick={() => setOpen(true)}
-        className="w-14 h-14 relative rounded overflow-hidden bg-gray-50 hover:ring-2 hover:ring-[var(--primary)]"
-        aria-label="이미지 확대"
-      >
-        <Image src={src} alt={alt} fill className="object-cover" sizes="56px" />
-      </button>
-      {open && (
+    <div className="shrink-0 flex flex-col items-center gap-1">
+      {src ? (
+        <button
+          type="button"
+          onClick={() => setOpen(true)}
+          className="w-14 h-14 relative rounded overflow-hidden bg-gray-50 hover:ring-2 hover:ring-[var(--primary)]"
+          aria-label="이미지 확대"
+        >
+          <Image src={src} alt={alt} fill className="object-cover" sizes="56px" />
+        </button>
+      ) : (
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          className="w-14 h-14 rounded bg-gray-50 border border-dashed border-[var(--border)] hover:border-[var(--primary)] flex items-center justify-center text-[10px] opacity-50 hover:opacity-100"
+        >
+          +
+        </button>
+      )}
+
+      <input
+        ref={fileRef}
+        type="file"
+        accept="image/png,image/jpeg,image/webp"
+        className="hidden"
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (f) uploadFile(f);
+          e.target.value = "";
+        }}
+      />
+
+      <div className="flex items-center gap-1 text-[9px]">
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          className="opacity-60 hover:opacity-100 disabled:opacity-30"
+        >
+          {uploading ? "..." : src ? "교체" : "업로드"}
+        </button>
+        {src && (
+          <>
+            <span className="opacity-30">·</span>
+            <button
+              type="button"
+              onClick={removeImage}
+              disabled={uploading}
+              className="opacity-60 hover:opacity-100 hover:text-red-600 disabled:opacity-30"
+            >
+              제거
+            </button>
+          </>
+        )}
+      </div>
+
+      {open && src && (
         <button
           type="button"
           onClick={() => setOpen(false)}
@@ -56,7 +123,7 @@ export function ImageThumb({ src, alt }: { src: string | null; alt: string }) {
           <span className="absolute top-4 right-4 text-white/80 text-xs">클릭하여 닫기 (ESC)</span>
         </button>
       )}
-    </>
+    </div>
   );
 }
 
