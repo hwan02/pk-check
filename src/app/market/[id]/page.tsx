@@ -84,18 +84,21 @@ export default async function MarketDetailPage({ params }: Props) {
   const history = (histRows ?? []) as MarketPriceRow[];
   const grades = latestByGrade(history);
 
-  // 위계 관련 데이터: 부모(파ack→box) / 조부모(single→pack→box) / 자식(box→packs, pack→singles) / 손주(box→singles via packs)
+  // 위계 관련 데이터
+  // - parent / grandparent : 박스(=parent) 정보는 비활성이어도 위계 표시는 노출
+  // - children : 박스 시세 페이지일 때 그 박스 안 카드들
+  // - siblings : single 시세 페이지에서 같은 박스/팩의 다른 카드들
   let parent: MarketCard | null = null;
   let grandparent: MarketCard | null = null;
   let children: MarketCard[] = [];
   let grandchildren: MarketCard[] = [];
+  let siblings: MarketCard[] = [];
 
   if (card.parent_id) {
     const { data: p } = await supabase
       .from("market_cards")
       .select("*")
       .eq("id", card.parent_id)
-      .eq("is_active", true)
       .maybeSingle();
     parent = (p ?? null) as MarketCard | null;
     if (parent?.parent_id) {
@@ -103,10 +106,19 @@ export default async function MarketDetailPage({ params }: Props) {
         .from("market_cards")
         .select("*")
         .eq("id", parent.parent_id)
-        .eq("is_active", true)
         .maybeSingle();
       grandparent = (gp ?? null) as MarketCard | null;
     }
+
+    // 형제 (같은 부모를 둔 다른 활성 카드)
+    const { data: sib } = await supabase
+      .from("market_cards")
+      .select("*")
+      .eq("parent_id", card.parent_id)
+      .eq("is_active", true)
+      .neq("id", card.id)
+      .order("display_order", { ascending: true });
+    siblings = (sib ?? []) as MarketCard[];
   }
 
   if (card.product_type !== "single") {
@@ -133,8 +145,8 @@ export default async function MarketDetailPage({ params }: Props) {
     }
   }
 
-  // 자식/손주들의 최신가 미니 표시용 history
-  const relatedIds = [...children, ...grandchildren].map((c) => c.id);
+  // 자식/손주/형제 들의 최신가 미니 표시용 history
+  const relatedIds = [...children, ...grandchildren, ...siblings].map((c) => c.id);
   const relatedHistByCard = new Map<string, MarketPriceRow[]>();
   if (relatedIds.length > 0) {
     const { data: relHist } = await supabase
@@ -192,17 +204,29 @@ export default async function MarketDetailPage({ params }: Props) {
         {grandparent && (
           <>
             <span>/</span>
-            <Link href={`/market/${grandparent.id}`} className="hover:opacity-100 truncate max-w-[140px]">
-              {grandparent.name}
-            </Link>
+            {grandparent.is_active ? (
+              <Link href={`/market/${grandparent.id}`} className="hover:opacity-100 truncate max-w-[140px]">
+                {grandparent.name}
+              </Link>
+            ) : (
+              <span className="truncate max-w-[140px] opacity-70" title={`비활성: ${grandparent.name}`}>
+                {grandparent.name}
+              </span>
+            )}
           </>
         )}
         {parent && (
           <>
             <span>/</span>
-            <Link href={`/market/${parent.id}`} className="hover:opacity-100 truncate max-w-[140px]">
-              {parent.name}
-            </Link>
+            {parent.is_active ? (
+              <Link href={`/market/${parent.id}`} className="hover:opacity-100 truncate max-w-[140px]">
+                {parent.name}
+              </Link>
+            ) : (
+              <span className="truncate max-w-[140px] opacity-70" title={`비활성: ${parent.name}`}>
+                {parent.name}
+              </span>
+            )}
           </>
         )}
         <span>/</span>
@@ -327,6 +351,22 @@ export default async function MarketDetailPage({ params }: Props) {
             </span>
           </h2>
           <RelatedGrid items={grandchildren} historyByCard={relatedHistByCard} />
+        </section>
+      )}
+
+      {/* 형제 — 같은 박스/팩의 다른 카드들 (single 또는 pack 의 형제) */}
+      {siblings.length > 0 && parent && (
+        <section className="mt-10">
+          <h2 className="text-sm font-semibold tracking-widest uppercase opacity-70 mb-3">
+            같은 {PRODUCT_TYPE_LABEL[parent.product_type]}의 다른 카드
+            <span className="ml-2 opacity-50 normal-case tracking-normal text-xs">
+              {siblings.length}
+            </span>
+            <span className="ml-2 opacity-50 normal-case tracking-normal text-xs">
+              · {parent.name}
+            </span>
+          </h2>
+          <RelatedGrid items={siblings} historyByCard={relatedHistByCard} />
         </section>
       )}
 
