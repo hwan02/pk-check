@@ -7,7 +7,9 @@ import { notFound } from "next/navigation";
 import { createSsrClient } from "@/lib/supabase/ssr";
 import {
   formatKRW,
+  isUuid,
   latestByGrade,
+  marketCardHref,
   MARKET_CATEGORY_LABEL,
   PRODUCT_TYPE_LABEL,
   priceChangePct,
@@ -21,12 +23,13 @@ interface Props {
   params: Promise<{ id: string }>;
 }
 
-async function getCard(id: string): Promise<MarketCard | null> {
+async function getCard(idOrShort: string): Promise<MarketCard | null> {
   const supabase = await createSsrClient();
+  const column = isUuid(idOrShort) ? "id" : "short_id";
   const { data } = await supabase
     .from("market_cards")
     .select("*")
-    .eq("id", id)
+    .eq(column, idOrShort)
     .eq("is_active", true)
     .maybeSingle();
   return (data ?? null) as MarketCard | null;
@@ -63,17 +66,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function MarketDetailPage({ params }: Props) {
-  const { id } = await params;
+  const { id: idOrShort } = await params;
   const supabase = await createSsrClient();
 
+  // short_id 또는 UUID 둘 다 받음
+  const column = isUuid(idOrShort) ? "id" : "short_id";
   const { data: cardRow } = await supabase
     .from("market_cards")
     .select("*")
-    .eq("id", id)
+    .eq(column, idOrShort)
     .eq("is_active", true)
     .maybeSingle();
   if (!cardRow) notFound();
   const card = cardRow as MarketCard;
+  const id = card.id; // 이후 history/위계 쿼리는 항상 UUID
 
   const { data: histRows } = await supabase
     .from("market_price_history")
@@ -110,15 +116,33 @@ export default async function MarketDetailPage({ params }: Props) {
       grandparent = (gp ?? null) as MarketCard | null;
     }
 
-    // 형제 (같은 부모를 둔 다른 활성 카드)
-    const { data: sib } = await supabase
-      .from("market_cards")
-      .select("*")
-      .eq("parent_id", card.parent_id)
-      .eq("is_active", true)
-      .neq("id", card.id)
-      .order("display_order", { ascending: true });
-    siblings = (sib ?? []) as MarketCard[];
+    // 형제: 같은 박스 트리 안 다른 활성 카드 모두
+    // rootBox = grandparent(있으면 박스) 또는 parent(그 자체가 박스)
+    const rootBoxId = grandparent?.id ?? parent?.id;
+    if (rootBoxId) {
+      // 박스의 직속 자식들 (팩 또는 싱글)
+      const { data: depth1 } = await supabase
+        .from("market_cards")
+        .select("*")
+        .eq("parent_id", rootBoxId)
+        .eq("is_active", true);
+      const tree: MarketCard[] = (depth1 ?? []) as MarketCard[];
+
+      // 자식 중 팩이 있으면 그 팩의 자식(싱글)까지
+      const packIds = tree.filter((c) => c.product_type === "pack").map((c) => c.id);
+      if (packIds.length > 0) {
+        const { data: depth2 } = await supabase
+          .from("market_cards")
+          .select("*")
+          .in("parent_id", packIds)
+          .eq("is_active", true);
+        tree.push(...((depth2 ?? []) as MarketCard[]));
+      }
+
+      siblings = tree
+        .filter((c) => c.id !== card.id)
+        .sort((a, b) => a.display_order - b.display_order);
+    }
   }
 
   if (card.product_type !== "single") {
@@ -205,7 +229,7 @@ export default async function MarketDetailPage({ params }: Props) {
           <>
             <span>/</span>
             {grandparent.is_active ? (
-              <Link href={`/market/${grandparent.id}`} className="hover:opacity-100 truncate max-w-[140px]">
+              <Link href={marketCardHref(grandparent)} className="hover:opacity-100 truncate max-w-[140px]">
                 {grandparent.name}
               </Link>
             ) : (
@@ -219,7 +243,7 @@ export default async function MarketDetailPage({ params }: Props) {
           <>
             <span>/</span>
             {parent.is_active ? (
-              <Link href={`/market/${parent.id}`} className="hover:opacity-100 truncate max-w-[140px]">
+              <Link href={marketCardHref(parent)} className="hover:opacity-100 truncate max-w-[140px]">
                 {parent.name}
               </Link>
             ) : (
@@ -326,31 +350,55 @@ export default async function MarketDetailPage({ params }: Props) {
         </div>
       </div>
 
-      {/* 위계 — 자식 (박스→팩, 팩→싱글) 그리드 */}
-      {children.length > 0 && (
+      {/* 위계 — 자식 그리드. 박스 시세는 자식을 팩 / 싱글 로 분리해서 노출 */}
+      {card.product_type === "box" && (
+        <>
+          {(() => {
+            const childPacks = children.filter((c) => c.product_type === "pack");
+            const allSingles = [
+              ...children.filter((c) => c.product_type === "single"),
+              ...grandchildren,
+            ];
+            return (
+              <>
+                {childPacks.length > 0 && (
+                  <section className="mt-10">
+                    <h2 className="text-sm font-semibold tracking-widest uppercase opacity-70 mb-3">
+                      이 박스에 들어있는 팩
+                      <span className="ml-2 opacity-50 normal-case tracking-normal text-xs">
+                        {childPacks.length}
+                      </span>
+                    </h2>
+                    <RelatedGrid items={childPacks} historyByCard={relatedHistByCard} />
+                  </section>
+                )}
+                {allSingles.length > 0 && (
+                  <section className="mt-10">
+                    <h2 className="text-sm font-semibold tracking-widest uppercase opacity-70 mb-3">
+                      이 박스에서 나오는 카드
+                      <span className="ml-2 opacity-50 normal-case tracking-normal text-xs">
+                        {allSingles.length}
+                      </span>
+                    </h2>
+                    <RelatedGrid items={allSingles} historyByCard={relatedHistByCard} />
+                  </section>
+                )}
+              </>
+            );
+          })()}
+        </>
+      )}
+
+      {/* 팩 시세는 그 팩에서 나오는 카드 (=자식 싱글) */}
+      {card.product_type === "pack" && children.length > 0 && (
         <section className="mt-10">
           <h2 className="text-sm font-semibold tracking-widest uppercase opacity-70 mb-3">
-            {card.product_type === "box"
-              ? "이 박스에 들어있는 팩"
-              : "이 팩에서 나오는 카드"}
+            이 팩에서 나오는 카드
             <span className="ml-2 opacity-50 normal-case tracking-normal text-xs">
               {children.length}
             </span>
           </h2>
           <RelatedGrid items={children} historyByCard={relatedHistByCard} />
-        </section>
-      )}
-
-      {/* 박스 → 손주 싱글(체이스 카드) 그리드 */}
-      {grandchildren.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-sm font-semibold tracking-widest uppercase opacity-70 mb-3">
-            이 박스에서 나오는 카드
-            <span className="ml-2 opacity-50 normal-case tracking-normal text-xs">
-              {grandchildren.length}
-            </span>
-          </h2>
-          <RelatedGrid items={grandchildren} historyByCard={relatedHistByCard} />
         </section>
       )}
 
@@ -472,7 +520,7 @@ function RelatedGrid({
         const ch = top ? priceChangePct(top.latest, top.prev) : null;
         return (
           <li key={c.id}>
-            <Link href={`/market/${c.id}`} className="block group">
+            <Link href={marketCardHref(c)} className="block group">
               <div className="rounded-xl overflow-hidden bg-[var(--surface)] border border-[var(--border)]">
                 <div className="aspect-square relative bg-white">
                   {c.image_url ? (

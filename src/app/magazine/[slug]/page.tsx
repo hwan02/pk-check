@@ -9,6 +9,7 @@ import {
   formatKRW,
   latestByGrade,
   MARKET_CATEGORY_LABEL,
+  marketCardHref,
   priceChangePct,
   type MarketCard,
   type MarketPriceRow,
@@ -53,7 +54,7 @@ function renderChipHtml(c: MarketCard, history: MarketPriceRow[]): string {
     ? `<span class="mc-price">${formatKRW(top.latest)}</span>`
     : `<span class="mc-price mc-no-price">시세 준비 중</span>`;
   return (
-    `<a href="/market/${esc(c.id)}" class="market-chip">` +
+    `<a href="${esc(marketCardHref(c))}" class="market-chip">` +
     img +
     `<span class="mc-name">${esc(c.name)}</span>` +
     priceHtml +
@@ -175,7 +176,7 @@ export default async function ContentDetailPage({ params }: Props) {
               const ch = top ? priceChangePct(top.latest, top.prev) : null;
               return (
                 <li key={c.id}>
-                  <Link href={`/market/${c.id}`} className="block group">
+                  <Link href={marketCardHref(c)} className="block group">
                     <div className="rounded-xl overflow-hidden bg-[var(--surface)] border border-[var(--border)]">
                       <div className="aspect-square relative bg-white">
                         {c.image_url ? (

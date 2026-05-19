@@ -2,6 +2,7 @@ export type ProductType = "box" | "pack" | "single";
 
 export interface MarketCard {
   id: string;
+  short_id: string | null;
   category: "pokemon" | "onepiece";
   product_type: ProductType;
   parent_id: string | null;
@@ -16,6 +17,16 @@ export interface MarketCard {
   display_order: number;
   created_at: string;
   updated_at: string;
+}
+
+// 카드 시세 상세 URL — short_id 가 있으면 그걸로, 없으면 UUID
+export function marketCardHref(c: { id: string; short_id?: string | null }): string {
+  return `/market/${c.short_id ?? c.id}`;
+}
+
+// UUID 형식 판별 (라우팅에서 short_id 와 구분용)
+export function isUuid(s: string): boolean {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
 }
 
 export const PRODUCT_TYPE_LABEL: Record<ProductType, string> = {

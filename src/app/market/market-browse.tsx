@@ -7,6 +7,7 @@ import {
   formatKRW,
   latestByGrade,
   MARKET_CATEGORY_LABEL,
+  marketCardHref,
   priceChangePct,
   PRODUCT_TYPE_LABEL,
   type MarketCard,
@@ -201,7 +202,7 @@ export default function MarketBrowse({ cards, history }: Props) {
             const ch = topGrade ? priceChangePct(topGrade.latest, topGrade.prev) : null;
             return (
               <li key={c.id}>
-                <Link href={`/market/${c.id}`} className="block group">
+                <Link href={marketCardHref(c)} className="block group">
                   <div className="rounded-xl overflow-hidden bg-[var(--surface)] border border-[var(--border)] relative">
                     <span
                       className={`absolute top-1.5 left-1.5 z-10 text-[9px] px-1.5 py-0.5 rounded font-semibold ${TYPE_COLORS[c.product_type]}`}
