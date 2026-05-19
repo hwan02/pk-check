@@ -265,6 +265,7 @@ export interface ParentOpt {
   name: string;
   product_type: ProductType;
   category: MarketCard["category"];
+  is_active: boolean;
 }
 
 export function InlineParent({
@@ -320,7 +321,7 @@ export function InlineParent({
       <option value="">— {placeholderLabel} 미지정 —</option>
       {allowed.map((p) => (
         <option key={p.id} value={p.id}>
-          [{PRODUCT_TYPE_LABEL[p.product_type]}] {p.name}
+          [{PRODUCT_TYPE_LABEL[p.product_type]}] {p.name}{!p.is_active && " (숨김)"}
         </option>
       ))}
     </select>

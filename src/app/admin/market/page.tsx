@@ -77,14 +77,15 @@ export default async function AdminMarketPage() {
   const cards = (cardRows ?? []) as MarketCard[];
   const history = (historyRows ?? []) as MarketPriceRow[];
 
-  // 부모 picker용 옵션 (활성 박스/팩만)
+  // 부모 picker용 옵션 (박스/팩 모두 — 활성 여부 무관, 비활성은 라벨에 표시)
   const parentOptions = cards
-    .filter((c) => c.is_active && (c.product_type === "box" || c.product_type === "pack"))
+    .filter((c) => c.product_type === "box" || c.product_type === "pack")
     .map((c) => ({
       id: c.id,
       name: c.name,
       product_type: c.product_type,
       category: c.category,
+      is_active: c.is_active,
     }));
   return (
     <div>

@@ -246,7 +246,7 @@ export default function EditCardModal({
                   <option value="">— 미지정 —</option>
                   {allowedParents.map((p) => (
                     <option key={p.id} value={p.id}>
-                      [{PRODUCT_TYPE_LABEL[p.product_type]}] {p.name}
+                      [{PRODUCT_TYPE_LABEL[p.product_type]}] {p.name}{!p.is_active && " (숨김)"}
                     </option>
                   ))}
                 </select>
