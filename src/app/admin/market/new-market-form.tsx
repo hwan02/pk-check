@@ -23,6 +23,7 @@ export default function NewMarketCardForm({ parentOptions = [] }: { parentOption
   const [setNameField, setSetNameField] = useState("");
   const [rarity, setRarity] = useState("");
   const [order, setOrder] = useState("0");
+  const [listPrice, setListPrice] = useState("");
   const [notes, setNotes] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -48,6 +49,7 @@ export default function NewMarketCardForm({ parentOptions = [] }: { parentOption
     setSetNameField("");
     setRarity("");
     setOrder("0");
+    setListPrice("");
     setNotes("");
     setFile(null);
     setPreview(null);
@@ -85,6 +87,7 @@ export default function NewMarketCardForm({ parentOptions = [] }: { parentOption
     if (rarity.trim()) form.append("rarity", rarity.trim());
     if (notes.trim()) form.append("notes", notes.trim());
     form.append("display_order", order);
+    if (listPrice.trim()) form.append("list_price_krw", listPrice.trim());
     if (file) form.append("image", file);
     try {
       const resp = await fetch("/api/admin/market", { method: "POST", body: form });
@@ -206,6 +209,15 @@ export default function NewMarketCardForm({ parentOptions = [] }: { parentOption
                 onChange={(e) => setRarity(e.target.value)}
                 className={inp}
                 placeholder="SAR"
+              />
+            </Field>
+            <Field label="정가 (원, 선택)">
+              <input
+                value={listPrice}
+                onChange={(e) => setListPrice(e.target.value.replace(/[^0-9]/g, ""))}
+                className={inp}
+                placeholder="5500"
+                inputMode="numeric"
               />
             </Field>
             <Field label="노출 순서">

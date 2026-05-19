@@ -34,6 +34,7 @@ export async function POST(request: NextRequest) {
   const rarity = (form.get("rarity") as string | null)?.trim() || null;
   const notes = (form.get("notes") as string | null)?.trim() || null;
   const orderRaw = (form.get("display_order") as string | null) ?? "0";
+  const listPriceRaw = (form.get("list_price_krw") as string | null)?.trim() || "";
   const image = form.get("image") as File | null;
 
   if (!name) return NextResponse.json({ error: "name required" }, { status: 400 });
@@ -72,6 +73,13 @@ export async function POST(request: NextRequest) {
   }
 
   const displayOrder = parseInt(orderRaw, 10) || 0;
+  let listPriceKrw: number | null = null;
+  if (listPriceRaw) {
+    const n = parseInt(listPriceRaw, 10);
+    if (!Number.isFinite(n) || n < 0)
+      return NextResponse.json({ error: "invalid list_price_krw" }, { status: 400 });
+    listPriceKrw = n;
+  }
 
   let imageUrl: string | null = null;
   if (image && image.size > 0) {
@@ -101,6 +109,7 @@ export async function POST(request: NextRequest) {
       set_name: setName,
       rarity,
       notes,
+      list_price_krw: listPriceKrw,
       display_order: displayOrder,
       image_url: imageUrl,
       is_active: true,
