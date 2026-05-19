@@ -195,8 +195,15 @@ export default async function MarketPage({ searchParams }: Props) {
                             </span>
                           )}
                         </div>
-                        <p className="text-[10px] opacity-50 mt-0.5">{topGrade.grade} 기준</p>
+                        <p className="text-[10px] opacity-50 mt-0.5">
+                          {topGrade.grade} 기준
+                          {c.list_price_krw != null && <> · 정가 {formatKRW(c.list_price_krw)}</>}
+                        </p>
                       </>
+                    ) : c.list_price_krw != null ? (
+                      <p className="text-[13px] mt-1.5 opacity-80">
+                        정가 <span className="font-semibold">{formatKRW(c.list_price_krw)}</span>
+                      </p>
                     ) : (
                       <p className="text-[11px] opacity-50 mt-1.5">시세 정보 없음</p>
                     )}

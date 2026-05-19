@@ -43,6 +43,10 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
   if (body.parent_id === null) updates.parent_id = null;
   else if (typeof body.parent_id === "string" && body.parent_id.trim())
     updates.parent_id = body.parent_id.trim();
+  // 정가 — null 또는 정수
+  if (body.list_price_krw === null) updates.list_price_krw = null;
+  else if (typeof body.list_price_krw === "number" && body.list_price_krw >= 0)
+    updates.list_price_krw = Math.round(body.list_price_krw);
 
   if (Object.keys(updates).length === 0)
     return NextResponse.json({ error: "no updates" }, { status: 400 });

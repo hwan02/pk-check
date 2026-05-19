@@ -11,6 +11,7 @@ export interface MarketCard {
   rarity: string | null;
   image_url: string | null;
   notes: string | null;
+  list_price_krw: number | null;
   is_active: boolean;
   display_order: number;
   created_at: string;

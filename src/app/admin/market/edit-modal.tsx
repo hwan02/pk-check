@@ -36,6 +36,9 @@ export default function EditCardModal({
   const [productType, setProductType] = useState(card.product_type);
   const [parentId, setParentId] = useState(card.parent_id ?? "");
   const [notes, setNotes] = useState(card.notes ?? "");
+  const [listPrice, setListPrice] = useState(
+    card.list_price_krw != null ? String(card.list_price_krw) : "",
+  );
   const [imageUrl, setImageUrl] = useState(card.image_url);
 
   const [saving, setSaving] = useState(false);
@@ -101,6 +104,10 @@ export default function EditCardModal({
     }
     const pid = parentId || null;
     if (pid !== (card.parent_id ?? null)) out.parent_id = pid;
+    // 정가
+    const lpClean = listPrice.replace(/[^0-9]/g, "");
+    const lpVal = lpClean === "" ? null : parseInt(lpClean, 10);
+    if (lpVal !== (card.list_price_krw ?? null)) out.list_price_krw = lpVal;
     return out;
   }
 
@@ -222,6 +229,16 @@ export default function EditCardModal({
                 <input value={rarity} onChange={(e) => setRarity(e.target.value)} className={inp} placeholder="SAR" />
               </Field>
             </div>
+
+            <Field label="정가 (원, 선택)">
+              <input
+                value={listPrice}
+                onChange={(e) => setListPrice(e.target.value.replace(/[^0-9]/g, ""))}
+                className={inp}
+                placeholder="5500"
+                inputMode="numeric"
+              />
+            </Field>
 
             {needTypes.length > 0 && (
               <Field label={`부모 (${needTypes.map((t) => PRODUCT_TYPE_LABEL[t]).join("/")})`}>

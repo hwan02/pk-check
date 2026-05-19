@@ -249,6 +249,16 @@ export default async function MarketDetailPage({ params }: Props) {
             )}
           </div>
 
+          {/* 정가 */}
+          {card.list_price_krw != null && (
+            <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] p-4 flex items-baseline justify-between">
+              <span className="text-xs opacity-60">정가</span>
+              <span className="text-base font-extrabold tracking-tight">
+                {formatKRW(card.list_price_krw)}
+              </span>
+            </div>
+          )}
+
           {/* 등급별 최신가 */}
           <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] p-4">
             <p className="text-xs opacity-60 mb-3">등급별 최신가</p>
