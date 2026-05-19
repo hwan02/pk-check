@@ -1,0 +1,3 @@
+-- 그레이딩 정보
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS grading_company text; -- BRG, PSA, BGS, CGC, SGC
+ALTER TABLE listings ADD COLUMN IF NOT EXISTS grading_grade text;   -- 10, 9.5, 9, 8.5, 8...

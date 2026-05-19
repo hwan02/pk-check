@@ -16,6 +16,8 @@ export default function NewListingForm() {
   const [stock, setStock] = useState("1");
   const [description, setDescription] = useState("");
   const [descriptionEn, setDescriptionEn] = useState("");
+  const [gradingCompany, setGradingCompany] = useState("");
+  const [gradingGrade, setGradingGrade] = useState("");
   const [videoUrl, setVideoUrl] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -65,6 +67,8 @@ export default function NewListingForm() {
     form.append("stock", stock);
     if (description.trim()) form.append("description", description.trim());
     if (descriptionEn.trim()) form.append("description_en", descriptionEn.trim());
+    if (gradingCompany) form.append("grading_company", gradingCompany);
+    if (gradingGrade) form.append("grading_grade", gradingGrade);
     if (videoUrl.trim()) form.append("video_url", videoUrl.trim());
     if (file) form.append("image", file);
 
@@ -144,6 +148,32 @@ export default function NewListingForm() {
                 <option value="played">PL (Played)</option>
               </select>
             </Field>
+            <Field label="그레이딩 업체">
+              <select value={gradingCompany} onChange={(e) => setGradingCompany(e.target.value)} className={inp}>
+                <option value="">없음 (미감정)</option>
+                <option value="brg">BRG</option>
+                <option value="psa">PSA</option>
+                <option value="bgs">BGS</option>
+                <option value="cgc">CGC</option>
+                <option value="sgc">SGC</option>
+                <option value="ace">ACE</option>
+              </select>
+            </Field>
+            {gradingCompany && (
+              <Field label="등급">
+                <select value={gradingGrade} onChange={(e) => setGradingGrade(e.target.value)} className={inp}>
+                  <option value="">선택</option>
+                  <option value="10">10</option>
+                  <option value="9.5">9.5</option>
+                  <option value="9">9</option>
+                  <option value="8.5">8.5</option>
+                  <option value="8">8</option>
+                  <option value="7.5">7.5</option>
+                  <option value="7">7</option>
+                  <option value="6">6 이하</option>
+                </select>
+              </Field>
+            )}
             <Field label="가격 (USD) *">
               <input value={priceUsd} onChange={(e) => setPriceUsd(e.target.value)} className={inp} placeholder="99.99" inputMode="decimal" />
             </Field>

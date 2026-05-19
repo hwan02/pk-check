@@ -41,6 +41,8 @@ export async function POST(request: NextRequest) {
   const stockRaw = (form.get("stock") as string | null) ?? "1";
   const description = (form.get("description") as string | null)?.trim() || null;
   const descriptionEn = (form.get("description_en") as string | null)?.trim() || null;
+  const gradingCompany = (form.get("grading_company") as string | null)?.trim() || null;
+  const gradingGrade = (form.get("grading_grade") as string | null)?.trim() || null;
   const videoUrlRaw = (form.get("video_url") as string | null)?.trim() || null;
   const videoUrl =
     videoUrlRaw && /^https?:\/\//.test(videoUrlRaw) ? videoUrlRaw : null;
@@ -102,6 +104,8 @@ export async function POST(request: NextRequest) {
       description_en: descriptionEn,
       image_url: imageUrl,
       video_url: videoUrl,
+      grading_company: gradingCompany,
+      grading_grade: gradingGrade,
       is_active: true,
     })
     .select()

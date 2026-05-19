@@ -13,6 +13,8 @@ export interface Listing {
   image_url: string | null;
   image_urls: string[] | null;
   video_url: string | null;
+  grading_company: string | null;
+  grading_grade: string | null;
   is_active: boolean;
   card_id: string | null;
   created_at: string;
@@ -37,6 +39,17 @@ export const LANGUAGE_LABEL: Record<string, string> = {
   en: "북미판",
   kr: "한국판",
 };
+
+export const GRADING_COMPANY_LABEL: Record<string, string> = {
+  brg: "BRG",
+  psa: "PSA",
+  bgs: "BGS",
+  cgc: "CGC",
+  sgc: "SGC",
+  ace: "ACE",
+};
+
+export const GRADING_GRADES = ["10", "9.5", "9", "8.5", "8", "7.5", "7", "6", "5", "4", "3", "2", "1"];
 
 export function formatUSD(n: number): string {
   return `$${n.toFixed(2)}`;

@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSsrClient } from "@/lib/supabase/ssr";
-import { CATEGORY_LABEL, CONDITION_LABEL, LANGUAGE_LABEL, formatUSD, type Listing } from "@/lib/shop";
+import { CATEGORY_LABEL, CONDITION_LABEL, LANGUAGE_LABEL, GRADING_COMPANY_LABEL, formatUSD, type Listing } from "@/lib/shop";
 import AddToCartButton from "./add-to-cart";
 import PriceTrend from "@/components/price-trend";
 import ProductVideo from "@/components/product-video";
@@ -153,6 +153,11 @@ export default async function ListingDetailPage({ params }: Props) {
                 {CONDITION_LABEL[item.condition]}
               </span>
             )}
+            {item.grading_company && (
+              <span className="text-[11px] px-2 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 font-bold">
+                {GRADING_COMPANY_LABEL[item.grading_company] ?? item.grading_company.toUpperCase()} {item.grading_grade ?? ""}
+              </span>
+            )}
           </div>
 
           {/* 가격 박스 (KREAM 시그니처) */}
@@ -181,6 +186,15 @@ export default async function ListingDetailPage({ params }: Props) {
                 <>
                   <dt className="opacity-60">상태</dt>
                   <dd className="text-right font-medium">{CONDITION_LABEL[item.condition]}</dd>
+                </>
+              )}
+
+              {item.grading_company && (
+                <>
+                  <dt className="opacity-60">그레이딩</dt>
+                  <dd className="text-right font-bold text-amber-700">
+                    {GRADING_COMPANY_LABEL[item.grading_company] ?? item.grading_company.toUpperCase()} {item.grading_grade ?? ""}
+                  </dd>
                 </>
               )}
             </dl>
