@@ -328,36 +328,47 @@ export function InlineParent({
 }
 
 export function ToggleActiveButton({ id, active }: { id: string; active: boolean }) {
-  const router = useRouter();
+  const [localActive, setLocalActive] = useState(active);
   const [loading, setLoading] = useState(false);
+
+  // 부모에서 active prop 이 바뀌면 로컬도 따라가게 (다른 경로로 변경됐을 때 sync)
+  useEffect(() => {
+    setLocalActive(active);
+  }, [active]);
+
   async function toggle() {
+    const next = !localActive;
+    setLocalActive(next); // optimistic
     setLoading(true);
     const resp = await fetch(`/api/admin/market/${id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
-      body: JSON.stringify({ is_active: !active }),
+      body: JSON.stringify({ is_active: next }),
     });
     setLoading(false);
-    if (resp.ok) router.refresh();
+    if (!resp.ok) {
+      setLocalActive(!next); // rollback
+      alert("저장 실패");
+    }
   }
   return (
     <button
       type="button"
       role="switch"
-      aria-checked={active}
-      aria-label={active ? "노출중 (클릭해서 숨김)" : "숨김 (클릭해서 노출)"}
+      aria-checked={localActive}
+      aria-label={localActive ? "노출중 (클릭해서 숨김)" : "숨김 (클릭해서 노출)"}
       onClick={toggle}
       disabled={loading}
       className={`relative inline-flex items-center h-5 w-10 rounded-full transition-colors disabled:opacity-50 ${
-        active ? "bg-emerald-500" : "bg-gray-300"
+        localActive ? "bg-emerald-500" : "bg-gray-300"
       }`}
     >
       <span
         className={`absolute h-3.5 w-3.5 rounded-full bg-white shadow transition-transform ${
-          active ? "translate-x-[22px]" : "translate-x-1"
+          localActive ? "translate-x-[22px]" : "translate-x-1"
         }`}
       />
-      <span className="sr-only">{active ? "노출중" : "숨김"}</span>
+      <span className="sr-only">{localActive ? "노출중" : "숨김"}</span>
     </button>
   );
 }
