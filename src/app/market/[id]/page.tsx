@@ -402,11 +402,11 @@ export default async function MarketDetailPage({ params }: Props) {
         </section>
       )}
 
-      {/* 형제 — 같은 박스/팩의 다른 카드들 (single 또는 pack 의 형제) */}
-      {siblings.length > 0 && parent && (
+      {/* 형제 — single 시세에서만 (박스/팩은 children/grandchildren 으로 이미 노출) */}
+      {card.product_type === "single" && siblings.length > 0 && parent && (
         <section className="mt-10">
           <h2 className="text-sm font-semibold tracking-widest uppercase opacity-70 mb-3">
-            같은 {PRODUCT_TYPE_LABEL[parent.product_type]}의 다른 카드
+            같은 박스의 다른 카드
             <span className="ml-2 opacity-50 normal-case tracking-normal text-xs">
               {siblings.length}
             </span>
