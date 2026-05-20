@@ -169,8 +169,14 @@ export default async function MarketDetailPage({ params }: Props) {
     }
   }
 
-  // 자식/손주/형제 들의 최신가 미니 표시용 history
-  const relatedIds = [...children, ...grandchildren, ...siblings].map((c) => c.id);
+  // 자식/손주/형제/부모 들의 최신가 미니 표시용 history
+  const relatedIds = [
+    ...children,
+    ...grandchildren,
+    ...siblings,
+    ...(parent ? [parent] : []),
+    ...(grandparent ? [grandparent] : []),
+  ].map((c) => c.id);
   const relatedHistByCard = new Map<string, MarketPriceRow[]>();
   if (relatedIds.length > 0) {
     const { data: relHist } = await supabase
@@ -349,6 +355,25 @@ export default async function MarketDetailPage({ params }: Props) {
           </div>
         </div>
       </div>
+
+      {/* 위계 — 부모(팩/박스). 클릭해서 위로 올라가는 경로 */}
+      {(() => {
+        const ancestors: MarketCard[] = [];
+        if (parent?.is_active) ancestors.push(parent);
+        if (grandparent?.is_active && grandparent.id !== parent?.id) ancestors.push(grandparent);
+        if (ancestors.length === 0) return null;
+        return (
+          <section className="mt-10">
+            <h2 className="text-sm font-semibold tracking-widest uppercase opacity-70 mb-3">
+              {card.product_type === "single" ? "이 카드의 팩 / 박스" : "이 팩의 박스"}
+              <span className="ml-2 opacity-50 normal-case tracking-normal text-xs">
+                {ancestors.length}
+              </span>
+            </h2>
+            <RelatedGrid items={ancestors} historyByCard={relatedHistByCard} />
+          </section>
+        );
+      })()}
 
       {/* 위계 — 자식 그리드. 박스 시세는 자식을 팩 / 싱글 로 분리해서 노출 */}
       {card.product_type === "box" && (
