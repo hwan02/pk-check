@@ -127,7 +127,7 @@ export default function AdminMarketCardList({ cards, history, parentOptions }: P
         <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
           <select value={setFilter} onChange={(e) => setSetFilter(e.target.value)}
             className="px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] max-w-[220px] truncate">
-            <option value="">박스 전체</option>
+            <option value="">전체</option>
             {setOptions.map((s) => <option key={s} value={s}>{s}</option>)}
           </select>
           <select value={rarityFilter} onChange={(e) => setRarityFilter(e.target.value)}
