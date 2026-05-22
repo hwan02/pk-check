@@ -16,71 +16,61 @@ const BUSINESS = {
 export default function Footer() {
   return (
     <footer className="mt-16 border-t border-[var(--border)] bg-[var(--card-bg)]">
-      <div className="max-w-7xl mx-auto px-4 py-6">
-        {/* 상단: 브랜드 + 링크들 */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <div>
-            <p
-              className="text-base font-black tracking-tight"
+      <div className="max-w-7xl mx-auto px-4 py-4">
+        {/* 한 줄: 브랜드 + 링크들 + 사업자정보 토글 + 카피라이트 */}
+        <details className="group">
+          <summary className="cursor-pointer list-none select-none flex flex-wrap items-center gap-x-4 gap-y-2 text-xs">
+            <span
+              className="text-sm font-black tracking-tight"
               style={{ fontFamily: "var(--font-brand), sans-serif", letterSpacing: "-0.04em" }}
             >
               KIKIDULT
-            </p>
-            <p className="text-[11px] opacity-50 mt-0.5">
-              포켓몬 · 원피스 트레이딩 카드 마켓
-            </p>
-          </div>
-          <ul className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-            <li>
-              <Link href="/legal/privacy" className="opacity-70 hover:opacity-100">
-                개인정보처리방침
-              </Link>
-            </li>
-            <li>
-              <Link href="/legal/terms" className="opacity-70 hover:opacity-100">
-                이용약관
-              </Link>
-            </li>
-            <li>
-              <a
-                href={`mailto:${BUSINESS.contactEmail}`}
-                className="opacity-70 hover:opacity-100"
+            </span>
+            <Link
+              href="/legal/privacy"
+              className="opacity-70 hover:opacity-100"            >
+              개인정보처리방침
+            </Link>
+            <Link
+              href="/legal/terms"
+              className="opacity-70 hover:opacity-100"            >
+              이용약관
+            </Link>
+            <a
+              href={`mailto:${BUSINESS.contactEmail}`}
+              className="opacity-70 hover:opacity-100"            >
+              고객센터
+            </a>
+            <a
+              href="https://www.instagram.com/kiki_dult"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="opacity-70 hover:opacity-100"            >
+              Instagram
+            </a>
+            <span className="inline-flex items-center gap-1 opacity-70 hover:opacity-100">
+              사업자 정보
+              <svg
+                className="opacity-60 transition-transform group-open:rotate-180"
+                width="10"
+                height="10"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
               >
-                고객센터
-              </a>
-            </li>
-            <li>
-              <a
-                href="https://www.instagram.com/kiki_dult"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="opacity-70 hover:opacity-100"
-              >
-                Instagram
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        {/* 사업자 정보 — 펼치기 */}
-        <details className="group mt-4 border-t border-[var(--border)] pt-3">
-          <summary className="cursor-pointer text-[11px] opacity-60 hover:opacity-100 list-none flex items-center gap-1.5 select-none">
-            <span>사업자 정보 · 개인정보보호책임자</span>
-            <svg
-              className="opacity-50 transition-transform group-open:rotate-180"
-              width="10"
-              height="10"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polyline points="6 9 12 15 18 9" />
-            </svg>
+                <polyline points="6 9 12 15 18 9" />
+              </svg>
+            </span>
+            <span className="ml-auto text-[10px] opacity-50">
+              © {new Date().getFullYear()} {BUSINESS.name} · PayPal
+            </span>
           </summary>
-          <div className="mt-3 text-[11px] opacity-70 leading-relaxed grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
+
+          {/* 펼침 영역 */}
+          <div className="mt-3 pt-3 border-t border-[var(--border)] text-[11px] opacity-70 leading-relaxed grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2">
             <dl className="grid grid-cols-[72px_1fr] gap-y-1">
               <dt className="opacity-60">상호</dt>
               <dd>{BUSINESS.name}</dd>
@@ -119,7 +109,7 @@ export default function Footer() {
                 </a>
               </dd>
             </dl>
-            <p className="sm:col-span-2 opacity-60 leading-relaxed">
+            <p className="sm:col-span-2 opacity-60">
               {BUSINESS.name}은(는) 통신판매중개자이자 해외 구매대행 서비스 제공자로서, 통관 시
               부과되는 관세·부가세는 회원이 부담합니다. 회원의 개인정보는{" "}
               <Link
@@ -132,12 +122,6 @@ export default function Footer() {
             </p>
           </div>
         </details>
-
-        {/* 하단: 카피라이트 + 결제수단 */}
-        <div className="mt-3 pt-3 border-t border-[var(--border)] flex items-center justify-between text-[10px] opacity-50">
-          <span>© {new Date().getFullYear()} {BUSINESS.name}. All rights reserved.</span>
-          <span>PayPal</span>
-        </div>
       </div>
     </footer>
   );
