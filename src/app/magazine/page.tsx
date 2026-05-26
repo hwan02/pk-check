@@ -49,19 +49,18 @@ export default async function MagazineListPage() {
           {articles.map((a) => (
             <li key={a.id}>
               <Link href={`/magazine/${a.slug}`} className="group block">
-                <div className="aspect-[16/10] relative rounded-2xl overflow-hidden bg-[var(--surface)] border border-[var(--border)]">
+                <div className="rounded-2xl overflow-hidden bg-white border border-[var(--border)] flex items-center justify-center aspect-[5/7]">
                   {a.cover_image ? (
                     <Image
                       src={a.cover_image}
                       alt={a.title}
-                      fill
+                      width={500}
+                      height={700}
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                      className="object-cover group-hover:scale-[1.03] transition-transform"
+                      className="max-w-full max-h-full w-auto h-auto object-contain group-hover:scale-[1.03] transition-transform"
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center text-xs opacity-30">
-                      no cover
-                    </div>
+                    <div className="text-xs opacity-30">no cover</div>
                   )}
                 </div>
                 <div className="mt-3">
