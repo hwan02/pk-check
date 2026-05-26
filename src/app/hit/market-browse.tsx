@@ -95,51 +95,51 @@ export default function MarketBrowse({ all }: Props) {
 
   return (
     <>
-      {/* 카테고리 탭 + 검색 — 모바일/데스크탑 공통 가로 정렬 */}
-      <div className="flex items-center gap-2 mb-4 overflow-x-auto">
-        <div className="flex gap-1 shrink-0">
-          {(["all", "pokemon", "onepiece"] as const).map((c) => (
-            <button
-              key={c}
-              type="button"
-              onClick={() => setCategory(c)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition ${
-                category === c
-                  ? "bg-[var(--primary)] text-white"
-                  : "border border-[var(--border)] opacity-70 hover:opacity-100"
-              }`}
-            >
-              {c === "all" ? "전체" : MARKET_CATEGORY_LABEL[c]}
-              <span className="ml-1 text-[10px] opacity-70">{counts[c]}</span>
-            </button>
-          ))}
-        </div>
-        <div className="relative flex-1 min-w-[140px]">
-          <input
-            type="text"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="검색"
-            className="w-full pl-8 pr-7 py-1.5 rounded-full border border-[var(--border)] bg-[var(--card-bg)] text-xs focus:border-[var(--primary)] focus:outline-none"
-          />
-          <svg
-            className="absolute left-2.5 top-1/2 -translate-y-1/2 opacity-40"
-            width="13" height="13" viewBox="0 0 24 24" fill="none"
-            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+      {/* 검색 — 한 줄 전체 폭 */}
+      <div className="relative mb-2">
+        <input
+          type="text"
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          placeholder="박스/카드/등급 검색"
+          className="w-full pl-9 pr-8 py-2 rounded-full border border-[var(--border)] bg-[var(--card-bg)] text-sm focus:border-[var(--primary)] focus:outline-none"
+        />
+        <svg
+          className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40"
+          width="15" height="15" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+        >
+          <circle cx="11" cy="11" r="8" />
+          <line x1="21" y1="21" x2="16.65" y2="16.65" />
+        </svg>
+        {q && (
+          <button
+            onClick={() => setQ("")}
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs opacity-50 hover:opacity-100"
+            aria-label="검색 지우기"
           >
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          {q && (
-            <button
-              onClick={() => setQ("")}
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-xs opacity-50 hover:opacity-100"
-              aria-label="검색 지우기"
-            >
-              ✕
-            </button>
-          )}
-        </div>
+            ✕
+          </button>
+        )}
+      </div>
+
+      {/* 카테고리 탭 */}
+      <div className="flex gap-1 mb-4 overflow-x-auto -mx-1 px-1">
+        {(["all", "pokemon", "onepiece"] as const).map((c) => (
+          <button
+            key={c}
+            type="button"
+            onClick={() => setCategory(c)}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap shrink-0 transition ${
+              category === c
+                ? "bg-[var(--primary)] text-white"
+                : "border border-[var(--border)] opacity-70 hover:opacity-100"
+            }`}
+          >
+            {c === "all" ? "전체" : MARKET_CATEGORY_LABEL[c]}
+            <span className="ml-1 text-[10px] opacity-70">{counts[c]}</span>
+          </button>
+        ))}
       </div>
 
       {filtered.length === 0 ? (
@@ -191,23 +191,23 @@ export default function MarketBrowse({ all }: Props) {
                       </div>
                     ) : (
                       <div
-                        className="flex gap-2 sm:gap-3 overflow-x-auto p-2 sm:p-3 h-full items-center scroll-smooth"
+                        className="flex gap-2 sm:gap-3 overflow-x-auto p-2 sm:p-3 scroll-smooth"
                         style={{ scrollSnapType: "x mandatory" }}
                       >
                         {cards.map((c) => (
                           <Link
                             key={c.id}
                             href={marketCardHref(c)}
-                            className="shrink-0 w-[88px] sm:w-[110px] group"
+                            className="shrink-0 w-[80px] sm:w-[96px] group flex flex-col"
                             style={{ scrollSnapAlign: "start" }}
                           >
-                            <div className="aspect-[3/4] relative rounded-lg overflow-hidden bg-white border border-[var(--border)] group-hover:border-[var(--border-strong)] group-hover:shadow-md transition">
+                            <div className="w-[80px] h-[112px] sm:w-[96px] sm:h-[134px] relative rounded-lg overflow-hidden bg-white border border-[var(--border)] group-hover:border-[var(--border-strong)] group-hover:shadow-md transition shrink-0">
                               {c.image_url ? (
                                 <Image
                                   src={c.image_url}
                                   alt={c.name}
                                   fill
-                                  sizes="110px"
+                                  sizes="96px"
                                   className="object-contain p-1 group-hover:scale-[1.05] transition-transform duration-300"
                                 />
                               ) : (
@@ -221,7 +221,7 @@ export default function MarketBrowse({ all }: Props) {
                                 </span>
                               )}
                             </div>
-                            <p className="text-[10px] sm:text-[11px] font-bold mt-1 line-clamp-1 leading-snug">
+                            <p className="text-[10px] sm:text-[11px] font-bold mt-1 line-clamp-1 leading-tight h-[14px] sm:h-[15px] overflow-hidden">
                               {c.name}
                             </p>
                           </Link>

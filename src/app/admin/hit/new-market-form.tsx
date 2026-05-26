@@ -90,7 +90,7 @@ export default function NewMarketCardForm({ parentOptions = [] }: { parentOption
     if (listPrice.trim()) form.append("list_price_krw", listPrice.trim());
     if (file) form.append("image", file);
     try {
-      const resp = await fetch("/api/admin/market", { method: "POST", body: form });
+      const resp = await fetch("/api/admin/hit", { method: "POST", body: form });
       const json = await resp.json();
       if (!resp.ok) {
         setErrors([json.error ?? "등록 실패"]);

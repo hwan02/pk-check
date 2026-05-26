@@ -20,9 +20,9 @@ const ITEMS: { href: string; label: string; match: (p: string) => boolean }[] = 
     match: (p) => p.startsWith("/admin/listings"),
   },
   {
-    href: "/admin/market",
+    href: "/admin/hit",
     label: "Hit 관리",
-    match: (p) => p.startsWith("/admin/market"),
+    match: (p) => p.startsWith("/admin/hit"),
   },
   {
     href: "/admin/magazine",

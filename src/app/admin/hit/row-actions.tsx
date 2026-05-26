@@ -39,7 +39,7 @@ export function ImageThumb({ id, src, alt }: { id: string; src: string | null; a
     setUploading(true);
     const form = new FormData();
     form.append("image", file);
-    const resp = await fetch(`/api/admin/market/${id}/image`, { method: "POST", body: form });
+    const resp = await fetch(`/api/admin/hit/${id}/image`, { method: "POST", body: form });
     setUploading(false);
     if (resp.ok) router.refresh();
     else {
@@ -50,7 +50,7 @@ export function ImageThumb({ id, src, alt }: { id: string; src: string | null; a
 
   async function removeImage() {
     if (!confirm("이미지를 제거할까요?")) return;
-    const resp = await fetch(`/api/admin/market/${id}/image`, { method: "DELETE" });
+    const resp = await fetch(`/api/admin/hit/${id}/image`, { method: "DELETE" });
     if (resp.ok) router.refresh();
   }
 
@@ -148,7 +148,7 @@ export function InlineText({
   async function save() {
     if ((value || "") === (initial ?? "")) return;
     setSaving(true);
-    const resp = await fetch(`/api/admin/market/${id}`, {
+    const resp = await fetch(`/api/admin/hit/${id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ [field]: value }),
@@ -179,7 +179,7 @@ export function InlineCategory({ id, initial }: { id: string; initial: MarketCar
     if (v === value) return;
     setValue(v);
     setSaving(true);
-    const resp = await fetch(`/api/admin/market/${id}`, {
+    const resp = await fetch(`/api/admin/hit/${id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ category: v }),
@@ -222,7 +222,7 @@ export function InlineProductType({
     // box로 바꿀 때는 parent_id 도 null 로 보냄
     const body: Record<string, unknown> = { product_type: v };
     if (v === "box") body.parent_id = null;
-    const resp = await fetch(`/api/admin/market/${id}`, {
+    const resp = await fetch(`/api/admin/hit/${id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(body),
@@ -296,7 +296,7 @@ export function InlineParent({
   async function change(next: string) {
     if (next === value) return;
     setSaving(true);
-    const resp = await fetch(`/api/admin/market/${id}`, {
+    const resp = await fetch(`/api/admin/hit/${id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ parent_id: next || null }),
@@ -341,7 +341,7 @@ export function ToggleActiveButton({ id, active }: { id: string; active: boolean
     const next = !localActive;
     setLocalActive(next); // optimistic
     setLoading(true);
-    const resp = await fetch(`/api/admin/market/${id}`, {
+    const resp = await fetch(`/api/admin/hit/${id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ is_active: next }),
@@ -380,7 +380,7 @@ export function DeleteMarketButton({ id }: { id: string }) {
   async function onDelete() {
     if (!confirm("삭제할까요? 가격 history도 함께 삭제됩니다.")) return;
     setLoading(true);
-    const resp = await fetch(`/api/admin/market/${id}`, { method: "DELETE" });
+    const resp = await fetch(`/api/admin/hit/${id}`, { method: "DELETE" });
     setLoading(false);
     if (resp.ok) router.refresh();
     else alert("삭제 실패");
@@ -502,7 +502,7 @@ export function PriceHistoryPanel({
       return;
     }
     setSaving(true);
-    const resp = await fetch(`/api/admin/market/${cardId}/price`, {
+    const resp = await fetch(`/api/admin/hit/${cardId}/price`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ grade: grade.trim(), price_krw: p, recorded_at: date }),
@@ -519,7 +519,7 @@ export function PriceHistoryPanel({
 
   async function del(rowId: string) {
     if (!confirm("이 가격 기록을 삭제할까요?")) return;
-    const resp = await fetch(`/api/admin/market/${cardId}/price?row=${rowId}`, {
+    const resp = await fetch(`/api/admin/hit/${cardId}/price?row=${rowId}`, {
       method: "DELETE",
     });
     if (resp.ok) router.refresh();

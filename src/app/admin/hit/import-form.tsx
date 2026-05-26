@@ -57,7 +57,7 @@ export default function BulkImportForm({ sets }: { sets: SetRow[] }) {
     if (!setId) return;
     setLoading(true);
     setMsg("");
-    const resp = await fetch("/api/admin/market/bulk-import", {
+    const resp = await fetch("/api/admin/hit/bulk-import", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({

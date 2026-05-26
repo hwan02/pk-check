@@ -219,7 +219,7 @@ export default async function MarketDetailPage({ params }: Props) {
     <div className="max-w-5xl mx-auto px-4 py-6">
       {/* breadcrumb */}
       <nav className="text-xs opacity-60 mb-4 flex items-center gap-1.5 flex-wrap">
-        <Link href="/market" className="hover:opacity-100">
+        <Link href="/hit" className="hover:opacity-100">
           MARKET
         </Link>
         <span>/</span>

@@ -67,7 +67,7 @@ export default function EditCardModal({
     setImgBusy(true);
     const form = new FormData();
     form.append("image", file);
-    const resp = await fetch(`/api/admin/market/${card.id}/image`, { method: "POST", body: form });
+    const resp = await fetch(`/api/admin/hit/${card.id}/image`, { method: "POST", body: form });
     setImgBusy(false);
     if (resp.ok) {
       const j = await resp.json();
@@ -82,7 +82,7 @@ export default function EditCardModal({
   async function removeImage() {
     if (!confirm("이미지를 제거할까요?")) return;
     setImgBusy(true);
-    const resp = await fetch(`/api/admin/market/${card.id}/image`, { method: "DELETE" });
+    const resp = await fetch(`/api/admin/hit/${card.id}/image`, { method: "DELETE" });
     setImgBusy(false);
     if (resp.ok) {
       setImageUrl(null);
@@ -115,7 +115,7 @@ export default function EditCardModal({
     const payload = diffPayload();
     if (Object.keys(payload).length === 0) { onClose(); return; }
     setSaving(true);
-    const resp = await fetch(`/api/admin/market/${card.id}`, {
+    const resp = await fetch(`/api/admin/hit/${card.id}`, {
       method: "PATCH",
       headers: { "content-type": "application/json" },
       body: JSON.stringify(payload),

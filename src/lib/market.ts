@@ -21,7 +21,7 @@ export interface MarketCard {
 
 // 카드 시세 상세 URL — short_id 가 있으면 그걸로, 없으면 UUID
 export function marketCardHref(c: { id: string; short_id?: string | null }): string {
-  return `/market/${c.short_id ?? c.id}`;
+  return `/hit/${c.short_id ?? c.id}`;
 }
 
 // UUID 형식 판별 (라우팅에서 short_id 와 구분용)
