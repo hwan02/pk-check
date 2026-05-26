@@ -96,7 +96,7 @@ export default function BulkImportForm({ sets }: { sets: SetRow[] }) {
       </div>
 
       <p className="text-[11px] opacity-60">
-        카탈로그(cards) 에서 박스의 카드들을 시세 placeholder 로 가져옵니다. 비활성 상태로
+        카탈로그(cards) 에서 박스의 카드들을 Hit placeholder 로 가져옵니다. 비활성 상태로
         들어가니, 가격 채우고 노출 토글해주세요. 같은 박스를 다시 실행해도 중복 import 되지 않습니다.
       </p>
 

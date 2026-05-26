@@ -138,7 +138,7 @@ export default function EditCardModal({
       <div className="bg-[var(--background)] w-full max-w-2xl rounded-2xl border border-[var(--border)] shadow-xl my-6">
         {/* 헤더 */}
         <div className="flex items-center justify-between px-5 py-3 border-b border-[var(--border)]">
-          <h3 className="text-sm font-semibold">시세 카드 수정</h3>
+          <h3 className="text-sm font-semibold">Hit 카드 수정</h3>
           <button onClick={onClose} className="text-xs opacity-60 hover:opacity-100" aria-label="닫기 (ESC)">
             닫기 (ESC)
           </button>

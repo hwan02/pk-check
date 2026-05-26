@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSsrClient } from "@/lib/supabase/ssr";
+import { createServerClient } from "@/lib/supabase/server";
 import {
   formatKRW,
   isUuid,
@@ -17,20 +18,22 @@ import {
   type MarketPriceRow,
 } from "@/lib/market";
 import { formatUSD } from "@/lib/shop";
-import MarketChart from "@/components/market-chart";
+
+// 시세 표시는 데이터 완성 시까지 임시 숨김
+const SHOW_PRICE = false;
 
 interface Props {
   params: Promise<{ id: string }>;
 }
 
 async function getCard(idOrShort: string): Promise<MarketCard | null> {
-  const supabase = await createSsrClient();
+  // 일시: 비활성 카드도 접근 허용 — 사용자가 어드민 설정 중이라 모두 표시
+  const admin = createServerClient();
   const column = isUuid(idOrShort) ? "id" : "short_id";
-  const { data } = await supabase
+  const { data } = await admin
     .from("market_cards")
     .select("*")
     .eq(column, idOrShort)
-    .eq("is_active", true)
     .maybeSingle();
   return (data ?? null) as MarketCard | null;
 }
@@ -38,7 +41,7 @@ async function getCard(idOrShort: string): Promise<MarketCard | null> {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { id } = await params;
   const card = await getCard(id);
-  if (!card) return { title: "시세를 찾을 수 없습니다" };
+  if (!card) return { title: "카드를 찾을 수 없습니다" };
 
   // 최신가 한 줄로 추가
   const supabase = await createSsrClient();
@@ -49,17 +52,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     .order("recorded_at", { ascending: false })
     .limit(1)
     .maybeSingle();
-  const priceLine = latestRow
-    ? `${latestRow.grade} ${formatKRW(latestRow.price_krw)}`
-    : "시세 정보 준비 중";
   const meta = [card.set_name, card.rarity].filter(Boolean).join(" · ");
 
+  // 시세 표시는 임시 숨김 — 메타 description 에도 노출 안 함
   return {
-    title: `${card.name} 시세 — KIKIDULT`,
-    description: `${card.name} · ${priceLine} · ${MARKET_CATEGORY_LABEL[card.category]}${meta ? ` · ${meta}` : ""}`,
+    title: `${card.name} — Kikidult`,
+    description: `${card.name} · ${MARKET_CATEGORY_LABEL[card.category]}${meta ? ` · ${meta}` : ""}`,
     openGraph: {
-      title: `${card.name} 시세`,
-      description: `${priceLine}${meta ? ` · ${meta}` : ""}`,
+      title: `${card.name}`,
+      description: meta || MARKET_CATEGORY_LABEL[card.category],
       images: card.image_url ? [{ url: card.image_url }] : [],
     },
   };
@@ -67,15 +68,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function MarketDetailPage({ params }: Props) {
   const { id: idOrShort } = await params;
+  const admin = createServerClient();
   const supabase = await createSsrClient();
 
-  // short_id 또는 UUID 둘 다 받음
+  // 비활성도 접근 허용 — 어드민 설정 중
   const column = isUuid(idOrShort) ? "id" : "short_id";
-  const { data: cardRow } = await supabase
+  const { data: cardRow } = await admin
     .from("market_cards")
     .select("*")
     .eq(column, idOrShort)
-    .eq("is_active", true)
     .maybeSingle();
   if (!cardRow) notFound();
   const card = cardRow as MarketCard;
@@ -303,56 +304,20 @@ export default async function MarketDetailPage({ params }: Props) {
             )}
           </div>
 
-          {/* 정가 */}
-          {card.list_price_krw != null && (
-            <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] p-4 flex items-baseline justify-between">
-              <span className="text-xs opacity-60">정가</span>
-              <span className="text-base font-extrabold tracking-tight">
-                {formatKRW(card.list_price_krw)}
-              </span>
-            </div>
+          {/* 시세 표시는 데이터 완성 시까지 임시 숨김 */}
+          {SHOW_PRICE && (
+            <>
+              {/* 정가 */}
+              {card.list_price_krw != null && (
+                <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] p-4 flex items-baseline justify-between">
+                  <span className="text-xs opacity-60">정가</span>
+                  <span className="text-base font-extrabold tracking-tight">
+                    {(card.list_price_krw).toLocaleString("ko-KR")}원
+                  </span>
+                </div>
+              )}
+            </>
           )}
-
-          {/* 등급별 최신가 */}
-          <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] p-4">
-            <p className="text-xs opacity-60 mb-3">등급별 최신가</p>
-            {grades.length === 0 ? (
-              <p className="text-sm opacity-50 py-6 text-center">시세 데이터가 아직 없어요.</p>
-            ) : (
-              <ul className="divide-y divide-[var(--border)]">
-                {grades.map((g) => {
-                  const ch = priceChangePct(g.latest, g.prev);
-                  return (
-                    <li key={g.grade} className="flex items-center justify-between py-2.5">
-                      <div>
-                        <p className="text-sm font-semibold">{g.grade}</p>
-                        <p className="text-[10px] opacity-50 mt-0.5">{g.recorded_at}</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-base font-extrabold tracking-tight">
-                          {formatKRW(g.latest)}
-                        </p>
-                        {ch && (
-                          <p
-                            className={`text-[11px] font-semibold ${
-                              ch.dir === "up"
-                                ? "text-red-600"
-                                : ch.dir === "down"
-                                  ? "text-blue-600"
-                                  : "opacity-50"
-                            }`}
-                          >
-                            {ch.dir === "up" ? "▲" : ch.dir === "down" ? "▼" : "·"}{" "}
-                            {Math.abs(ch.pct).toFixed(1)}%
-                          </p>
-                        )}
-                      </div>
-                    </li>
-                  );
-                })}
-              </ul>
-            )}
-          </div>
         </div>
       </div>
 
@@ -443,13 +408,8 @@ export default async function MarketDetailPage({ params }: Props) {
         </section>
       )}
 
-      {/* 시세 추이 차트 */}
-      <section className="mt-10">
-        <h2 className="text-sm font-semibold tracking-widest uppercase opacity-70 mb-3">
-          시세 추이
-        </h2>
-        <MarketChart history={history} />
-      </section>
+      {/* 시세 추이 차트 — 데이터 완성 시 노출 */}
+      {SHOW_PRICE && false /* MarketChart 비활성 */ && null}
 
       {/* 관련 매물 (listings) */}
       {listings.length > 0 && (
@@ -494,39 +454,8 @@ export default async function MarketDetailPage({ params }: Props) {
         </section>
       )}
 
-      {/* 전체 기록 테이블 */}
-      {history.length > 0 && (
-        <section className="mt-10">
-          <h2 className="text-sm font-semibold tracking-widest uppercase opacity-70 mb-3">
-            전체 기록 ({history.length})
-          </h2>
-          <div className="overflow-x-auto rounded-xl border border-[var(--border)]">
-            <table className="w-full text-sm">
-              <thead className="bg-[var(--surface)]/40 text-xs opacity-70">
-                <tr>
-                  <th className="text-left py-2 px-3">날짜</th>
-                  <th className="text-left py-2 px-3">등급</th>
-                  <th className="text-right py-2 px-3">가격</th>
-                </tr>
-              </thead>
-              <tbody>
-                {history.slice(0, 200).map((r) => (
-                  <tr key={r.id} className="border-t border-[var(--border)]">
-                    <td className="py-2 px-3 opacity-70">{r.recorded_at}</td>
-                    <td className="py-2 px-3">{r.grade}</td>
-                    <td className="py-2 px-3 text-right font-mono">
-                      {formatKRW(r.price_krw)}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            {history.length > 200 && (
-              <p className="text-[11px] opacity-50 text-center py-2">최근 200건만 표시</p>
-            )}
-          </div>
-        </section>
-      )}
+      {/* 전체 기록 테이블 — 데이터 완성 시 노출 */}
+      {SHOW_PRICE && false && null}
     </div>
   );
 }
@@ -572,7 +501,7 @@ function RelatedGrid({
                 <p className="text-[13px] font-bold leading-snug line-clamp-1 mt-0.5">
                   {c.name}
                 </p>
-                {top ? (
+                {SHOW_PRICE && top && (
                   <div className="mt-1 flex items-baseline gap-2">
                     <p className="text-[14px] font-extrabold tracking-tight">
                       {formatKRW(top.latest)}
@@ -592,8 +521,6 @@ function RelatedGrid({
                       </span>
                     )}
                   </div>
-                ) : (
-                  <p className="text-[11px] opacity-50 mt-1">시세 준비 중</p>
                 )}
               </div>
             </Link>

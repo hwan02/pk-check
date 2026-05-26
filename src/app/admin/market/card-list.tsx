@@ -173,7 +173,7 @@ export default function AdminMarketCardList({ cards, history, parentOptions }: P
       <div className="space-y-2 mt-4">
         {filtered.length === 0 ? (
           <p className="text-center text-xs opacity-50 py-12">
-            {cards.length === 0 ? "등록된 시세 카드가 없습니다." : "조건에 맞는 카드가 없어요."}
+            {cards.length === 0 ? "등록된 Hit 카드가 없습니다." : "조건에 맞는 카드가 없어요."}
           </p>
         ) : (
           filtered.map((c) => (

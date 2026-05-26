@@ -90,7 +90,7 @@ export default async function AdminMarketPage() {
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold tracking-tight">시세 관리</h1>
+        <h1 className="text-2xl font-bold tracking-tight">Hit 관리</h1>
         <p className="text-xs opacity-50">{cards.length}장 등록</p>
       </div>
 

@@ -112,7 +112,7 @@ export default function NewMarketCardForm({ parentOptions = [] }: { parentOption
         onClick={() => setOpen(true)}
         className="px-4 py-2 rounded-lg bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90"
       >
-        + 새 시세 카드 등록
+        + 새 Hit 카드 등록
       </button>
     );
   }
@@ -120,7 +120,7 @@ export default function NewMarketCardForm({ parentOptions = [] }: { parentOption
   return (
     <div className="rounded-lg border border-[var(--border)] p-4 bg-[var(--card-bg)]">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold">새 시세 카드 등록</h3>
+        <h3 className="text-sm font-semibold">새 Hit 카드 등록</h3>
         <button onClick={() => setOpen(false)} className="text-xs opacity-60 hover:opacity-100">
           닫기
         </button>

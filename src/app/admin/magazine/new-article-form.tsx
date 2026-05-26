@@ -210,7 +210,7 @@ export default function NewArticleForm({
         {/* 카드 목록 */}
         {filtered.length === 0 ? (
           <p className="text-xs opacity-50 py-4 text-center border border-dashed border-[var(--border)] rounded">
-            먼저 /admin/market 에서 시세 카드를 등록하세요.
+            먼저 /admin/market 에서 Hit 카드를 등록하세요.
           </p>
         ) : (
           <ul className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 max-h-72 overflow-y-auto p-1">

@@ -21,7 +21,7 @@ const ITEMS: { href: string; label: string; match: (p: string) => boolean }[] = 
   },
   {
     href: "/admin/market",
-    label: "시세 관리",
+    label: "Hit 관리",
     match: (p) => p.startsWith("/admin/market"),
   },
   {
