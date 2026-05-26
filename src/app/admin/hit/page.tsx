@@ -28,15 +28,32 @@ export default async function AdminMarketPage() {
   }
 
   const admin = createServerClient();
-  const [{ data: cardRows }, { data: historyRows }, { data: setRows }] = await Promise.all([
-    admin
-      .from("market_cards")
-      .select("*")
-      .order("is_active", { ascending: false })
-      .order("category", { ascending: true })
-      .order("display_order", { ascending: true })
-      .order("created_at", { ascending: false })
-      .range(0, 9999), // Supabase 기본 1000 cap 우회 — market_cards 가 늘어나도 어드민에선 다 보이게
+
+  // PostgREST max-rows 가 1000 으로 cap 되어 있어서 .range(0, 9999) 로 한방에 못 가져옴.
+  // 페이지네이션해서 모든 market_cards 를 가져오기.
+  async function fetchAllMarketCards(): Promise<MarketCard[]> {
+    const PAGE = 1000;
+    const out: MarketCard[] = [];
+    for (let from = 0; ; from += PAGE) {
+      const { data, error } = await admin
+        .from("market_cards")
+        .select("*")
+        .order("is_active", { ascending: false })
+        .order("category", { ascending: true })
+        .order("display_order", { ascending: true })
+        .order("created_at", { ascending: false })
+        .range(from, from + PAGE - 1);
+      if (error) break;
+      const rows = (data ?? []) as MarketCard[];
+      out.push(...rows);
+      if (rows.length < PAGE) break;
+      if (out.length >= 20000) break; // 안전장치
+    }
+    return out;
+  }
+
+  const [cardsAll, { data: historyRows }, { data: setRows }] = await Promise.all([
+    fetchAllMarketCards(),
     admin
       .from("market_price_history")
       .select("*")
@@ -75,7 +92,7 @@ export default async function AdminMarketPage() {
     region: s.region,
     cardCount: setCardCounts.get(s.id) ?? 0,
   }));
-  const cards = (cardRows ?? []) as MarketCard[];
+  const cards = cardsAll;
   const history = (historyRows ?? []) as MarketPriceRow[];
 
   // 부모 picker용 옵션 (박스/팩 모두 — 활성 여부 무관, 비활성은 라벨에 표시)
