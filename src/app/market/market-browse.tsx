@@ -209,12 +209,6 @@ export default function MarketBrowse({ cards, boxes }: Props) {
         </ul>
       )}
 
-      {/* 빈 영역 — 추후 등급별 시세 차트 등 */}
-      {boxes.length > 0 && q === "" && (
-        <p className="mt-8 text-center text-[10px] opacity-40">
-          시세는 준비 중입니다. 곧 공개됩니다.
-        </p>
-      )}
     </>
   );
 }

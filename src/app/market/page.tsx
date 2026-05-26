@@ -35,11 +35,9 @@ export default async function MarketPage() {
   }
 
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <header className="mb-6 text-center">
-        <p className="text-[10px] tracking-[0.3em] opacity-50 uppercase">HIT</p>
-        <h1 className="mt-2 text-2xl md:text-3xl font-black tracking-tight">Hit 카드</h1>
-        <p className="mt-2 text-xs opacity-60">박스 · 팩 · 히트 카드 모음</p>
+    <div className="max-w-6xl mx-auto px-4 py-6">
+      <header className="mb-4 text-center">
+        <h1 className="text-2xl md:text-3xl font-black tracking-tight">Hit</h1>
       </header>
 
       <MarketBrowse cards={cards} boxes={boxes} history={history} />
