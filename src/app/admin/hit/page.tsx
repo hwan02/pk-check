@@ -35,7 +35,8 @@ export default async function AdminMarketPage() {
       .order("is_active", { ascending: false })
       .order("category", { ascending: true })
       .order("display_order", { ascending: true })
-      .order("created_at", { ascending: false }),
+      .order("created_at", { ascending: false })
+      .range(0, 9999), // Supabase 기본 1000 cap 우회 — market_cards 가 늘어나도 어드민에선 다 보이게
     admin
       .from("market_price_history")
       .select("*")
