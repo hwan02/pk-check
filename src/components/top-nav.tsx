@@ -34,7 +34,6 @@ export default async function TopNav() {
         <div className="hidden md:flex items-center gap-7 text-sm font-semibold tracking-wide ml-4">
           <Link href="/shop" className="opacity-80 hover:opacity-100">SHOP</Link>
           <Link href="/market" className="opacity-80 hover:opacity-100">MARKET</Link>
-          <Link href="/magazine" className="opacity-80 hover:opacity-100">MAGAZINE</Link>
         </div>
 
         {/* PC 우측 — 장바구니/계정 */}
