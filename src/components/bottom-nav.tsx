@@ -25,7 +25,7 @@ export default async function BottomNav() {
   }[] = [
     { href: "/", label: "홈", icon: <HomeIcon /> },
     { href: "/shop", label: "상품", icon: <BagIcon /> },
-    { href: "/hit", label: "Hit", icon: <FlameIcon /> },
+    { href: "/hit", label: "HIT", icon: <FlameIcon /> },
     { href: "/cart", label: "장바구니", icon: <CartIcon count={cartCount} /> },
     user
       ? { href: "/mypage", label: "MY", icon: <UserIcon /> }
