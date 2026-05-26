@@ -8,6 +8,7 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "cdn.snkrdunk.com" },
       { protocol: "https", hostname: "cards.image.pokemonkorea.co.kr" },
       { protocol: "https", hostname: "assets.tcgdex.net" },
+      { protocol: "https", hostname: "www.onepiece-cardgame.com" },
       { protocol: "https", hostname: "*.supabase.co" },
     ],
   },
