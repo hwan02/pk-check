@@ -169,14 +169,14 @@ export default function MarketBrowse({ all }: Props) {
                     href={marketCardHref(box)}
                     className="shrink-0 w-[150px] sm:w-[200px] p-3 group hover:bg-[var(--surface)]/40 transition flex flex-col items-center"
                   >
-                    <div className="aspect-square w-full relative rounded-xl overflow-hidden bg-white">
+                    <div className="aspect-[3/4] w-full relative rounded-xl overflow-hidden bg-white">
                       {box.image_url ? (
                         <Image
                           src={box.image_url}
                           alt={box.name}
                           fill
                           sizes="200px"
-                          className="object-contain p-2 group-hover:scale-[1.04] transition-transform duration-300"
+                          className="object-cover group-hover:scale-[1.04] transition-transform duration-300"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-[11px] opacity-40">
