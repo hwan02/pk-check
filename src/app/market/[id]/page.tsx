@@ -5,7 +5,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSsrClient } from "@/lib/supabase/ssr";
-import { createServerClient } from "@/lib/supabase/server";
 import {
   formatKRW,
   isUuid,
@@ -27,13 +26,13 @@ interface Props {
 }
 
 async function getCard(idOrShort: string): Promise<MarketCard | null> {
-  // 일시: 비활성 카드도 접근 허용 — 사용자가 어드민 설정 중이라 모두 표시
-  const admin = createServerClient();
+  const supabase = await createSsrClient();
   const column = isUuid(idOrShort) ? "id" : "short_id";
-  const { data } = await admin
+  const { data } = await supabase
     .from("market_cards")
     .select("*")
     .eq(column, idOrShort)
+    .eq("is_active", true)
     .maybeSingle();
   return (data ?? null) as MarketCard | null;
 }
@@ -68,15 +67,15 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
 export default async function MarketDetailPage({ params }: Props) {
   const { id: idOrShort } = await params;
-  const admin = createServerClient();
   const supabase = await createSsrClient();
 
-  // 비활성도 접근 허용 — 어드민 설정 중
+  // 활성 카드만 접근 가능
   const column = isUuid(idOrShort) ? "id" : "short_id";
-  const { data: cardRow } = await admin
+  const { data: cardRow } = await supabase
     .from("market_cards")
     .select("*")
     .eq(column, idOrShort)
+    .eq("is_active", true)
     .maybeSingle();
   if (!cardRow) notFound();
   const card = cardRow as MarketCard;
@@ -106,6 +105,7 @@ export default async function MarketDetailPage({ params }: Props) {
       .from("market_cards")
       .select("*")
       .eq("id", card.parent_id)
+      .eq("is_active", true)
       .maybeSingle();
     parent = (p ?? null) as MarketCard | null;
     if (parent?.parent_id) {
@@ -113,6 +113,7 @@ export default async function MarketDetailPage({ params }: Props) {
         .from("market_cards")
         .select("*")
         .eq("id", parent.parent_id)
+        .eq("is_active", true)
         .maybeSingle();
       grandparent = (gp ?? null) as MarketCard | null;
     }
