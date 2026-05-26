@@ -25,6 +25,7 @@ export default async function BottomNav() {
   }[] = [
     { href: "/", label: "홈", icon: <HomeIcon /> },
     { href: "/shop", label: "상품", icon: <BagIcon /> },
+    { href: "/market", label: "Hit", icon: <FlameIcon /> },
     { href: "/cart", label: "장바구니", icon: <CartIcon count={cartCount} /> },
     user
       ? { href: "/mypage", label: "MY", icon: <UserIcon /> }
@@ -37,7 +38,7 @@ export default async function BottomNav() {
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-[var(--card-bg)] border-t border-[var(--border)] pb-[env(safe-area-inset-bottom)]">
-      <ul className={`grid max-w-md mx-auto ${items.length <= 4 ? "grid-cols-4" : "grid-cols-5"}`}>
+      <ul className={`grid max-w-md mx-auto ${items.length <= 4 ? "grid-cols-4" : items.length <= 5 ? "grid-cols-5" : "grid-cols-6"}`}>
         {items.map((it) => (
           <li key={it.href}>
             {it.isLogin ? (
@@ -58,6 +59,13 @@ export default async function BottomNav() {
   );
 }
 
+function FlameIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+    </svg>
+  );
+}
 function HomeIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">

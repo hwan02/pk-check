@@ -10,15 +10,14 @@ export const metadata = {
 
 export default async function MarketPage() {
   const supabase = await createSsrClient();
-  // 활성 박스만 노출
+  // 활성 박스 + 활성 팩 + 활성 single 모두 로드 (서로 부모-자식 따라 매핑)
   const { data: rows } = await supabase
     .from("market_cards")
     .select("*")
     .eq("is_active", true)
-    .eq("product_type", "box")
     .order("display_order", { ascending: true })
     .order("created_at", { ascending: false });
-  const boxes = (rows ?? []) as MarketCard[];
+  const all = (rows ?? []) as MarketCard[];
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-6">
@@ -26,7 +25,7 @@ export default async function MarketPage() {
         <h1 className="text-2xl md:text-3xl font-black tracking-tight">Hit</h1>
       </header>
 
-      <MarketBrowse boxes={boxes} />
+      <MarketBrowse all={all} />
     </div>
   );
 }
