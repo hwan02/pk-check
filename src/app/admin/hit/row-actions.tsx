@@ -374,6 +374,57 @@ export function ToggleActiveButton({ id, active }: { id: string; active: boolean
   );
 }
 
+/* 박스 단위 일괄 토글 — 박스 + 자식 팩 + 손자 싱글 한방에 ON/OFF */
+export function BoxBulkToggle({ boxId, boxActive }: { boxId: string; boxActive: boolean }) {
+  const router = useRouter();
+  const [loading, setLoading] = useState<"on" | "off" | null>(null);
+
+  async function call(next: boolean) {
+    setLoading(next ? "on" : "off");
+    const resp = await fetch("/api/admin/hit/bulk-toggle", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ box_id: boxId, is_active: next }),
+    });
+    setLoading(null);
+    if (resp.ok) {
+      const j = (await resp.json().catch(() => ({}))) as { updated?: number };
+      router.refresh();
+      // 가벼운 토스트 대신 console + 시각 피드백은 router refresh 로
+      console.log(`[bulk-toggle] ${j.updated ?? 0}건 ${next ? "ON" : "OFF"}`);
+    } else {
+      const j = await resp.json().catch(() => ({}));
+      alert(`일괄 토글 실패: ${j.error ?? resp.statusText}`);
+    }
+  }
+
+  return (
+    <div className="inline-flex items-center gap-1">
+      <button
+        type="button"
+        onClick={() => call(true)}
+        disabled={!!loading}
+        className="text-[10px] px-2 py-1 rounded border border-emerald-300 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
+        title="박스 + 자식 팩 + 자식 싱글 모두 노출"
+      >
+        {loading === "on" ? "..." : "박스 전체 ON"}
+      </button>
+      <button
+        type="button"
+        onClick={() => call(false)}
+        disabled={!!loading}
+        className="text-[10px] px-2 py-1 rounded border border-gray-300 text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+        title="박스 + 자식 팩 + 자식 싱글 모두 숨김"
+      >
+        {loading === "off" ? "..." : "박스 전체 OFF"}
+      </button>
+      <span className="text-[9px] opacity-50 ml-0.5">
+        {boxActive ? "박스 ON" : "박스 OFF"}
+      </span>
+    </div>
+  );
+}
+
 export function DeleteMarketButton({ id }: { id: string }) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);

@@ -10,6 +10,7 @@ import {
   type ProductType,
 } from "@/lib/market";
 import {
+  BoxBulkToggle,
   DeleteMarketButton,
   PriceHistoryPanel,
   ToggleActiveButton,
@@ -212,7 +213,10 @@ export default function AdminMarketCardList({ cards, history, parentOptions }: P
                 </div>
 
                 {/* 액션 */}
-                <div className="flex items-center gap-1.5 shrink-0">
+                <div className="flex items-center gap-1.5 shrink-0 flex-wrap justify-end">
+                  {c.product_type === "box" && (
+                    <BoxBulkToggle boxId={c.id} boxActive={c.is_active} />
+                  )}
                   <ToggleActiveButton id={c.id} active={c.is_active} />
                   <button
                     type="button"
