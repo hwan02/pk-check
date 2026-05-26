@@ -79,7 +79,7 @@ export default function MarketBrowse({ all }: Props) {
 
   const filtered = useMemo(() => {
     const needle = q.trim().toLowerCase();
-    return boxes.filter((b) => {
+    const list = boxes.filter((b) => {
       if (category !== "all" && b.category !== category) return false;
       if (needle) {
         const cs = cardsByBox.get(b.id) ?? [];
@@ -91,6 +91,12 @@ export default function MarketBrowse({ all }: Props) {
       }
       return true;
     });
+    // 전체 카테고리일 땐 포켓몬 먼저 (현재 인기 카테고리). 그 안에서는 원래 순서(display_order / created_at) 유지.
+    if (category === "all") {
+      const rank = (c: MarketCard["category"]) => (c === "pokemon" ? 0 : 1);
+      return [...list].sort((a, b) => rank(a.category) - rank(b.category));
+    }
+    return list;
   }, [boxes, cardsByBox, category, q]);
 
   return (
