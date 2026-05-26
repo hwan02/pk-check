@@ -223,12 +223,12 @@ export default async function MarketDetailPage({ params }: Props) {
           MARKET
         </Link>
         <span>/</span>
-        <Link href={`/market?category=${card.category}`} className="hover:opacity-100">
+        <Link href={`/hit?category=${card.category}`} className="hover:opacity-100">
           {MARKET_CATEGORY_LABEL[card.category]}
         </Link>
         <span>/</span>
         <Link
-          href={`/market?category=${card.category}&type=${card.product_type}`}
+          href={`/hit?category=${card.category}&type=${card.product_type}`}
           className="hover:opacity-100"
         >
           {PRODUCT_TYPE_LABEL[card.product_type]}

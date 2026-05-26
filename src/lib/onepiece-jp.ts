@@ -58,7 +58,7 @@ function buildHeaders(extra?: Record<string, string>): HeadersInit {
   return h;
 }
 
-async function fetchHtml(url: string): Promise<string> {
+async function fetchHtml(url: string): Promise<{ html: string; finalUrl: string }> {
   const resp = await fetch(url, {
     headers: buildHeaders(),
     signal: AbortSignal.timeout(20000),
@@ -75,7 +75,7 @@ async function fetchHtml(url: string): Promise<string> {
     cookieJar = cookieJar ? `${cookieJar}; ${merged}` : merged;
   }
   if (!resp.ok) throw new Error(`HTTP ${resp.status} ${url}`);
-  return await resp.text();
+  return { html: await resp.text(), finalUrl: resp.url || url };
 }
 
 /** &amp; / &quot; / &lt; / &gt; 단순 디코드. */
@@ -108,7 +108,7 @@ function classifySeries(label: string): OpSeries["type"] {
 
 /** 시리즈(박스/팩/덱) 전체 목록. */
 export async function fetchSeriesList(): Promise<OpSeries[]> {
-  const html = await fetchHtml(`${BASE}/cardlist/`);
+  const { html } = await fetchHtml(`${BASE}/cardlist/`);
   // <select name="series" ...> ... </select>
   const selMatch = html.match(/<select[^>]+name="series"[^>]*>([\s\S]*?)<\/select>/);
   if (!selMatch) return [];
@@ -212,7 +212,7 @@ function parseCardBlock(block: string): OpCard | null {
 /** 특정 시리즈(option value) 의 카드 전체. */
 export async function fetchSeriesCards(seriesValue: string): Promise<OpCard[]> {
   if (!cookieJar) await fetchHtml(`${BASE}/cardlist/`).catch(() => {});
-  const html = await fetchHtml(`${BASE}/cardlist/?series=${seriesValue}`);
+  const { html } = await fetchHtml(`${BASE}/cardlist/?series=${seriesValue}`);
   const blocks = [...html.matchAll(/<dl class="modalCol"[\s\S]*?<\/dl>/g)].map((m) => m[0]);
   const cards: OpCard[] = [];
   for (const b of blocks) {
@@ -220,4 +220,81 @@ export async function fetchSeriesCards(seriesValue: string): Promise<OpCard[]> {
     if (c) cards.push(c);
   }
   return cards;
+}
+
+/**
+ * 시리즈 상품 페이지에서 팩/덱 이미지 URL 을 추출.
+ * 신구 페이지 형식이 섞여 있어 후보 패턴을 순차로 시도.
+ *
+ * @param code - 시리즈 코드 (예: "OP-16", "ST-30", "EB-04")
+ * @param type - "booster" | "extra" | "premium" | "start"
+ */
+export async function fetchProductImage(
+  code: string,
+  type: OpSeries["type"],
+): Promise<string | null> {
+  const lower = code.toLowerCase().replace("-", "");
+  // booster/extra/premium 은 boosters 디렉토리, start 는 decks 디렉토리 사용
+  const sub = type === "start" ? "decks" : "boosters";
+  const candidates = [
+    `${BASE}/products/${lower}.html`,
+    `${BASE}/products/${sub}/${lower}.php`,
+    `${BASE}/products/${sub}/${lower}/`,
+  ];
+  // 일부 스타트덱은 묶음 페이지에 들어 있음 (예: ST-15 ~ ST-20 → decks/st15-20.php)
+  const num = parseInt(lower.replace(/^[a-z]+/, ""), 10);
+  if (type === "start" && Number.isFinite(num)) {
+    // 5단위로 묶이는 경향 — 인접 묶음 페이지를 시도
+    for (let start = Math.max(1, num - 5); start <= num; start++) {
+      for (let end = num; end <= num + 5; end++) {
+        if (start === end) continue;
+        const pad = (n: number) => n.toString().padStart(2, "0");
+        candidates.push(`${BASE}/products/decks/st${pad(start)}-${pad(end)}.php`);
+      }
+    }
+  }
+
+  for (const url of candidates) {
+    let result: { html: string; finalUrl: string };
+    try {
+      result = await fetchHtml(url);
+    } catch {
+      continue;
+    }
+    const img = pickProductImage(result.html, result.finalUrl);
+    if (img) return img;
+  }
+  return null;
+}
+
+function pickProductImage(html: string, pageUrl: string): string | null {
+  // 1순위: alt 에 "パック画像" / "商品画像" 포함된 img (신형식)
+  const altMatch = html.match(
+    /<img[^>]+src="([^"]+)"[^>]+alt="[^"]*(?:パック画像|商品画像)[^"]*"/,
+  );
+  if (altMatch) return resolveUrl(altMatch[1], pageUrl);
+
+  // 2순위: src 가 img_item01 인 것
+  const item01 = html.match(/<img[^>]+src="([^"]*img_item01[^"]*)"/);
+  if (item01) return resolveUrl(item01[1], pageUrl);
+
+  // 3순위: mv_01_sale 또는 mv_01 (구형식 메인 비주얼)
+  const mvSale = html.match(/<img[^>]+src="([^"]*mv_01_sale[^"]*)"/);
+  if (mvSale) return resolveUrl(mvSale[1], pageUrl);
+  const mv01 = html.match(/<img[^>]+src="([^"]*\/mv_01\.[a-z]+[^"]*)"/);
+  if (mv01) return resolveUrl(mv01[1], pageUrl);
+
+  // 4순위: img_thumbnail
+  const thumb = html.match(/<img[^>]+src="([^"]*img_thumbnail[^"]*)"/);
+  if (thumb) return resolveUrl(thumb[1], pageUrl);
+
+  // 5순위: mv_catch_01 (op09 같은 1회성 레이아웃)
+  const mvCatch = html.match(/<img[^>]+src="([^"]*mv_catch_01[^"]*)"/);
+  if (mvCatch) return resolveUrl(mvCatch[1], pageUrl);
+
+  return null;
+}
+
+function resolveUrl(src: string, pageUrl: string): string {
+  return new URL(src.replace(/\?[^?]*$/, ""), pageUrl).toString();
 }
