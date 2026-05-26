@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
 import type { Listing } from "@/lib/shop";
 import EditListingForm from "./edit-listing-form";
+import ReviewsAdmin from "./reviews-admin";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -35,6 +36,8 @@ export default async function AdminEditListingPage({ params }: Props) {
       <h1 className="text-2xl font-bold tracking-tight mb-6">상품 수정</h1>
 
       <EditListingForm listing={listing} />
+
+      <ReviewsAdmin listingId={listing.id} />
     </div>
   );
 }

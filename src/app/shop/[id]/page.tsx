@@ -11,6 +11,7 @@ import ProductVideo from "@/components/product-video";
 import ProductGallery from "@/components/product-gallery";
 import WishlistButton from "@/components/wishlist-button";
 import TrackView from "@/components/track-view";
+import ReviewSection from "./review-section";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -262,6 +263,10 @@ export default async function ListingDetailPage({ params }: Props) {
           <li>· 영업일 기준 1–3일 내 발송</li>
         </ul>
       </section>
+
+      <div className="max-w-3xl">
+        <ReviewSection listingId={item.id} listingSlug={id} />
+      </div>
     </div>
   );
 }

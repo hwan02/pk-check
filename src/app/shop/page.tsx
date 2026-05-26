@@ -7,6 +7,7 @@ import ShopGrid from "@/components/shop-grid";
 import ShopSearchBar from "@/components/shop-search-bar";
 import CategoryTabs from "@/components/category-tabs";
 import type { Listing } from "@/lib/shop";
+import { fetchReviewStatsBulk } from "@/lib/reviews";
 import { ITEMS_PER_PAGE } from "@/lib/constants";
 
 interface Props {
@@ -71,6 +72,11 @@ export default async function ShopPage({ searchParams }: Props) {
     wishlistedIds = new Set((wl ?? []).map((w) => w.listing_id as string));
   }
 
+  // 리뷰 통계 (별점/개수) — 카드 옆에 표시
+  const reviewStats = items.length > 0
+    ? await fetchReviewStatsBulk(supabase, items.map((i) => i.id))
+    : new Map();
+
   function buildUrl(overrides: Record<string, string | undefined>) {
     const sp = new URLSearchParams();
     const merged = { q, category, sort, ...overrides };
@@ -113,7 +119,7 @@ export default async function ShopPage({ searchParams }: Props) {
         </div>
       </div>
 
-      <ShopGrid listings={items} wishlistedIds={wishlistedIds} loggedIn={!!user} />
+      <ShopGrid listings={items} wishlistedIds={wishlistedIds} loggedIn={!!user} reviewStats={reviewStats} />
 
       {totalPages > 1 && (
         <div className="flex justify-center gap-1 mt-8">

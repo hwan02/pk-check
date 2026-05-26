@@ -1,15 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
 import { CATEGORY_LABEL, LANGUAGE_LABEL, formatUSD, type Listing } from "@/lib/shop";
+import type { ListingReviewStats } from "@/lib/reviews";
 import WishlistButton from "@/components/wishlist-button";
 
 interface Props {
   listings: Listing[];
   wishlistedIds?: Set<string>;
   loggedIn?: boolean;
+  /** listing.id → { avg_rating, review_count } */
+  reviewStats?: Map<string, ListingReviewStats>;
 }
 
-export default function ShopGrid({ listings, wishlistedIds, loggedIn = false }: Props) {
+export default function ShopGrid({ listings, wishlistedIds, loggedIn = false, reviewStats }: Props) {
   if (listings.length === 0) {
     return (
       <div className="py-20 text-center text-sm opacity-50">
@@ -74,7 +77,20 @@ export default function ShopGrid({ listings, wishlistedIds, loggedIn = false }: 
               <p className="text-[15px] font-extrabold mt-1.5 tracking-tight">
                 {formatUSD(l.price_usd)}
               </p>
-              <p className="text-[10px] opacity-50 mt-0.5">즉시 구매가</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <p className="text-[10px] opacity-50">즉시 구매가</p>
+                {(() => {
+                  const s = reviewStats?.get(l.id);
+                  if (!s || s.review_count === 0) return null;
+                  return (
+                    <span className="text-[10px] opacity-70 ml-auto flex items-center gap-0.5">
+                      <span className="text-yellow-500">★</span>
+                      <span className="font-semibold">{Number(s.avg_rating).toFixed(1)}</span>
+                      <span className="opacity-60">({s.review_count})</span>
+                    </span>
+                  );
+                })()}
+              </div>
             </div>
           </Link>
         );
