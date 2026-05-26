@@ -13,12 +13,19 @@ interface Props {
   all: MarketCard[]; // 활성 박스 + 팩 + 싱글 모두
 }
 
-// 등급 우선순위 (MUR > SAR > SSR > AR > RR > UR > HR > SR > ...)
+// 등급 우선순위 (작을수록 먼저 노출)
+// - Pokemon: MUR > SAR > SSR > AR > RR > UR > HR > SR > ...
+// - One Piece: SEC > L > SR > R > UC > C
 const RARITY_RANK: Record<string, number> = {
+  // Pokemon 최상위
   MUR: 1,
   SAR: 2, "Special Illustration Rare": 2,
   SSR: 3,
+  // One Piece SEC (시크릿 레어 — 박스 톱)
+  SEC: 3,
   AR: 4, "Illustration Rare": 4,
+  // One Piece L (리더 — 컬렉터블 + 덱 핵심)
+  L: 4,
   RR: 5, "Double Rare": 5, RRR: 5,
   UR: 6, "Ultra Rare": 6,
   HR: 7, "Hyper Rare": 7,
@@ -27,7 +34,7 @@ const RARITY_RANK: Record<string, number> = {
   "ACE SPEC Rare": 10,
   R: 11, Rare: 11,
   S: 12, "Shiny Rare": 12,
-  U: 13, Uncommon: 13,
+  U: 13, Uncommon: 13, UC: 13,
   C: 14, Common: 14,
 };
 const rank = (r: string | null) => (r ? RARITY_RANK[r] ?? 50 : 99);
