@@ -155,3 +155,12 @@ main {
 /* 본문 안 카드 임베드를 줄 단독으로 쓸 때(블록처럼) 살짝 마진 */
 .article-body p > .market-chip:only-child { margin: 0.25rem 0; }
 
+
+/* market 팩 행 페이드인 애니메이션 */
+@keyframes mp-fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.animate-fade-in {
+  animation: mp-fade-in 0.45s ease-out both;
+}
