@@ -167,24 +167,24 @@ export default function MarketBrowse({ all }: Props) {
                   {/* 좌측: 박스 카드 */}
                   <Link
                     href={marketCardHref(box)}
-                    className="shrink-0 w-[110px] sm:w-[140px] p-2 group hover:bg-[var(--surface)]/40 transition flex flex-col items-center"
+                    className="shrink-0 w-[150px] sm:w-[200px] p-3 group hover:bg-[var(--surface)]/40 transition flex flex-col items-center"
                   >
-                    <div className="aspect-square w-full relative rounded-lg overflow-hidden bg-white">
+                    <div className="aspect-square w-full relative rounded-xl overflow-hidden bg-white">
                       {box.image_url ? (
                         <Image
                           src={box.image_url}
                           alt={box.name}
                           fill
-                          sizes="140px"
-                          className="object-contain p-1.5 group-hover:scale-[1.04] transition-transform duration-300"
+                          sizes="200px"
+                          className="object-contain p-2 group-hover:scale-[1.04] transition-transform duration-300"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center text-[10px] opacity-40">
+                        <div className="w-full h-full flex items-center justify-center text-[11px] opacity-40">
                           no image
                         </div>
                       )}
                     </div>
-                    <p className="text-[10px] sm:text-[11px] font-bold mt-1.5 text-center line-clamp-2 leading-tight">
+                    <p className="text-[12px] sm:text-[13px] font-bold mt-2 text-center line-clamp-2 leading-tight">
                       {box.name}
                     </p>
                   </Link>
@@ -197,37 +197,37 @@ export default function MarketBrowse({ all }: Props) {
                       </div>
                     ) : (
                       <div
-                        className="flex gap-2 sm:gap-3 overflow-x-auto p-2 sm:p-3 scroll-smooth"
+                        className="flex gap-3 sm:gap-4 overflow-x-auto p-3 sm:p-4 scroll-smooth"
                         style={{ scrollSnapType: "x mandatory" }}
                       >
                         {cards.map((c) => (
                           <Link
                             key={c.id}
                             href={marketCardHref(c)}
-                            className="shrink-0 w-[80px] sm:w-[96px] group flex flex-col"
+                            className="shrink-0 w-[130px] sm:w-[160px] group flex flex-col"
                             style={{ scrollSnapAlign: "start" }}
                           >
-                            <div className="w-[80px] h-[112px] sm:w-[96px] sm:h-[134px] relative rounded-lg overflow-hidden bg-white border border-[var(--border)] group-hover:border-[var(--border-strong)] group-hover:shadow-md transition shrink-0">
+                            <div className="w-[130px] h-[182px] sm:w-[160px] sm:h-[224px] relative rounded-xl overflow-hidden bg-white border border-[var(--border)] group-hover:border-[var(--border-strong)] group-hover:shadow-lg transition shrink-0">
                               {c.image_url ? (
                                 <Image
                                   src={c.image_url}
                                   alt={c.name}
                                   fill
-                                  sizes="96px"
-                                  className="object-contain p-1 group-hover:scale-[1.05] transition-transform duration-300"
+                                  sizes="160px"
+                                  className="object-contain p-1.5 group-hover:scale-[1.05] transition-transform duration-300"
                                 />
                               ) : (
-                                <div className="w-full h-full flex items-center justify-center text-[9px] opacity-40">
+                                <div className="w-full h-full flex items-center justify-center text-[10px] opacity-40">
                                   no image
                                 </div>
                               )}
                               {c.rarity && (
-                                <span className="absolute top-1 left-1 text-[8px] sm:text-[9px] px-1 py-0.5 rounded bg-black/75 text-white font-semibold">
+                                <span className="absolute top-1.5 left-1.5 text-[10px] sm:text-[11px] px-1.5 py-0.5 rounded bg-black/75 text-white font-bold">
                                   {c.rarity}
                                 </span>
                               )}
                             </div>
-                            <p className="text-[10px] sm:text-[11px] font-bold mt-1 line-clamp-1 leading-tight h-[14px] sm:h-[15px] overflow-hidden">
+                            <p className="text-[12px] sm:text-[13px] font-bold mt-1.5 line-clamp-1 leading-tight">
                               {c.name}
                             </p>
                           </Link>
