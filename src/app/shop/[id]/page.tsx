@@ -264,9 +264,7 @@ export default async function ListingDetailPage({ params }: Props) {
         </ul>
       </section>
 
-      <div className="max-w-3xl">
-        <ReviewSection listingId={item.id} listingSlug={id} />
-      </div>
+      <ReviewSection listingId={item.id} listingSlug={id} />
     </div>
   );
 }
