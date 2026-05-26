@@ -123,7 +123,7 @@ export default function PrivacyPage() {
       <ul>
         <li><strong>상호:</strong> Kikidult</li>
         <li><strong>이메일:</strong> kikidult.help@gmail.com</li>
-        <li><strong>웹사이트:</strong> kikidult.vercel.app</li>
+        <li><strong>웹사이트:</strong> kikidult.com</li>
       </ul>
 
       <h2>10. 고지의 의무</h2>

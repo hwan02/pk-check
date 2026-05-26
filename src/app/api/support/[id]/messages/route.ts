@@ -56,7 +56,7 @@ export async function POST(req: Request, { params }: Ctx) {
         auth: { user: process.env.GMAIL_USER, pass: process.env.GMAIL_APP_PASSWORD },
       });
 
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://kikidult.vercel.app";
+      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://kikidult.com";
       const threadUrl = `${siteUrl}/support/${threadId}`;
 
       if (senderRole === "customer") {

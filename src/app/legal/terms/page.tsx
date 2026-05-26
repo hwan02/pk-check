@@ -13,7 +13,7 @@ export default function TermsPage() {
       <h2>제1조 (목적)</h2>
       <p>
         본 약관은 Kikidult(이하 &quot;회사&quot;)가 운영하는 인터넷 사이트
-        (kikidult.vercel.app, 이하 &quot;사이트&quot;)에서 제공하는 트레이딩 카드
+        (kikidult.com, 이하 &quot;사이트&quot;)에서 제공하는 트레이딩 카드
         판매 및 해외 배송 서비스(이하 &quot;서비스&quot;)를 이용함에 있어 회사와
         회원의 권리·의무 및 책임사항을 규정함을 목적으로 합니다.
       </p>

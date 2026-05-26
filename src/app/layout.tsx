@@ -19,7 +19,7 @@ const inter = Inter({
   weight: ["700", "900"],
 });
 
-const SITE_URL = "https://kikidult.vercel.app";
+const SITE_URL = "https://kikidult.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

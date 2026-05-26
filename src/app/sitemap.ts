@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { createServerClient } from "@/lib/supabase/server";
 
-const SITE_URL = "https://kikidult.vercel.app";
+const SITE_URL = "https://kikidult.com";
 
 export const revalidate = 3600; // 1시간 캐시
 
