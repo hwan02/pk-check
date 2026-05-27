@@ -2,12 +2,28 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   MARKET_CATEGORY_LABEL,
   marketCardHref,
   type MarketCard,
 } from "@/lib/market";
+
+// 지역 토글 — 'all' → 모든 지역, jp/kr/en → 해당 지역만
+type RegionFilter = "all" | "jp" | "kr" | "en";
+const REGION_CYCLE: RegionFilter[] = ["all", "jp", "kr", "en"];
+const REGION_FLAG: Record<RegionFilter, string> = {
+  all: "🌐",
+  jp: "🇯🇵",
+  kr: "🇰🇷",
+  en: "🇺🇸",
+};
+const REGION_LABEL: Record<RegionFilter, string> = {
+  all: "전체",
+  jp: "일본판",
+  kr: "한국판",
+  en: "북미판",
+};
 
 interface Props {
   all: MarketCard[]; // 활성 박스 + 팩 + 싱글 모두
@@ -42,6 +58,26 @@ const rank = (r: string | null) => (r ? RARITY_RANK[r] ?? 50 : 99);
 export default function MarketBrowse({ all }: Props) {
   const [category, setCategory] = useState<"all" | "pokemon" | "onepiece">("all");
   const [q, setQ] = useState("");
+  const [region, setRegion] = useState<RegionFilter>("all");
+  const [fading, setFading] = useState(false);
+
+  // 첫 로드시 localStorage 에서 region 복원
+  useEffect(() => {
+    const saved = localStorage.getItem("hit-region") as RegionFilter | null;
+    if (saved && REGION_CYCLE.includes(saved)) setRegion(saved);
+  }, []);
+
+  function cycleRegion() {
+    const idx = REGION_CYCLE.indexOf(region);
+    const next = REGION_CYCLE[(idx + 1) % REGION_CYCLE.length];
+    setFading(true);
+    setTimeout(() => {
+      setRegion(next);
+      localStorage.setItem("hit-region", next);
+      // 다음 페인트 후 페이드 해제
+      requestAnimationFrame(() => requestAnimationFrame(() => setFading(false)));
+    }, 200);
+  }
 
   const boxes = useMemo(() => all.filter((c) => c.product_type === "box"), [all]);
   const packs = useMemo(() => all.filter((c) => c.product_type === "pack"), [all]);
@@ -88,6 +124,8 @@ export default function MarketBrowse({ all }: Props) {
     const needle = q.trim().toLowerCase();
     const list = boxes.filter((b) => {
       if (category !== "all" && b.category !== category) return false;
+      // region 필터 — 박스 자체의 region 으로 판단 (자식 single 들도 같은 region 으로 매겨짐)
+      if (region !== "all" && b.region !== region) return false;
       if (needle) {
         const cs = cardsByBox.get(b.id) ?? [];
         const hay = `${b.name} ${b.set_name ?? ""}`.toLowerCase();
@@ -104,36 +142,53 @@ export default function MarketBrowse({ all }: Props) {
       return [...list].sort((a, b) => rank(a.category) - rank(b.category));
     }
     return list;
-  }, [boxes, cardsByBox, category, q]);
+  }, [boxes, cardsByBox, category, q, region]);
 
   return (
     <>
-      {/* 검색 — 한 줄 전체 폭 */}
-      <div className="relative mb-2">
-        <input
-          type="text"
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          placeholder="박스/카드/등급 검색"
-          className="w-full pl-9 pr-8 py-2 rounded-full border border-[var(--border)] bg-[var(--card-bg)] text-sm focus:border-[var(--primary)] focus:outline-none"
-        />
-        <svg
-          className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40"
-          width="15" height="15" viewBox="0 0 24 24" fill="none"
-          stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-        >
-          <circle cx="11" cy="11" r="8" />
-          <line x1="21" y1="21" x2="16.65" y2="16.65" />
-        </svg>
-        {q && (
-          <button
-            onClick={() => setQ("")}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-xs opacity-50 hover:opacity-100"
-            aria-label="검색 지우기"
+      {/* 검색 + 지역 토글 한 줄 */}
+      <div className="flex items-center gap-2 mb-2">
+        <div className="relative flex-1 min-w-0">
+          <input
+            type="text"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+            placeholder="박스/카드/등급 검색"
+            className="w-full pl-9 pr-8 py-2 rounded-full border border-[var(--border)] bg-[var(--card-bg)] text-sm focus:border-[var(--primary)] focus:outline-none"
+          />
+          <svg
+            className="absolute left-3 top-1/2 -translate-y-1/2 opacity-40"
+            width="15" height="15" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
           >
-            ✕
-          </button>
-        )}
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          {q && (
+            <button
+              onClick={() => setQ("")}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-xs opacity-50 hover:opacity-100"
+              aria-label="검색 지우기"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+        <button
+          type="button"
+          onClick={cycleRegion}
+          title={`${REGION_LABEL[region]} (클릭하면 다음 지역)`}
+          className="shrink-0 flex items-center gap-1.5 h-[36px] px-3 rounded-full border border-[var(--border)] bg-[var(--card-bg)] text-sm font-semibold hover:bg-[var(--surface)] transition"
+        >
+          <span
+            key={region}
+            className="text-lg leading-none inline-block transition-transform duration-200"
+            style={{ animation: "flagFlip 0.4s ease-out" }}
+          >
+            {REGION_FLAG[region]}
+          </span>
+          <span className="text-xs">{REGION_LABEL[region]}</span>
+        </button>
       </div>
 
       {/* 카테고리 탭 */}
@@ -156,13 +211,25 @@ export default function MarketBrowse({ all }: Props) {
       </div>
 
       {filtered.length === 0 ? (
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] py-20 text-center">
+        <div
+          className={`rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] py-20 text-center transition-opacity duration-200 ${
+            fading ? "opacity-0" : "opacity-100"
+          }`}
+        >
           <p className="text-sm opacity-60">
-            {boxes.length === 0 ? "아직 등록된 박스가 없습니다." : "결과 없음"}
+            {boxes.length === 0
+              ? "아직 등록된 박스가 없습니다."
+              : region !== "all"
+                ? `${REGION_LABEL[region]} 카드 없음`
+                : "결과 없음"}
           </p>
         </div>
       ) : (
-        <ul className="space-y-3">
+        <ul
+          className={`space-y-3 transition-opacity duration-200 ${
+            fading ? "opacity-0" : "opacity-100"
+          }`}
+        >
           {filtered.map((box) => {
             const cards = cardsByBox.get(box.id) ?? [];
             return (

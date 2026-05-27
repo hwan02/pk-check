@@ -15,6 +15,7 @@ export interface MarketCard {
   list_price_krw: number | null;
   is_active: boolean;
   display_order: number;
+  region: "jp" | "kr" | "en" | null;
   created_at: string;
   updated_at: string;
 }
