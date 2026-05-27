@@ -131,7 +131,8 @@ export async function fetchSeriesList(): Promise<OpSeries[]> {
 
 /** 한 카드 블록 (<dl class="modalCol" id="..."> … </dl>) 을 파싱. */
 function parseCardBlock(block: string): OpCard | null {
-  const idMatch = block.match(/id="([A-Z0-9-]+)"/);
+  // 알트아트/망가레어 변형은 id 에 _p1 / _p2 접미사가 붙음 (예: OP01-003_p1)
+  const idMatch = block.match(/id="([A-Za-z0-9_-]+)"/);
   if (!idMatch) return null;
   const id = idMatch[1];
   const seriesCode = id.split("-")[0];
