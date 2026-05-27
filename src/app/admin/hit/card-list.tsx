@@ -41,6 +41,13 @@ export default function AdminMarketCardList({ cards, history, parentOptions }: P
     return m;
   }, [history]);
 
+  // 부모(박스/팩) id → 이름 매핑 — 카드 row 에 부모 박스명 노출용
+  const parentNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const p of parentOptions) m.set(p.id, p.name);
+    return m;
+  }, [parentOptions]);
+
   const [q, setQ] = useState("");
   const [setFilter, setSetFilter] = useState("");
   const [typeFilter, setTypeFilter] = useState<"all" | ProductType>("all");
@@ -210,6 +217,11 @@ export default function AdminMarketCardList({ cards, history, parentOptions }: P
                   <p className="text-[11px] opacity-60 mt-0.5 truncate">
                     {[c.set_name, c.rarity, c.name_en].filter(Boolean).join(" · ") || "—"}
                   </p>
+                  {c.parent_id && (
+                    <p className="text-[10px] opacity-50 mt-0.5 truncate">
+                      ↳ 소속: {parentNameById.get(c.parent_id) ?? "(알 수 없음)"}
+                    </p>
+                  )}
                 </div>
 
                 {/* 액션 */}
