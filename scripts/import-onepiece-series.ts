@@ -178,8 +178,9 @@ async function importSeries(series: OpSeries): Promise<ImportStat> {
   const cards = await fetchSeriesCards(series.value);
   const boxId = await ensureBox(series);
 
+  // pack 단계가 있는 시리즈: booster / extra / premium 만. start / other 는 box → singles.
   let packId: string | null = null;
-  if (series.type !== "start") {
+  if (series.type === "booster" || series.type === "extra" || series.type === "premium") {
     packId = await ensurePack(series, boxId);
   }
   const parentId = packId ?? boxId;

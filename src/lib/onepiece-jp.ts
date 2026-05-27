@@ -92,10 +92,15 @@ function stripTags(s: string): string {
   return s.replace(/<[^>]+>/g, "").replace(/\s+/g, " ").trim();
 }
 
-/** 시리즈 옵션 라벨에서 코드 ("OP-16", "ST-30" 등) 추출 */
+/** 시리즈 옵션 라벨에서 코드 ("OP-16", "ST-30" 등) 추출. 없으면 라벨 기반 합성 코드. */
 function extractCode(label: string): string | null {
   const m = label.match(/【([A-Z]{1,4}-\d{1,3})】/);
-  return m ? m[1] : null;
+  if (m) return m[1];
+  // 합성 코드 (코드 없는 시리즈)
+  if (label.includes("プロモ")) return "PROMO";
+  if (label.includes("限定")) return "LIMITED";
+  if (label.includes("ファミリー")) return "FAMILY";
+  return null;
 }
 
 function classifySeries(label: string): OpSeries["type"] {
