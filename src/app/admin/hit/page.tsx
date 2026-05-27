@@ -1,5 +1,6 @@
 export const dynamic = "force-dynamic";
 
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSsrClient } from "@/lib/supabase/ssr";
 import { createServerClient } from "@/lib/supabase/server";
@@ -8,7 +9,14 @@ import NewMarketCardForm from "./new-market-form";
 import BulkImportForm from "./import-form";
 import AdminMarketCardList from "./card-list";
 
-export default async function AdminMarketPage() {
+interface PageProps {
+  searchParams: Promise<{ show?: string }>;
+}
+
+export default async function AdminMarketPage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  const includeHidden = params.show === "all";
+
   const supabase = await createSsrClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect("/login");
@@ -29,13 +37,13 @@ export default async function AdminMarketPage() {
 
   const admin = createServerClient();
 
-  // PostgREST max-rows 가 1000 으로 cap 되어 있어서 .range(0, 9999) 로 한방에 못 가져옴.
-  // 페이지네이션해서 모든 market_cards 를 가져오기.
+  // PostgREST max-rows 가 1000 으로 cap 되어 있어서 .range 로 페이지네이션.
+  // 기본은 is_active=true 만 로드 (5000+ 전체 로드 시 느림).
   async function fetchAllMarketCards(): Promise<MarketCard[]> {
     const PAGE = 1000;
     const out: MarketCard[] = [];
     for (let from = 0; ; from += PAGE) {
-      const { data, error } = await admin
+      let q = admin
         .from("market_cards")
         .select("*")
         .order("is_active", { ascending: false })
@@ -43,6 +51,8 @@ export default async function AdminMarketPage() {
         .order("display_order", { ascending: true })
         .order("created_at", { ascending: false })
         .range(from, from + PAGE - 1);
+      if (!includeHidden) q = q.eq("is_active", true);
+      const { data, error } = await q;
       if (error) break;
       const rows = (data ?? []) as MarketCard[];
       out.push(...rows);
@@ -52,7 +62,7 @@ export default async function AdminMarketPage() {
     return out;
   }
 
-  const [cardsAll, { data: historyRows }, { data: setRows }] = await Promise.all([
+  const [cardsAll, { data: historyRows }, { data: setRows }, { data: allBoxPack }] = await Promise.all([
     fetchAllMarketCards(),
     admin
       .from("market_price_history")
@@ -64,6 +74,13 @@ export default async function AdminMarketPage() {
       .select("id, name, name_ja, release_date, region")
       .eq("region", "kr")
       .order("release_date", { ascending: false }),
+    // 부모 picker 용 — 활성 여부 무관 박스/팩 전부 (가벼움, 박스 73 + 팩 22 = 95개)
+    admin
+      .from("market_cards")
+      .select("id, name, product_type, category, is_active")
+      .in("product_type", ["box", "pack"])
+      .order("category")
+      .order("display_order"),
   ]);
 
   // 세트별 카드 수 — cards 테이블 단일 쿼리(in)로
@@ -95,21 +112,29 @@ export default async function AdminMarketPage() {
   const cards = cardsAll;
   const history = (historyRows ?? []) as MarketPriceRow[];
 
-  // 부모 picker용 옵션 (박스/팩 모두 — 활성 여부 무관, 비활성은 라벨에 표시)
-  const parentOptions = cards
-    .filter((c) => c.product_type === "box" || c.product_type === "pack")
-    .map((c) => ({
-      id: c.id,
-      name: c.name,
-      product_type: c.product_type,
-      category: c.category,
-      is_active: c.is_active,
-    }));
+  // 부모 picker용 옵션 — 별도 가벼운 쿼리에서 가져옴 (비활성 박스/팩도 부모 후보로 선택 가능)
+  const parentOptions = (allBoxPack ?? []).map((c) => ({
+    id: c.id as string,
+    name: c.name as string,
+    product_type: c.product_type as "box" | "pack",
+    category: c.category as "pokemon" | "onepiece",
+    is_active: c.is_active as boolean,
+  }));
   return (
     <div>
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <h1 className="text-2xl font-bold tracking-tight">HIT 관리</h1>
-        <p className="text-xs opacity-50">{cards.length}장 등록</p>
+        <div className="flex items-center gap-3 text-xs">
+          <span className="opacity-50">
+            {cards.length}장 표시 {includeHidden ? "(전체)" : "(활성만)"}
+          </span>
+          <Link
+            href={includeHidden ? "/admin/hit" : "/admin/hit?show=all"}
+            className="px-3 py-1.5 rounded-full border border-[var(--border)] hover:bg-[var(--surface)] font-semibold"
+          >
+            {includeHidden ? "활성만 보기" : "숨김 카드도 보기"}
+          </Link>
+        </div>
       </div>
 
       <div className="flex flex-wrap gap-2">
