@@ -71,15 +71,15 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
       return NextResponse.json({ error: "box cannot have a parent" }, { status: 400 });
     }
     if (nextParentId) {
-      const need = nextType === "single" ? "pack" : nextType === "pack" ? "box" : null;
+      const allowed: string[] = nextType === "single" ? ["box", "pack"] : nextType === "pack" ? ["box"] : [];
       const { data: parentRow } = await admin
         .from("market_cards")
         .select("id, product_type, category")
         .eq("id", nextParentId)
         .maybeSingle();
       if (!parentRow) return NextResponse.json({ error: "parent not found" }, { status: 400 });
-      if (parentRow.product_type !== need)
-        return NextResponse.json({ error: `parent must be a ${need}` }, { status: 400 });
+      if (!allowed.includes(parentRow.product_type))
+        return NextResponse.json({ error: `parent must be one of: ${allowed.join(", ")}` }, { status: 400 });
       if (parentRow.category !== nextCategory)
         return NextResponse.json({ error: "parent category mismatch" }, { status: 400 });
       if (parentRow.id === id)

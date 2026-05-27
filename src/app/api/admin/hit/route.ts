@@ -44,14 +44,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "invalid product_type" }, { status: 400 });
   const productType = productTypeRaw as "box" | "pack" | "single";
 
-  // 부모 타입 검증 (single→pack, pack→box). box 는 부모 없음.
+  // 부모 타입 검증 — single 은 box 또는 pack 어디든 가능, pack 은 box 만. box 는 부모 없음.
   const admin = createServerClient();
   let parentId: string | null = null;
   if (parentIdRaw) {
     if (productType === "box") {
       return NextResponse.json({ error: "box cannot have a parent" }, { status: 400 });
     }
-    const need = productType === "single" ? "pack" : "box";
+    const allowed: string[] = productType === "single" ? ["box", "pack"] : ["box"];
     const { data: parentRow } = await admin
       .from("market_cards")
       .select("id, product_type, category")
@@ -60,9 +60,9 @@ export async function POST(request: NextRequest) {
     if (!parentRow) {
       return NextResponse.json({ error: "parent not found" }, { status: 400 });
     }
-    if (parentRow.product_type !== need) {
+    if (!allowed.includes(parentRow.product_type)) {
       return NextResponse.json(
-        { error: `parent must be a ${need}` },
+        { error: `parent must be one of: ${allowed.join(", ")}` },
         { status: 400 },
       );
     }

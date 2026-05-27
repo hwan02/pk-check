@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { PARENT_TYPE_OF, PRODUCT_TYPE_LABEL, type ProductType } from "@/lib/market";
+import { PARENT_TYPES_OF, PRODUCT_TYPE_LABEL, type ProductType } from "@/lib/market";
 
 interface ParentOpt {
   id: string;
@@ -30,11 +30,11 @@ export default function NewMarketCardForm({ parentOptions = [] }: { parentOption
   const [errors, setErrors] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
 
-  // 현재 타입에서 허용되는 부모 타입 (single→pack, pack→box) 만 필터, 같은 카테고리만
+  // 부모 타입 — single 은 박스/팩 어디든, pack 은 박스만. 같은 카테고리.
   const allowedParents = useMemo(() => {
-    const need = PARENT_TYPE_OF[productType];
-    if (!need) return [];
-    return parentOptions.filter((p) => p.product_type === need && p.category === category);
+    const allowed = PARENT_TYPES_OF[productType];
+    if (allowed.length === 0) return [];
+    return parentOptions.filter((p) => allowed.includes(p.product_type) && p.category === category);
   }, [productType, category, parentOptions]);
 
   function pickFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -156,19 +156,19 @@ export default function NewMarketCardForm({ parentOptions = [] }: { parentOption
                 }}
                 className={inp}
               >
-                {(["single", "pack", "box"] as ProductType[]).map((t) => (
+                {(["single", "box"] as ProductType[]).map((t) => (
                   <option key={t} value={t}>
                     {PRODUCT_TYPE_LABEL[t]}
                   </option>
                 ))}
               </select>
             </Field>
-            {PARENT_TYPE_OF[productType] && (
-              <Field label={`소속 ${PRODUCT_TYPE_LABEL[PARENT_TYPE_OF[productType]!]} (선택)`}>
+            {productType !== "box" && (
+              <Field label="소속 박스 (선택)">
                 <select value={parentId} onChange={(e) => setParentId(e.target.value)} className={inp}>
                   <option value="">— 없음 —</option>
                   {allowedParents.length === 0 ? (
-                    <option disabled>먼저 {PRODUCT_TYPE_LABEL[PARENT_TYPE_OF[productType]!]} 을(를) 등록하세요</option>
+                    <option disabled>먼저 박스를 등록하세요</option>
                   ) : (
                     allowedParents.map((p) => (
                       <option key={p.id} value={p.id}>

@@ -206,7 +206,8 @@ export default function EditCardModal({
                   onChange={(e) => setProductType(e.target.value as ProductType)}
                   className={`${inp} font-semibold ${TYPE_COLORS[productType]}`}
                 >
-                  {(["box", "pack", "single"] as ProductType[]).map((t) => (
+                  {/* 기존에 pack 으로 저장된 행은 표시만 하기 위해 옵션 노출, 신규 선택은 box/single */}
+                  {(productType === "pack" ? (["box", "pack", "single"] as ProductType[]) : (["box", "single"] as ProductType[])).map((t) => (
                     <option key={t} value={t}>{PRODUCT_TYPE_LABEL[t]}</option>
                   ))}
                 </select>
