@@ -37,29 +37,20 @@ export default async function AdminMarketPage({ searchParams }: PageProps) {
 
   const admin = createServerClient();
 
-  // PostgREST max-rows 가 1000 으로 cap 되어 있어서 .range 로 페이지네이션.
-  // 기본은 is_active=true 만 로드 (5000+ 전체 로드 시 느림).
+  // PostgREST max-rows 가 5000 으로 cap 됨 — 한 번에 받을 수 있음.
+  // 기본은 is_active=true (가벼움), 전체 모드도 한 페이지로 처리.
   async function fetchAllMarketCards(): Promise<MarketCard[]> {
-    const PAGE = 1000;
-    const out: MarketCard[] = [];
-    for (let from = 0; ; from += PAGE) {
-      let q = admin
-        .from("market_cards")
-        .select("*")
-        .order("is_active", { ascending: false })
-        .order("category", { ascending: true })
-        .order("display_order", { ascending: true })
-        .order("created_at", { ascending: false })
-        .range(from, from + PAGE - 1);
-      if (!includeHidden) q = q.eq("is_active", true);
-      const { data, error } = await q;
-      if (error) break;
-      const rows = (data ?? []) as MarketCard[];
-      out.push(...rows);
-      if (rows.length < PAGE) break;
-      if (out.length >= 20000) break; // 안전장치
-    }
-    return out;
+    let q = admin
+      .from("market_cards")
+      .select("*")
+      .order("is_active", { ascending: false })
+      .order("category", { ascending: true })
+      .order("display_order", { ascending: true })
+      .order("created_at", { ascending: false })
+      .limit(5000);
+    if (!includeHidden) q = q.eq("is_active", true);
+    const { data } = await q;
+    return (data ?? []) as MarketCard[];
   }
 
   const [cardsAll, { data: historyRows }, { data: setRows }, { data: allBoxPack }] = await Promise.all([
@@ -124,16 +115,27 @@ export default async function AdminMarketPage({ searchParams }: PageProps) {
     <div>
       <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
         <h1 className="text-2xl font-bold tracking-tight">HIT 관리</h1>
-        <div className="flex items-center gap-3 text-xs">
-          <span className="opacity-50">
-            {cards.length}장 표시 {includeHidden ? "(전체)" : "(활성만)"}
-          </span>
-          <Link
-            href={includeHidden ? "/admin/hit" : "/admin/hit?show=all"}
-            className="px-3 py-1.5 rounded-full border border-[var(--border)] hover:bg-[var(--surface)] font-semibold"
-          >
-            {includeHidden ? "활성만 보기" : "숨김 카드도 보기"}
-          </Link>
+        <div className="flex items-center gap-3">
+          {/* 탭형 토글 — 노출중 / 전체 */}
+          <div className="inline-flex rounded-full border border-[var(--border)] p-0.5 bg-[var(--card-bg)] text-xs font-semibold">
+            <Link
+              href="/admin/hit"
+              className={`px-3 py-1.5 rounded-full transition ${
+                !includeHidden ? "bg-[var(--primary)] text-white" : "opacity-60 hover:opacity-100"
+              }`}
+            >
+              노출중
+            </Link>
+            <Link
+              href="/admin/hit?show=all"
+              className={`px-3 py-1.5 rounded-full transition ${
+                includeHidden ? "bg-[var(--primary)] text-white" : "opacity-60 hover:opacity-100"
+              }`}
+            >
+              전체
+            </Link>
+          </div>
+          <span className="text-xs opacity-50">{cards.length}장</span>
         </div>
       </div>
 
