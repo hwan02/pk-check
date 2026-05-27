@@ -84,6 +84,18 @@ export async function PATCH(request: NextRequest, { params }: Ctx) {
         return NextResponse.json({ error: "parent category mismatch" }, { status: 400 });
       if (parentRow.id === id)
         return NextResponse.json({ error: "self parent" }, { status: 400 });
+
+      // parent_id 변경 시 set_name 도 부모 박스 기준으로 자동 갱신 (사용자가 set_name 을 명시적으로 안 보냈을 때만)
+      if ("parent_id" in updates && !("set_name" in updates)) {
+        const { data: parentFull } = await admin
+          .from("market_cards")
+          .select("set_name, name")
+          .eq("id", nextParentId)
+          .maybeSingle();
+        if (parentFull) {
+          updates.set_name = parentFull.set_name ?? parentFull.name ?? null;
+        }
+      }
     }
   }
 

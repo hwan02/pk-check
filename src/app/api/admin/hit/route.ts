@@ -47,6 +47,7 @@ export async function POST(request: NextRequest) {
   // 부모 타입 검증 — single 은 box 또는 pack 어디든 가능, pack 은 box 만. box 는 부모 없음.
   const admin = createServerClient();
   let parentId: string | null = null;
+  let inheritedSetName: string | null = null;
   if (parentIdRaw) {
     if (productType === "box") {
       return NextResponse.json({ error: "box cannot have a parent" }, { status: 400 });
@@ -54,7 +55,7 @@ export async function POST(request: NextRequest) {
     const allowed: string[] = productType === "single" ? ["box", "pack"] : ["box"];
     const { data: parentRow } = await admin
       .from("market_cards")
-      .select("id, product_type, category")
+      .select("id, product_type, category, set_name, name")
       .eq("id", parentIdRaw)
       .maybeSingle();
     if (!parentRow) {
@@ -70,7 +71,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "parent category mismatch" }, { status: 400 });
     }
     parentId = parentIdRaw;
+    inheritedSetName = parentRow.set_name ?? parentRow.name ?? null;
   }
+  // set_name: 자체 입력 우선, 없으면 부모 박스 set_name 자동 사용
+  const effectiveSetName = setName ?? inheritedSetName;
 
   const displayOrder = parseInt(orderRaw, 10) || 0;
   let listPriceKrw: number | null = null;
@@ -106,7 +110,7 @@ export async function POST(request: NextRequest) {
       parent_id: parentId,
       name,
       name_en: nameEn,
-      set_name: setName,
+      set_name: effectiveSetName,
       rarity,
       notes,
       list_price_krw: listPriceKrw,

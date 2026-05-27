@@ -195,14 +195,17 @@ export default function NewMarketCardForm({ parentOptions = [] }: { parentOption
                 placeholder="Mega Charizard Y ex"
               />
             </Field>
-            <Field label="세트명">
-              <input
-                value={setNameField}
-                onChange={(e) => setSetNameField(e.target.value)}
-                className={inp}
-                placeholder="메가 진화 / SV3"
-              />
-            </Field>
+            {/* 세트명 — box 만 직접 입력. single 은 부모 박스 set_name 자동 사용 */}
+            {productType === "box" && (
+              <Field label="세트명">
+                <input
+                  value={setNameField}
+                  onChange={(e) => setSetNameField(e.target.value)}
+                  className={inp}
+                  placeholder="메가 진화 / SV3"
+                />
+              </Field>
+            )}
             <Field label="등급/레어">
               <input
                 value={rarity}
