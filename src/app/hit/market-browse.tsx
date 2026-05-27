@@ -288,7 +288,7 @@ export default function MarketBrowse({ all }: Props) {
                                   alt={c.name}
                                   fill
                                   sizes="160px"
-                                  className="object-contain p-1.5 group-hover:scale-[1.05] transition-transform duration-300"
+                                  className="object-cover group-hover:scale-[1.05] transition-transform duration-300"
                                 />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-[10px] opacity-40">
