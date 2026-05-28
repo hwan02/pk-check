@@ -20,11 +20,6 @@ export async function GET(req: NextRequest): Promise<Response> {
   // 경로 traversal/외부 호스트 차단
   if (p.includes("..") || p.startsWith("/")) return new NextResponse("invalid path", { status: 400 });
   if (!SAFE_PATH.test(p)) return new NextResponse("invalid path", { status: 400 });
-  // images/ 가 빠진 경우 자동 보강
-  if (!p.startsWith("images/") && !p.startsWith("onepiececg/") && !p.startsWith("renewal/")) {
-    p = `images/${p}`;
-  }
-
   const target = `${BASE}/${p}`;
   const resp = await fetch(target, {
     headers: { "User-Agent": "Mozilla/5.0" },

@@ -1,12 +1,12 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   MARKET_CATEGORY_LABEL,
   PARENT_TYPES_OF,
   PRODUCT_TYPE_LABEL,
+  safeImageUrl,
   type MarketCard,
   type ProductType,
 } from "@/lib/market";
@@ -149,7 +149,8 @@ export default function EditCardModal({
           <div>
             <div className="aspect-square rounded-lg overflow-hidden bg-gray-50 border border-[var(--border)] relative">
               {imageUrl ? (
-                <Image src={imageUrl} alt={name} fill className="object-contain" sizes="200px" />
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={safeImageUrl(imageUrl)!} alt={name} decoding="async" className="absolute inset-0 w-full h-full object-contain" />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center text-xs opacity-40">
                   이미지 없음
