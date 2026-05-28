@@ -166,65 +166,74 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
           <p className="text-sm opacity-60">해당 상태의 주문이 없습니다.</p>
         </div>
       ) : (
-        <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] overflow-hidden">
-          <table className="w-full text-sm">
+        <div className="rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] overflow-x-auto">
+          <table className="w-full text-sm min-w-[1100px]">
             <thead className="bg-[var(--surface)] text-[11px] uppercase tracking-wider opacity-60">
               <tr>
-                <th className="text-left px-4 py-2.5 font-semibold">주문일</th>
-                <th className="text-left px-4 py-2.5 font-semibold">주문번호</th>
-                <th className="text-left px-4 py-2.5 font-semibold">고객</th>
+                <th className="text-left px-4 py-2.5 font-semibold w-[120px]">주문일</th>
+                <th className="text-left px-4 py-2.5 font-semibold w-[170px]">주문번호</th>
+                <th className="text-left px-4 py-2.5 font-semibold w-[180px]">고객</th>
                 <th className="text-left px-4 py-2.5 font-semibold">상품</th>
-                <th className="text-right px-4 py-2.5 font-semibold">금액</th>
-                <th className="text-left px-4 py-2.5 font-semibold">결제</th>
-                <th className="text-left px-4 py-2.5 font-semibold">통관</th>
-                <th className="text-left px-4 py-2.5 font-semibold">송장</th>
-                <th className="px-4 py-2.5" />
+                <th className="text-right px-4 py-2.5 font-semibold w-[100px]">금액</th>
+                <th className="text-left px-4 py-2.5 font-semibold w-[90px]">결제</th>
+                <th className="text-left px-4 py-2.5 font-semibold w-[80px]">통관</th>
+                <th className="text-left px-4 py-2.5 font-semibold w-[140px]">송장</th>
+                <th className="px-4 py-2.5 w-[80px]" />
               </tr>
             </thead>
             <tbody className="divide-y divide-[var(--border)]">
               {orders.map((o) => {
                 const items = itemsByOrder.get(o.id) ?? [];
                 const totalQty = items.reduce((s, i) => s + i.quantity, 0);
-                const firstTitle = items[0]?.title ?? "-";
+                const firstTitle = items[0]?.title ?? null;
                 const moreCount = items.length > 1 ? items.length - 1 : 0;
+                const isEmpty = items.length === 0;
                 return (
-                  <tr key={o.id} className="hover:bg-[var(--surface)]/60">
+                  <tr key={o.id} className="hover:bg-[var(--surface)]/60 align-top">
                     <td className="px-4 py-3 text-xs whitespace-nowrap opacity-80">
                       {formatOrderDate(o.created_at)}
                     </td>
-                    <td className="px-4 py-3 text-xs font-mono">
-                      {o.order_no ?? o.id.slice(0, 8)}
+                    <td className="px-4 py-3 text-xs font-mono whitespace-nowrap">
+                      {o.order_no ?? (
+                        <span className="opacity-50">{o.id.slice(0, 8)} (no#)</span>
+                      )}
                     </td>
-                    <td className="px-4 py-3 text-xs opacity-80 max-w-[160px] truncate">
+                    <td className="px-4 py-3 text-xs opacity-80 truncate max-w-[180px]">
                       {o.user_id ? userEmailById.get(o.user_id) ?? "-" : "비회원"}
                     </td>
-                    <td className="px-4 py-3 text-xs max-w-[220px]">
-                      <span className="truncate block">{firstTitle}</span>
-                      {moreCount > 0 && (
-                        <span className="opacity-50">외 {moreCount}건</span>
+                    <td className="px-4 py-3 text-xs">
+                      {isEmpty ? (
+                        <span className="opacity-40 italic">아이템 없음</span>
+                      ) : (
+                        <div className="max-w-[260px]">
+                          <span className="truncate block">{firstTitle}</span>
+                          <span className="text-[10px] opacity-50">
+                            {moreCount > 0 && `외 ${moreCount}건 · `}
+                            총 {totalQty}개
+                          </span>
+                        </div>
                       )}
-                      <span className="opacity-50">· {totalQty}개</span>
                     </td>
                     <td className="px-4 py-3 text-xs text-right font-semibold whitespace-nowrap">
                       {formatUSD(o.total_usd)}
                     </td>
                     <td className="px-4 py-3 text-xs">
                       <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-semibold whitespace-nowrap ${
                           STATUS_COLOR[o.status] ?? ""
                         }`}
                       >
                         {ORDER_STATUS_LABEL[o.status]}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-xs opacity-80">
+                    <td className="px-4 py-3 text-xs opacity-80 whitespace-nowrap">
                       {o.customs_status
                         ? CUSTOMS_STATUS_LABEL[o.customs_status]
                         : "-"}
                     </td>
                     <td className="px-4 py-3 text-xs font-mono opacity-80">
                       {o.tracking_no ? (
-                        <span>
+                        <span className="whitespace-nowrap">
                           {o.tracking_carrier ? (
                             <span className="opacity-60 mr-1">
                               {o.tracking_carrier}
@@ -236,7 +245,7 @@ export default async function AdminOrdersPage({ searchParams }: Props) {
                         <span className="opacity-40">미입력</span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right whitespace-nowrap">
                       <Link
                         href={`/admin/orders/${o.id}`}
                         className="text-xs px-3 py-1 rounded-full bg-[var(--primary)] text-white font-semibold"
