@@ -7,7 +7,7 @@
     },
     {
       "path": "/api/cron/expire-pending-orders",
-      "schedule": "*/30 * * * *"
+      "schedule": "30 3 * * *"
     }
   ]
 }
