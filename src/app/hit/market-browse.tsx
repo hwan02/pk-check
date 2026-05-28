@@ -30,9 +30,14 @@ interface Props {
 }
 
 // 등급 우선순위 (작을수록 먼저 노출)
+// - 망가/SP카드: 원피스 최상위 — 가장 앞에
 // - Pokemon: MUR > SAR > SSR > AR > RR > UR > HR > SR > ...
-// - One Piece: SEC > L > SR > R > UC > C
+// - One Piece: SPカード > SEC > L > SR > R > UC > C
 const RARITY_RANK: Record<string, number> = {
+  // One Piece 망가/SP — 가장 비싼 알트아트 (망가루피·챔피언십 등)
+  "SPカード": 0,
+  "SP P": 0,
+  "R-SP": 0,
   // Pokemon 최상위
   MUR: 1,
   SAR: 2, "Special Illustration Rare": 2,
@@ -48,12 +53,18 @@ const RARITY_RANK: Record<string, number> = {
   SR: 8, "Secret Rare": 8,
   MA: 9,
   "ACE SPEC Rare": 10,
+  // One Piece 프로모 P
+  P: 10,
   R: 11, Rare: 11,
   S: 12, "Shiny Rare": 12,
   U: 13, Uncommon: 13, UC: 13,
   C: 14, Common: 14,
 };
 const rank = (r: string | null) => (r ? RARITY_RANK[r] ?? 50 : 99);
+// 알트아트(_p1/_p2 등) 면 같은 등급 내에서 상위 정렬
+function isParallel(notes: string | null): boolean {
+  return !!notes && /_p\d+$/.test(notes);
+}
 
 export default function MarketBrowse({ all }: Props) {
   const [category, setCategory] = useState<"all" | "pokemon" | "onepiece">("all");
@@ -99,12 +110,16 @@ export default function MarketBrowse({ all }: Props) {
       arr.push(s);
       m.set(boxId, arr);
     }
-    // 등급 우선순위 정렬
+    // 등급 우선순위 정렬 + 같은 등급 내에서는 알트아트(_p) 가 먼저
     for (const arr of m.values()) {
       arr.sort((a, b) => {
         const ra = rank(a.rarity);
         const rb = rank(b.rarity);
         if (ra !== rb) return ra - rb;
+        // 같은 등급: 알트아트(망가/챔피언십 등 _p) 가 앞으로
+        const pa = isParallel(a.notes) ? 0 : 1;
+        const pb = isParallel(b.notes) ? 0 : 1;
+        if (pa !== pb) return pa - pb;
         return a.display_order - b.display_order;
       });
     }
