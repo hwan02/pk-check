@@ -27,10 +27,12 @@ const STATUS_TABS: { value: string; label: string }[] = [
 const STATUS_COLOR: Record<string, string> = {
   pending: "bg-gray-100 text-gray-700",
   paid: "bg-blue-50 text-blue-700",
+  shipping_pending: "bg-orange-50 text-orange-700",
+  shipping_paid: "bg-indigo-50 text-indigo-700",
   shipped: "bg-amber-50 text-amber-700",
   delivered: "bg-emerald-50 text-emerald-700",
   cancelled: "bg-gray-100 text-gray-500",
-  refunded: "bg-gray-100 text-gray-500",
+  refunded: "bg-rose-50 text-rose-700",
 };
 
 export default async function AdminOrdersPage({ searchParams }: Props) {

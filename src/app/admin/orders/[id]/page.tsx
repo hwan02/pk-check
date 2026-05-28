@@ -8,9 +8,12 @@ import {
   formatOrderDate,
   formatUSD,
   type Order,
+  type OrderAuditLog,
   type OrderItem,
+  type PaymentEvent,
 } from "@/lib/shop";
 import OrderEditForm from "./order-edit-form";
+import OrderTimeline from "./order-timeline";
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -19,10 +22,12 @@ interface Props {
 const STATUS_COLOR: Record<string, string> = {
   pending: "bg-gray-100 text-gray-700",
   paid: "bg-blue-50 text-blue-700",
+  shipping_pending: "bg-orange-50 text-orange-700",
+  shipping_paid: "bg-indigo-50 text-indigo-700",
   shipped: "bg-amber-50 text-amber-700",
   delivered: "bg-emerald-50 text-emerald-700",
   cancelled: "bg-gray-100 text-gray-500",
-  refunded: "bg-gray-100 text-gray-500",
+  refunded: "bg-rose-50 text-rose-700",
 };
 
 export default async function AdminOrderDetailPage({ params }: Props) {
@@ -37,7 +42,7 @@ export default async function AdminOrderDetailPage({ params }: Props) {
   if (!orderRow) notFound();
   const order = orderRow as Order;
 
-  const [{ data: items }, { data: profileRow }] = await Promise.all([
+  const [{ data: items }, { data: profileRow }, { data: events }, { data: audit }] = await Promise.all([
     db.from("order_items").select("*").eq("order_id", id),
     order.user_id
       ? db
@@ -46,6 +51,18 @@ export default async function AdminOrderDetailPage({ params }: Props) {
           .eq("id", order.user_id)
           .maybeSingle()
       : Promise.resolve({ data: null }),
+    db
+      .from("payment_events")
+      .select("*")
+      .eq("order_id", id)
+      .order("created_at", { ascending: false })
+      .limit(100),
+    db
+      .from("order_audit_log")
+      .select("*")
+      .eq("order_id", id)
+      .order("created_at", { ascending: false })
+      .limit(100),
   ]);
 
   // 주문 시점에 스냅샷된 배송지 (orders.shipping_address jsonb)
@@ -149,6 +166,12 @@ export default async function AdminOrderDetailPage({ params }: Props) {
 
       {/* 편집 폼 */}
       <OrderEditForm order={order} />
+
+      {/* 타임라인 — 결제 이벤트 + 변경 이력 */}
+      <OrderTimeline
+        events={(events ?? []) as PaymentEvent[]}
+        audit={(audit ?? []) as OrderAuditLog[]}
+      />
     </div>
   );
 }

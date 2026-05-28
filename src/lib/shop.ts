@@ -105,7 +105,36 @@ export interface Order {
   customs_status: CustomsStatus | null;
   customs_cleared_at: string | null;
   paid_at: string | null;
+  paypal_order_id: string | null;
+  paypal_capture_id: string | null;
+  // 운영 메모/취소 정보 (migration 030)
+  admin_memo: string | null;
+  cancel_reason: string | null;
+  cancelled_at: string | null;
+  refunded_at: string | null;
   bundle_group: string | null;
+  created_at: string;
+}
+
+export interface PaymentEvent {
+  id: string;
+  order_id: string | null;
+  event_type: string;
+  paypal_event_id: string | null;
+  payload: Record<string, unknown>;
+  source: "server" | "webhook" | "admin" | "cron";
+  created_at: string;
+}
+
+export interface OrderAuditLog {
+  id: string;
+  order_id: string;
+  actor_id: string | null;
+  actor_role: string | null;
+  action: string;
+  before_data: Record<string, unknown> | null;
+  after_data: Record<string, unknown> | null;
+  note: string | null;
   created_at: string;
 }
 

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createSsrClient } from "@/lib/supabase/ssr";
 import { createServerClient } from "@/lib/supabase/server";
+import { trackingUrlFor } from "@/lib/tracking";
 
 interface Ctx {
   params: Promise<{ id: string }>;
@@ -9,6 +10,8 @@ interface Ctx {
 const VALID_STATUS = new Set([
   "pending",
   "paid",
+  "shipping_pending",
+  "shipping_paid",
   "shipped",
   "delivered",
   "cancelled",
@@ -31,7 +34,6 @@ function optNum(v: unknown): number | null {
 export async function PATCH(req: Request, { params }: Ctx) {
   const { id } = await params;
 
-  // 권한 확인 (쿠키 세션)
   const ssr = await createSsrClient();
   const { data: { user } } = await ssr.auth.getUser();
   if (!user) return NextResponse.json({ error: "로그인 필요" }, { status: 401 });
@@ -52,6 +54,13 @@ export async function PATCH(req: Request, { params }: Ctx) {
     if (!VALID_STATUS.has(body.status)) {
       return NextResponse.json({ error: "잘못된 상태" }, { status: 400 });
     }
+    // cancelled/refunded 는 별도 액션 라우트(/cancel, /refund) 사용 권장
+    if (body.status === "cancelled" || body.status === "refunded") {
+      return NextResponse.json(
+        { error: `${body.status} 상태는 /cancel 또는 /refund 액션으로 변경해 주세요 (재고 복구 + PayPal 처리 필요)` },
+        { status: 400 },
+      );
+    }
     update.status = body.status;
     if (body.status === "shipped") update.shipped_at = new Date().toISOString();
     if (body.status === "delivered") update.delivered_at = new Date().toISOString();
@@ -71,6 +80,17 @@ export async function PATCH(req: Request, { params }: Ctx) {
   if ("tracking_no" in body) update.tracking_no = optStr(body.tracking_no);
   if ("tracking_url" in body) update.tracking_url = optStr(body.tracking_url);
 
+  // tracking_no / tracking_carrier 가 들어오는데 tracking_url 이 비어있으면 자동 생성
+  if (
+    ("tracking_no" in body || "tracking_carrier" in body) &&
+    !update.tracking_url
+  ) {
+    const carrier = (update.tracking_carrier as string | null) ?? null;
+    const no = (update.tracking_no as string | null) ?? null;
+    const auto = trackingUrlFor(carrier, no);
+    if (auto) update.tracking_url = auto;
+  }
+
   if ("payment_fee_usd" in body) update.payment_fee_usd = optNum(body.payment_fee_usd) ?? 0;
   if ("exchange_rate" in body) update.exchange_rate = optNum(body.exchange_rate);
   if ("estimated_weight_g" in body) {
@@ -88,16 +108,46 @@ export async function PATCH(req: Request, { params }: Ctx) {
     }
     update.card_last4 = c;
   }
-
-  // 합계 재계산: tracking 정보 들어왔는데 status가 paid라면 그대로 두고, 운영자가 명시적으로 shipped로 바꿔야 함
-  // 총액은 변경하지 않음 (수수료는 결제 시점에 이미 확정)
+  if ("admin_memo" in body) update.admin_memo = optStr(body.admin_memo);
 
   if (Object.keys(update).length === 0) {
     return NextResponse.json({ ok: true, noop: true });
   }
 
   const db = createServerClient();
+
+  // before snapshot — audit 용
+  const { data: before } = await db
+    .from("orders")
+    .select(
+      "status, tracking_carrier, tracking_no, tracking_url, customs_status, " +
+        "payment_fee_usd, exchange_rate, estimated_weight_g, card_brand, card_last4, admin_memo",
+    )
+    .eq("id", id)
+    .maybeSingle();
+
   const { error } = await db.from("orders").update(update).eq("id", id);
   if (error) return NextResponse.json({ error: error.message }, { status: 500 });
-  return NextResponse.json({ ok: true });
+
+  // audit log
+  if (before) {
+    // 실제 변경된 키만 추리기
+    const changed: Record<string, { before: unknown; after: unknown }> = {};
+    for (const [k, v] of Object.entries(update)) {
+      const beforeVal = (before as unknown as Record<string, unknown>)[k];
+      if (beforeVal !== v) changed[k] = { before: beforeVal, after: v };
+    }
+    if (Object.keys(changed).length > 0) {
+      await db.from("order_audit_log").insert({
+        order_id: id,
+        actor_id: user.id,
+        actor_role: "admin",
+        action: update.status ? "status_change" : "update",
+        before_data: Object.fromEntries(Object.entries(changed).map(([k, v]) => [k, v.before])),
+        after_data: Object.fromEntries(Object.entries(changed).map(([k, v]) => [k, v.after])),
+      });
+    }
+  }
+
+  return NextResponse.json({ ok: true, auto_tracking_url: update.tracking_url ?? null });
 }
