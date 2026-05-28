@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/refresh-prices",
       "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/expire-pending-orders",
+      "schedule": "*/30 * * * *"
     }
   ]
 }

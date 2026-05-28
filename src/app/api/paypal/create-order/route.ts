@@ -33,6 +33,8 @@ export async function POST(request: NextRequest) {
       title_en: string | null;
       image_url: string | null;
       price_usd: number;
+      stock: number;
+      is_active: boolean;
     };
     quantity: number;
   };
@@ -69,6 +71,33 @@ export async function POST(request: NextRequest) {
       { error: buyListingId ? "상품을 찾을 수 없습니다" : "장바구니가 비어있습니다" },
       { status: 400 },
     );
+  }
+
+  // === 재고 사전 검증 — listings.stock 부족하면 결제 진행 차단 ===
+  for (const item of cartItems) {
+    if (!item.listing) {
+      return NextResponse.json(
+        { error: "장바구니에 판매 종료된 상품이 있습니다. 새로고침 후 다시 시도해 주세요." },
+        { status: 409 },
+      );
+    }
+    if (!item.listing.is_active) {
+      return NextResponse.json(
+        { error: `'${item.listing.title}' 판매가 중지되었습니다.` },
+        { status: 409 },
+      );
+    }
+    if ((item.listing.stock ?? 0) < item.quantity) {
+      return NextResponse.json(
+        {
+          error: `'${item.listing.title}' 재고 부족 (남은 수량 ${item.listing.stock}개)`,
+          listing_id: item.listing.id,
+          available: item.listing.stock,
+          requested: item.quantity,
+        },
+        { status: 409 },
+      );
+    }
   }
 
   const address = addressRes.data as {
@@ -149,6 +178,14 @@ export async function POST(request: NextRequest) {
   await db.from("order_items").insert(items);
 
   const paypalOrder = await createPayPalOrder(total, order.id);
+
+  // PayPal create 응답 원본 기록
+  await db.from("payment_events").insert({
+    order_id: order.id,
+    event_type: paypalOrder.id ? "order_created" : "order_create_failed",
+    payload: paypalOrder,
+    source: "server",
+  });
 
   if (paypalOrder.id) {
     await db
