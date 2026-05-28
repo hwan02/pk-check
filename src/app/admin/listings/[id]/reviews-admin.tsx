@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { createServerClient } from "@/lib/supabase/server";
 import type { ListingReview } from "@/lib/reviews";
 import SeedReviewForm from "./seed-review-form";
@@ -43,7 +42,8 @@ export default async function ReviewsAdmin({ listingId }: Props) {
                 <div className="flex flex-wrap gap-1.5 mt-2">
                   {r.photo_urls.map((u) => (
                     <div key={u} className="relative w-12 h-12 rounded overflow-hidden border border-[var(--border)]">
-                      <Image src={u} alt="" fill className="object-cover" sizes="48px" />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={u} alt="" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
                     </div>
                   ))}
                 </div>

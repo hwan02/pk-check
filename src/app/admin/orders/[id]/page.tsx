@@ -1,6 +1,5 @@
 export const dynamic = "force-dynamic";
 
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createServerClient } from "@/lib/supabase/server";
@@ -119,12 +118,13 @@ export default async function AdminOrderDetailPage({ params }: Props) {
             <li key={it.id} className="flex items-center gap-4 px-5 py-3">
               <div className="relative w-14 h-14 shrink-0 rounded-lg overflow-hidden bg-[var(--surface)] border border-[var(--border)]">
                 {it.image_url ? (
-                  <Image
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
                     src={it.image_url}
                     alt={it.title}
-                    fill
-                    sizes="56px"
-                    className="object-contain"
+                    loading="lazy"
+                    decoding="async"
+                    className="absolute inset-0 w-full h-full object-contain"
                   />
                 ) : null}
               </div>

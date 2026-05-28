@@ -1,7 +1,6 @@
 export const revalidate = 60;
 
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { createSsrClient } from "@/lib/supabase/ssr";
 
@@ -51,12 +50,12 @@ export default async function MagazineListPage() {
               <Link href={`/magazine/${a.slug}`} className="group block">
                 <div className="rounded-2xl overflow-hidden bg-white border border-[var(--border)] flex items-center justify-center aspect-[5/7]">
                   {a.cover_image ? (
-                    <Image
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
                       src={a.cover_image}
                       alt={a.title}
-                      width={500}
-                      height={700}
-                      sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                      loading="lazy"
+                      decoding="async"
                       className="max-w-full max-h-full w-auto h-auto object-contain group-hover:scale-[1.03] transition-transform"
                     />
                   ) : (

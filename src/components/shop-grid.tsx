@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { CATEGORY_LABEL, LANGUAGE_LABEL, formatUSD, type Listing } from "@/lib/shop";
 import type { ListingReviewStats } from "@/lib/reviews";
@@ -33,12 +32,13 @@ export default function ShopGrid({ listings, wishlistedIds, loggedIn = false, re
             <div className="rounded-xl overflow-hidden bg-[var(--surface)] border border-[var(--border)] group-hover:border-[var(--border-strong)] transition-colors relative">
               <div className="aspect-square relative bg-white">
                 {l.image_url ? (
-                  <Image
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
                     src={l.image_url}
                     alt={l.title}
-                    fill
-                    className="object-contain p-4 group-hover:scale-[1.03] transition-transform duration-200"
-                    sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 20vw"
+                    loading="lazy"
+                    decoding="async"
+                    className="absolute inset-0 w-full h-full object-contain p-4 group-hover:scale-[1.03] transition-transform duration-200"
                   />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-xs opacity-40">

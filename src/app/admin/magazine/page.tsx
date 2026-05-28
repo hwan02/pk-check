@@ -1,6 +1,5 @@
 export const dynamic = "force-dynamic";
 
-import Image from "next/image";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createSsrClient } from "@/lib/supabase/ssr";
@@ -81,7 +80,8 @@ export default async function AdminContentPage() {
           >
             <div className="w-20 h-12 relative shrink-0 rounded overflow-hidden bg-gray-50">
               {a.cover_image ? (
-                <Image src={a.cover_image} alt={a.title} fill className="object-cover" sizes="80px" />
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={a.cover_image} alt={a.title} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-[10px] opacity-40">no cover</div>
               )}

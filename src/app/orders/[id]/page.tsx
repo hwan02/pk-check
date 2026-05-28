@@ -1,6 +1,5 @@
 export const dynamic = "force-dynamic";
 
-import Image from "next/image";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createSsrClient } from "@/lib/supabase/ssr";
@@ -105,12 +104,13 @@ export default async function OrderDetailPage({ params }: Props) {
             <li key={it.id} className="flex items-center gap-4 px-5 py-4">
               <div className="relative w-16 h-16 shrink-0 rounded-lg overflow-hidden bg-[var(--surface)] border border-[var(--border)]">
                 {it.image_url ? (
-                  <Image
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img
                     src={it.image_url}
                     alt={it.title}
-                    fill
-                    sizes="64px"
-                    className="object-contain"
+                    loading="lazy"
+                    decoding="async"
+                    className="absolute inset-0 w-full h-full object-contain"
                   />
                 ) : null}
               </div>

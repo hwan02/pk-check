@@ -1,4 +1,3 @@
-import Image from "next/image";
 import Link from "next/link";
 import { createSsrClient } from "@/lib/supabase/ssr";
 import { fetchReviewsForListing, type ListingReview } from "@/lib/reviews";
@@ -169,7 +168,8 @@ function ReviewItem({
               key={url}
               className="relative w-24 h-24 rounded-xl overflow-hidden border border-[var(--border)] bg-white"
             >
-              <Image src={url} alt="" fill className="object-cover" sizes="96px" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={url} alt="" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
             </div>
           ))}
         </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { createSeedReview } from "./admin-review-actions";
 
 interface Props {
@@ -95,7 +94,8 @@ export default function SeedReviewForm({ listingId }: Props) {
         <div className="flex flex-wrap gap-2 mb-2">
           {photos.map((url) => (
             <div key={url} className="relative w-16 h-16 rounded-lg overflow-hidden border border-[var(--border)]">
-              <Image src={url} alt="" fill className="object-cover" sizes="64px" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={url} alt="" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
               <button type="button" onClick={() => setPhotos((p) => p.filter((u) => u !== url))} className="absolute top-0 right-0 w-5 h-5 bg-black/70 text-white text-xs leading-5 text-center">×</button>
             </div>
           ))}

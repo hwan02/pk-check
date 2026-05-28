@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MARKET_CATEGORY_LABEL, type MarketCard } from "@/lib/market";
@@ -233,7 +232,8 @@ export default function NewArticleForm({
                     >
                       <div className="w-10 h-10 relative shrink-0 rounded bg-white border border-[var(--border)] overflow-hidden">
                         {c.image_url ? (
-                          <Image src={c.image_url} alt={c.name} fill sizes="40px" className="object-contain" />
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img src={c.image_url} alt={c.name} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-contain" />
                         ) : null}
                       </div>
                       <div className="min-w-0 flex-1">

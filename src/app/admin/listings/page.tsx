@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic";
 
 import { redirect } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import { createSsrClient } from "@/lib/supabase/ssr";
 import { CATEGORY_LABEL, formatUSD, type Listing } from "@/lib/shop";
@@ -59,7 +58,8 @@ export default async function AdminListingsPage() {
           >
             <div className="w-16 h-16 relative shrink-0 rounded overflow-hidden bg-gray-50">
               {l.image_url ? (
-                <Image src={l.image_url} alt={l.title} fill className="object-cover" />
+                /* eslint-disable-next-line @next/next/no-img-element */
+                <img src={l.image_url} alt={l.title} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
               ) : (
                 <div className="w-full h-full flex items-center justify-center text-xs opacity-40">
                   없음

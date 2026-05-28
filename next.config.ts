@@ -11,6 +11,11 @@ const nextConfig: NextConfig = {
       { protocol: "https", hostname: "www.onepiece-cardgame.com" },
       { protocol: "https", hostname: "*.supabase.co" },
     ],
+    // 변환 비용 절감: webp 만 (avif 제외), 캐시는 30 일 유지, srcset 너비 변형 줄임
+    formats: ["image/webp"],
+    minimumCacheTTL: 60 * 60 * 24 * 30,
+    deviceSizes: [640, 1080, 1920],
+    imageSizes: [64, 128, 256],
   },
   async headers() {
     return [

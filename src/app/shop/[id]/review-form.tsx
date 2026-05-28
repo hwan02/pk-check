@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import { submitReview } from "./review-actions";
 
 interface Props {
@@ -139,7 +138,8 @@ export default function ReviewForm({ listingId, listingSlug, existing }: Props) 
               key={url}
               className="relative w-20 h-20 rounded-xl overflow-hidden border border-[var(--border)] group bg-white"
             >
-              <Image src={url} alt="" fill className="object-cover" sizes="80px" />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={url} alt="" loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
               <button
                 type="button"
                 onClick={() => setPhotos((p) => p.filter((u) => u !== url))}

@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import Link from "next/link";
 import RecentlyViewed from "@/components/recently-viewed";
 
@@ -138,13 +137,15 @@ export default function CartPage() {
         {items.map((item) => (
           <div key={item.id} className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-xl border border-[var(--border)] bg-[var(--card-bg)]">
             {item.listing.image_url && (
-              <Image
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
                 src={item.listing.image_url}
                 alt={item.listing.title}
                 width={56}
                 height={56}
+                loading="lazy"
+                decoding="async"
                 className="rounded-lg object-cover flex-shrink-0"
-                unoptimized
               />
             )}
             <div className="flex-1 min-w-0">

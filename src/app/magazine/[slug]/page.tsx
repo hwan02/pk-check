@@ -1,6 +1,5 @@
 export const dynamic = "force-dynamic";
 
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { marked } from "marked";
@@ -205,12 +204,13 @@ export default async function ContentDetailPage({ params }: Props) {
                     <div className="rounded-2xl overflow-hidden bg-white border border-[var(--border)]">
                       <div className="aspect-[5/7] relative">
                         {c.image_url ? (
-                          <Image
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
                             src={c.image_url}
                             alt={c.name}
-                            fill
-                            className="object-contain group-hover:scale-[1.02] transition-transform"
-                            sizes="(max-width: 640px) 50vw, 50vw"
+                            loading="lazy"
+                            decoding="async"
+                            className="absolute inset-0 w-full h-full object-contain group-hover:scale-[1.02] transition-transform"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-xs opacity-40">no image</div>
