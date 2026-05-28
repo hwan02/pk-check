@@ -117,6 +117,7 @@ export async function POST(request: NextRequest) {
       display_order: displayOrder,
       image_url: imageUrl,
       is_active: true,
+      short_id: Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, "0"),
     })
     .select()
     .single();

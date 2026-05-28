@@ -104,6 +104,7 @@ export async function POST(request: NextRequest) {
         notes: `cat:${c.id}`, // 카탈로그 연결 식별자
         is_active: false,
         display_order: i,
+        short_id: Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, "0"),
       };
     });
 

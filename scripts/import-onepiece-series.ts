@@ -49,6 +49,7 @@ function sleep(ms: number): Promise<void> {
 function boxNoteKey(code: string): string { return `cat:op-box-${code}`; }
 function packNoteKey(code: string): string { return `cat:op-pack-${code}`; }
 function singleNoteKey(cardId: string): string { return `cat:op-${cardId}`; }
+function genShortId(): string { return Math.floor(Math.random() * 0xffffffff).toString(16).padStart(8, "0"); }
 
 /** 카드 id (예: OP16-001) → 정수 (1) — display_order 용 */
 function cardOrder(id: string): number {
@@ -94,6 +95,7 @@ async function ensureBox(series: OpSeries): Promise<string> {
       notes: noteKey,
       is_active: false,
       display_order: 0,
+      short_id: genShortId(),
     })
     .select("id")
     .single();
@@ -125,6 +127,7 @@ async function ensurePack(series: OpSeries, boxId: string): Promise<string> {
       notes: noteKey,
       is_active: false,
       display_order: 0,
+      short_id: genShortId(),
     })
     .select("id")
     .single();
@@ -160,6 +163,7 @@ async function importSingles(
       notes: singleNoteKey(c.id),
       is_active: false,
       display_order: cardOrder(c.id),
+      short_id: genShortId(),
     }));
 
   if (inserts.length === 0) return { added: 0, skipped: cards.length };
