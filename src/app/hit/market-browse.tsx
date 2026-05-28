@@ -1,11 +1,11 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   MARKET_CATEGORY_LABEL,
   marketCardHref,
+  safeImageUrl,
   type MarketCard,
 } from "@/lib/market";
 
@@ -245,12 +245,13 @@ export default function MarketBrowse({ all }: Props) {
                   >
                     <div className="aspect-[3/4] w-full relative rounded-xl overflow-hidden bg-white">
                       {box.image_url ? (
-                        <Image
-                          src={box.image_url}
+                        /* eslint-disable-next-line @next/next/no-img-element */
+                        <img
+                          src={safeImageUrl(box.image_url)!}
                           alt={box.name}
-                          fill
-                          sizes="200px"
-                          className="object-cover group-hover:scale-[1.04] transition-transform duration-300"
+                          loading="lazy"
+                          decoding="async"
+                          className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.04] transition-transform duration-300"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center text-[11px] opacity-40">
@@ -283,12 +284,13 @@ export default function MarketBrowse({ all }: Props) {
                           >
                             <div className="w-[130px] h-[182px] sm:w-[160px] sm:h-[224px] relative rounded-xl overflow-hidden bg-white border border-[var(--border)] group-hover:border-[var(--border-strong)] group-hover:shadow-lg transition shrink-0">
                               {c.image_url ? (
-                                <Image
-                                  src={c.image_url}
+                                /* eslint-disable-next-line @next/next/no-img-element */
+                                <img
+                                  src={safeImageUrl(c.image_url)!}
                                   alt={c.name}
-                                  fill
-                                  sizes="160px"
-                                  className="object-cover group-hover:scale-[1.05] transition-transform duration-300"
+                                  loading="lazy"
+                                  decoding="async"
+                                  className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-300"
                                 />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-[10px] opacity-40">

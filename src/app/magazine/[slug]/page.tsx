@@ -1,7 +1,6 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import { marked } from "marked";
 import { createSsrClient } from "@/lib/supabase/ssr";
@@ -11,6 +10,7 @@ import {
   MARKET_CATEGORY_LABEL,
   marketCardHref,
   priceChangePct,
+  safeImageUrl,
   type MarketCard,
   type MarketPriceRow,
 } from "@/lib/market";
@@ -205,12 +205,13 @@ export default async function ContentDetailPage({ params }: Props) {
                     <div className="rounded-2xl overflow-hidden bg-white border border-[var(--border)]">
                       <div className="aspect-[5/7] relative">
                         {c.image_url ? (
-                          <Image
-                            src={c.image_url}
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={safeImageUrl(c.image_url)!}
                             alt={c.name}
-                            fill
-                            sizes="(max-width: 640px) 50vw, 50vw"
-                            className="object-contain group-hover:scale-[1.02] transition-transform"
+                            loading="lazy"
+                            decoding="async"
+                            className="absolute inset-0 w-full h-full object-contain group-hover:scale-[1.02] transition-transform"
                           />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-xs opacity-40">no image</div>

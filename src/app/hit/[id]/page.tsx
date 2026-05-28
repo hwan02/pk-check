@@ -1,7 +1,6 @@
 export const revalidate = 60;
 
 import type { Metadata } from "next";
-import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSsrClient } from "@/lib/supabase/ssr";
@@ -13,6 +12,7 @@ import {
   MARKET_CATEGORY_LABEL,
   PRODUCT_TYPE_LABEL,
   priceChangePct,
+  safeImageUrl,
   type MarketCard,
   type MarketPriceRow,
 } from "@/lib/market";
@@ -270,13 +270,12 @@ export default async function MarketDetailPage({ params }: Props) {
         <div>
           <div className="aspect-square relative rounded-2xl overflow-hidden bg-[var(--card-bg)] border border-[var(--border)]">
             {card.image_url ? (
-              <Image
-                src={card.image_url}
+              /* eslint-disable-next-line @next/next/no-img-element */
+              <img
+                src={safeImageUrl(card.image_url)!}
                 alt={card.name}
-                fill
-                className="object-contain"
-                sizes="(max-width: 768px) 100vw, 40vw"
-                priority
+                decoding="async"
+                className="absolute inset-0 w-full h-full object-contain"
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center text-sm opacity-40">
@@ -427,12 +426,13 @@ export default async function MarketDetailPage({ params }: Props) {
                 >
                   <div className="aspect-square relative bg-white">
                     {l.image_url ? (
-                      <Image
-                        src={l.image_url}
+                      /* eslint-disable-next-line @next/next/no-img-element */
+                      <img
+                        src={safeImageUrl(l.image_url)!}
                         alt={l.title}
-                        fill
-                        sizes="(max-width: 640px) 50vw, 33vw"
-                        className="object-contain p-3 group-hover:scale-[1.03] transition-transform"
+                        loading="lazy"
+                        decoding="async"
+                        className="absolute inset-0 w-full h-full object-contain p-3 group-hover:scale-[1.03] transition-transform"
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center text-xs opacity-40">
@@ -479,12 +479,13 @@ function RelatedGrid({
               <div className="rounded-xl overflow-hidden bg-[var(--surface)] border border-[var(--border)]">
                 <div className="aspect-square relative bg-white">
                   {c.image_url ? (
-                    <Image
-                      src={c.image_url}
+                    /* eslint-disable-next-line @next/next/no-img-element */
+                    <img
+                      src={safeImageUrl(c.image_url)!}
                       alt={c.name}
-                      fill
-                      sizes="(max-width: 640px) 50vw, 25vw"
-                      className="object-contain p-3 group-hover:scale-[1.03] transition-transform"
+                      loading="lazy"
+                      decoding="async"
+                      className="absolute inset-0 w-full h-full object-contain p-3 group-hover:scale-[1.03] transition-transform"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-xs opacity-40">

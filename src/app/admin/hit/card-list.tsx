@@ -1,10 +1,10 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import {
   MARKET_CATEGORY_LABEL,
   PRODUCT_TYPE_LABEL,
+  safeImageUrl,
   type MarketCard,
   type MarketPriceRow,
   type ProductType,
@@ -195,7 +195,8 @@ export default function AdminMarketCardList({ cards, history, parentOptions }: P
                     className="w-14 h-14 relative shrink-0 rounded overflow-hidden bg-gray-50 hover:ring-2 hover:ring-[var(--primary)]"
                     aria-label="이미지 확대"
                   >
-                    <Image src={c.image_url} alt={c.name} fill className="object-cover" sizes="56px" />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={safeImageUrl(c.image_url)!} alt={c.name} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
                   </button>
                 ) : (
                   <div className="w-14 h-14 shrink-0 rounded bg-gray-50 border border-dashed border-[var(--border)] flex items-center justify-center text-[10px] opacity-40">
@@ -265,7 +266,8 @@ export default function AdminMarketCardList({ cards, history, parentOptions }: P
           className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-6"
         >
           <div className="relative w-full max-w-3xl aspect-square">
-            <Image src={zoomImg.src} alt={zoomImg.alt} fill className="object-contain" sizes="100vw" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={safeImageUrl(zoomImg.src)!} alt={zoomImg.alt} decoding="async" className="absolute inset-0 w-full h-full object-contain" />
           </div>
           <span className="absolute top-4 right-4 text-white/80 text-xs">클릭하여 닫기 (ESC)</span>
         </button>

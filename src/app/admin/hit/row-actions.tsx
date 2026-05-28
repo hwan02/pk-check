@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
@@ -9,6 +8,7 @@ import {
   MARKET_CATEGORY_LABEL,
   PARENT_TYPES_OF,
   PRODUCT_TYPE_LABEL,
+  safeImageUrl,
   type MarketCard,
   type MarketPriceRow,
   type ProductType,
@@ -63,7 +63,8 @@ export function ImageThumb({ id, src, alt }: { id: string; src: string | null; a
           className="w-14 h-14 relative rounded overflow-hidden bg-gray-50 hover:ring-2 hover:ring-[var(--primary)]"
           aria-label="이미지 확대"
         >
-          <Image src={src} alt={alt} fill className="object-cover" sizes="56px" />
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={safeImageUrl(src)!} alt={alt} loading="lazy" decoding="async" className="absolute inset-0 w-full h-full object-cover" />
         </button>
       ) : (
         <button
@@ -118,7 +119,8 @@ export function ImageThumb({ id, src, alt }: { id: string; src: string | null; a
           className="fixed inset-0 z-[100] bg-black/80 flex items-center justify-center p-6"
         >
           <div className="relative w-full max-w-3xl aspect-square">
-            <Image src={src} alt={alt} fill className="object-contain" sizes="100vw" />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={safeImageUrl(src)!} alt={alt} decoding="async" className="absolute inset-0 w-full h-full object-contain" />
           </div>
           <span className="absolute top-4 right-4 text-white/80 text-xs">클릭하여 닫기 (ESC)</span>
         </button>

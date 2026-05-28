@@ -25,6 +25,22 @@ export function marketCardHref(c: { id: string; short_id?: string | null }): str
   return `/hit/${c.short_id ?? c.id}`;
 }
 
+/**
+ * 이미지 URL 안전 처리:
+ * - onepiece-cardgame.com 이미지는 CORP=same-site 라 브라우저가 직접 로드 못 함
+ *   → 우리 도메인 프록시(/api/img/op?p=...) 로 우회
+ * - 그 외(supabase 등)는 그대로 사용
+ */
+export function safeImageUrl(url: string | null | undefined): string | null {
+  if (!url) return null;
+  const OP_PREFIX = "https://www.onepiece-cardgame.com/";
+  if (url.startsWith(OP_PREFIX)) {
+    const path = url.slice(OP_PREFIX.length).split("?")[0];
+    return `/api/img/op?p=${encodeURIComponent(path)}`;
+  }
+  return url;
+}
+
 // UUID 형식 판별 (라우팅에서 short_id 와 구분용)
 export function isUuid(s: string): boolean {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s);
