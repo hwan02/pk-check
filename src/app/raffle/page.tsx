@@ -14,9 +14,9 @@ import {
 } from "@/lib/raffles";
 
 export const metadata: Metadata = {
-  title: "일본 아마존 응모 — Amazon JP 추첨판매 일정",
+  title: "일본 아마존 응모 추첨 일정",
   description:
-    "포켓몬 · 원피스 카드 일본 아마존 추첨판매(応募抽選販売) 응모 일정과 링크를 모아 안내합니다. 한국에서도 응모 가능.",
+    "포켓몬 · 원피스 카드 일본 아마존 응모 추첨 일정과 링크를 모아 안내합니다. 한국에서도 응모 가능.",
   alternates: { canonical: "https://kikidult.com/raffle" },
 };
 
@@ -104,7 +104,7 @@ export default async function RafflePage({ searchParams }: PageProps) {
             모음
           </h1>
           <p className="text-sm md:text-base opacity-70 mt-4 leading-relaxed max-w-xl">
-            포켓몬 · 원피스 카드의 일본 아마존 <strong>추첨판매(応募抽選販売)</strong> 일정을 모았어요.
+            포켓몬 · 원피스 카드의 일본 아마존 <strong>응모 추첨</strong> 일정을 모았어요.
             한국 번호로도 응모 가능하고, 당첨 시 한국으로 직배송할 수 있습니다.
           </p>
 
@@ -235,7 +235,7 @@ export default async function RafflePage({ searchParams }: PageProps) {
 
         {/* 면책 */}
         <p className="mt-12 text-[11px] opacity-50 leading-relaxed">
-          ※ 본 페이지는 일본 아마존(Amazon.co.jp) 의 추첨판매 정보를 안내하는 큐레이션 페이지입니다.
+          ※ 본 페이지는 일본 아마존(Amazon.co.jp) 의 응모 추첨 정보를 안내하는 큐레이션 페이지입니다.
           응모/당첨/결제/배송은 모두 Amazon.co.jp 의 정책을 따르며, 키키덜트는 응모 결과를 보증하지 않습니다.
           아마존 페이지로 이동 후 발생하는 모든 거래의 책임은 사용자 본인에게 있습니다.
         </p>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   type Raffle,
@@ -365,12 +365,10 @@ function RaffleEditor({
                   placeholder="ポケモンカードゲーム ..."
                 />
               </Field>
-              <Field label="이미지 URL (선택)">
-                <input
+              <Field label="이미지 (파일 업로드 또는 URL 입력)">
+                <ImagePicker
                   value={f.image_url}
-                  onChange={(e) => set("image_url", e.target.value)}
-                  className={inp}
-                  placeholder="https://m.media-amazon.com/images/..."
+                  onChange={(v) => set("image_url", v)}
                 />
               </Field>
               <Field label="아마존 JP URL *">
@@ -483,5 +481,95 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <span className="block text-xs opacity-60 mb-1">{label}</span>
       {children}
     </label>
+  );
+}
+
+function ImagePicker({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+
+  async function handleFile(file: File) {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      setErr("이미지 5MB 이하");
+      return;
+    }
+    if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      setErr("PNG / JPEG / WEBP 만 가능");
+      return;
+    }
+    setErr(null);
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append("image", file);
+      const resp = await fetch("/api/admin/raffle/upload-image", {
+        method: "POST",
+        body: form,
+      });
+      const json = await resp.json();
+      if (!resp.ok) {
+        setErr(`업로드 실패: ${json.error ?? resp.statusText}`);
+        return;
+      }
+      onChange(json.url as string);
+    } catch (e) {
+      setErr(e instanceof Error ? e.message : "네트워크 오류");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-stretch gap-2">
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+          className={`${inp} flex-1`}
+          placeholder="https://m.media-amazon.com/images/... 또는 ↓ 업로드"
+        />
+        <button
+          type="button"
+          onClick={() => fileRef.current?.click()}
+          disabled={uploading}
+          className="shrink-0 px-3 py-2 rounded border border-[var(--border)] hover:bg-[var(--surface)] text-xs font-semibold whitespace-nowrap disabled:opacity-50"
+        >
+          {uploading ? "업로드중..." : "📁 파일 업로드"}
+        </button>
+        {value && (
+          <button
+            type="button"
+            onClick={() => onChange("")}
+            disabled={uploading}
+            className="shrink-0 px-3 py-2 rounded border border-[var(--border)] text-red-600 hover:bg-red-50 text-xs font-semibold disabled:opacity-50"
+          >
+            제거
+          </button>
+        )}
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/png,image/jpeg,image/webp"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) handleFile(f);
+            e.target.value = "";
+          }}
+        />
+      </div>
+      {err && <p className="text-[11px] text-red-600">{err}</p>}
+      <p className="text-[10px] opacity-50">
+        파일 직접 업로드 또는 외부 URL (예: m.media-amazon.com) 둘 다 가능. 최대 5MB.
+      </p>
+    </div>
   );
 }
