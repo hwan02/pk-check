@@ -26,6 +26,7 @@ export default async function BottomNav() {
     { href: "/", label: "홈", icon: <HomeIcon /> },
     { href: "/shop", label: "상품", icon: <BagIcon /> },
     { href: "/hit", label: "HIT", icon: <FlameIcon /> },
+    { href: "/raffle", label: "응모", icon: <TicketIcon /> },
     { href: "/cart", label: "장바구니", icon: <CartIcon count={cartCount} /> },
     user
       ? { href: "/mypage", label: "MY", icon: <UserIcon /> }
@@ -59,6 +60,16 @@ export default async function BottomNav() {
   );
 }
 
+function TicketIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 9V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4z" />
+      <line x1="13" y1="5" x2="13" y2="7" />
+      <line x1="13" y1="11" x2="13" y2="13" />
+      <line x1="13" y1="17" x2="13" y2="19" />
+    </svg>
+  );
+}
 function FlameIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
