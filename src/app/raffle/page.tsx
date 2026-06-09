@@ -69,11 +69,10 @@ export default async function RafflePage({ searchParams }: PageProps) {
           </p>
           <h1 className="text-3xl md:text-5xl font-black tracking-tight mt-2 leading-[1.1]">
             일본 아마존 <span className="text-[var(--primary)]">응모</span>
-            <br />
-            모음
           </h1>
           <p className="text-sm md:text-base opacity-70 mt-4 leading-relaxed max-w-xl">
             포켓몬 · 원피스 카드의 일본 아마존 <strong>응모(추첨판매)</strong> 링크를 모았어요.
+            <br />
             한국 번호로도 응모 가능하고, 당첨 시 한국으로 직배송할 수 있습니다.
           </p>
 

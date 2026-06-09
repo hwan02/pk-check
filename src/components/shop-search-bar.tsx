@@ -23,11 +23,11 @@ export default function ShopSearchBar({ defaultValue = "" }: { defaultValue?: st
         value={v}
         onChange={(e) => setV(e.target.value)}
         placeholder="상품 검색 (예: 피카츄, 루피)"
-        className="flex-1 px-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--card-bg)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
+        className="flex-1 min-w-0 px-4 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--card-bg)] text-sm focus:outline-none focus:ring-2 focus:ring-[var(--primary)]"
       />
       <button
         type="submit"
-        className="px-5 py-2.5 rounded-xl bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90"
+        className="shrink-0 whitespace-nowrap px-5 py-2.5 rounded-xl bg-[var(--primary)] text-white text-sm font-medium hover:opacity-90"
       >
         검색
       </button>
