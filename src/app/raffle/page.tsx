@@ -5,26 +5,22 @@ import Link from "next/link";
 import { createSsrClient } from "@/lib/supabase/ssr";
 import {
   type Raffle,
-  type RaffleStatus,
   RAFFLE_CATEGORY_LABEL,
   formatJPY,
-  formatKstDate,
-  getRaffleStatus,
   isNewlyAdded,
 } from "@/lib/raffles";
 
 export const metadata: Metadata = {
-  title: "일본 아마존 응모 추첨 일정",
+  title: "일본 아마존 응모 — 포켓몬 · 원피스 카드",
   description:
-    "포켓몬 · 원피스 카드 일본 아마존 응모 추첨 일정과 링크를 모아 안내합니다. 한국에서도 응모 가능.",
+    "포켓몬 · 원피스 카드 일본 아마존 응모(추첨판매) 링크 모음. 한국에서도 응모 가능.",
   alternates: { canonical: "https://kikidult.com/raffle" },
 };
 
 type Category = "all" | "pokemon" | "onepiece" | "other";
-type Filter = "active" | "all";
 
 interface PageProps {
-  searchParams: Promise<{ category?: string; show?: string }>;
+  searchParams: Promise<{ category?: string }>;
 }
 
 export default async function RafflePage({ searchParams }: PageProps) {
@@ -33,7 +29,6 @@ export default async function RafflePage({ searchParams }: PageProps) {
     params.category === "pokemon" || params.category === "onepiece" || params.category === "other"
       ? params.category
       : "all";
-  const filter: Filter = params.show === "all" ? "all" : "active";
 
   const supabase = await createSsrClient();
   let query = supabase
@@ -41,44 +36,18 @@ export default async function RafflePage({ searchParams }: PageProps) {
     .select("*")
     .eq("is_active", true)
     .order("display_order", { ascending: true })
-    .order("apply_end_at", { ascending: true, nullsFirst: false })
     .order("created_at", { ascending: false })
     .limit(200);
   if (category !== "all") query = query.eq("category", category);
   const { data } = await query;
-  const all = (data ?? []) as Raffle[];
+  const items = (data ?? []) as Raffle[];
 
-  const now = new Date();
-  const withStatus = all.map((r) => ({ r, s: getRaffleStatus(r, now) }));
-  const visible =
-    filter === "active"
-      ? withStatus.filter((x) => x.s.status !== "closed")
-      : withStatus;
-
-  // 정렬: 응모중 → 예정 → 추첨대기 → 종료, 같은 상태 안에서는 마감 임박 우선
-  const ORDER: Record<RaffleStatus, number> = {
-    open: 0,
-    upcoming: 1,
-    awaiting_draw: 2,
-    closed: 3,
+  const total = items.length;
+  const counts = {
+    pokemon: items.filter((r) => r.category === "pokemon").length,
+    onepiece: items.filter((r) => r.category === "onepiece").length,
+    other: items.filter((r) => r.category === "other").length,
   };
-  visible.sort((a, b) => {
-    const so = ORDER[a.s.status] - ORDER[b.s.status];
-    if (so !== 0) return so;
-    return (a.s.daysTo ?? 9999) - (b.s.daysTo ?? 9999);
-  });
-
-  // Hero stat
-  const openCount = withStatus.filter((x) => x.s.status === "open").length;
-  const urgent = withStatus.filter(
-    (x) => x.s.status === "open" && x.s.daysTo !== null && x.s.daysTo <= 3,
-  );
-
-  // 곧 마감 (D-3 이내) — 현재 필터/카테고리 무관, 사용자가 놓치지 않게 항상 노출
-  const urgentAll = all
-    .map((r) => ({ r, s: getRaffleStatus(r, now) }))
-    .filter((x) => x.s.status === "open" && x.s.daysTo !== null && x.s.daysTo <= 3)
-    .sort((a, b) => (a.s.daysTo ?? 9999) - (b.s.daysTo ?? 9999));
 
   return (
     <div>
@@ -104,7 +73,7 @@ export default async function RafflePage({ searchParams }: PageProps) {
             모음
           </h1>
           <p className="text-sm md:text-base opacity-70 mt-4 leading-relaxed max-w-xl">
-            포켓몬 · 원피스 카드의 일본 아마존 <strong>응모 추첨</strong> 일정을 모았어요.
+            포켓몬 · 원피스 카드의 일본 아마존 <strong>응모(추첨판매)</strong> 링크를 모았어요.
             한국 번호로도 응모 가능하고, 당첨 시 한국으로 직배송할 수 있습니다.
           </p>
 
@@ -112,15 +81,21 @@ export default async function RafflePage({ searchParams }: PageProps) {
           <div className="mt-6 flex flex-wrap items-center gap-3 text-xs">
             <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500 text-white font-bold shadow-sm">
               <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-              지금 응모중 {openCount}건
+              지금 응모중 {total}건
             </span>
-            {urgent.length > 0 && (
-              <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-rose-500 text-white font-bold shadow-sm">
-                🔥 곧 마감 {urgent.length}건
-              </span>
-            )}
-            <span className="opacity-50">· 자동 업데이트 2분</span>
           </div>
+        </div>
+      </section>
+
+      {/* === 어필리에이트 고지 (FTC / Amazon Operating Agreement 준수) === */}
+      <section className="border-b border-amber-200/60 bg-amber-50/70">
+        <div className="max-w-7xl mx-auto px-4 py-2.5 flex items-start gap-2 text-[11px] md:text-xs leading-relaxed">
+          <span aria-hidden className="mt-0.5">💼</span>
+          <p className="opacity-80">
+            <strong>광고 고지</strong> · 본 페이지는 <strong>Amazon.co.jp 어필리에이트 프로그램</strong> 의
+            참가자로서, 페이지 내 링크를 통한 구매 시 소정의 추천 수수료를 받습니다. 응모 자체는 무료이며,
+            이로 인해 사용자에게 추가 비용이 발생하지 않습니다.
+          </p>
         </div>
       </section>
 
@@ -160,85 +135,46 @@ export default async function RafflePage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      {/* === 곧 마감 (D-3 이내) === */}
-      {urgentAll.length > 0 && (
-        <section className="max-w-7xl mx-auto px-4 mb-6">
-          <div className="flex items-end justify-between mb-3">
-            <h2 className="text-lg md:text-xl font-black tracking-tight">
-              🔥 곧 마감
-            </h2>
-            <p className="text-[11px] opacity-60">3일 이내 마감 임박</p>
-          </div>
-          <div
-            className="flex gap-3 overflow-x-auto pb-2 -mx-4 px-4 snap-x snap-mandatory"
-            style={{ scrollbarWidth: "thin" }}
-          >
-            {urgentAll.map(({ r, s }) => (
-              <UrgentCard
-                key={r.id}
-                r={r}
-                hint={s.hint}
-                isNew={isNewlyAdded(r.created_at)}
-              />
-            ))}
-          </div>
-        </section>
-      )}
-
       {/* === 필터 + 리스트 === */}
       <section className="max-w-7xl mx-auto px-4 pb-12">
         <div className="flex flex-wrap items-center gap-2 mb-5 sticky top-14 z-30 bg-[var(--background)]/95 backdrop-blur py-2 -mx-4 px-4 border-b border-[var(--border)]/60">
-          <CategoryTab href={hrefFor("all", filter)} active={category === "all"} label="전체" />
-          <CategoryTab href={hrefFor("pokemon", filter)} active={category === "pokemon"} label="포켓몬" />
-          <CategoryTab href={hrefFor("onepiece", filter)} active={category === "onepiece"} label="원피스" />
-          <CategoryTab href={hrefFor("other", filter)} active={category === "other"} label="기타" />
-          <div className="ml-auto inline-flex rounded-full border border-[var(--border)] p-0.5 bg-[var(--card-bg)] text-xs font-semibold">
-            <Link
-              href={hrefFor(category, "active")}
-              className={`px-3 py-1.5 rounded-full transition ${
-                filter === "active" ? "bg-[var(--primary)] text-white" : "opacity-60 hover:opacity-100"
-              }`}
-            >
-              진행중
-            </Link>
-            <Link
-              href={hrefFor(category, "all")}
-              className={`px-3 py-1.5 rounded-full transition ${
-                filter === "all" ? "bg-[var(--primary)] text-white" : "opacity-60 hover:opacity-100"
-              }`}
-            >
-              전체
-            </Link>
-          </div>
+          <CategoryTab href={hrefFor("all")} active={category === "all"} label="전체" badge={total} />
+          <CategoryTab href={hrefFor("pokemon")} active={category === "pokemon"} label="포켓몬" badge={counts.pokemon} />
+          <CategoryTab href={hrefFor("onepiece")} active={category === "onepiece"} label="원피스" badge={counts.onepiece} />
+          {counts.other > 0 && (
+            <CategoryTab href={hrefFor("other")} active={category === "other"} label="기타" badge={counts.other} />
+          )}
         </div>
 
-        {visible.length === 0 ? (
+        {items.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-[var(--border)] py-20 text-center">
             <p className="text-4xl mb-2">🎫</p>
             <p className="text-sm opacity-60">현재 표시할 응모가 없습니다.</p>
-            <p className="text-[11px] opacity-40 mt-1">새 응모가 오면 알려드릴게요.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-5">
-            {visible.map(({ r, s }) => (
-              <RaffleCard
-                key={r.id}
-                r={r}
-                status={s.status}
-                statusLabel={s.label}
-                hint={s.hint}
-                isNew={isNewlyAdded(r.created_at)}
-              />
+            {items.map((r) => (
+              <RaffleCard key={r.id} r={r} isNew={isNewlyAdded(r.created_at)} />
             ))}
           </div>
         )}
 
-        {/* 면책 */}
-        <p className="mt-12 text-[11px] opacity-50 leading-relaxed">
-          ※ 본 페이지는 일본 아마존(Amazon.co.jp) 의 응모 추첨 정보를 안내하는 큐레이션 페이지입니다.
-          응모/당첨/결제/배송은 모두 Amazon.co.jp 의 정책을 따르며, 키키덜트는 응모 결과를 보증하지 않습니다.
-          아마존 페이지로 이동 후 발생하는 모든 거래의 책임은 사용자 본인에게 있습니다.
-        </p>
+        {/* 면책 + 어필리에이트 상세 고지 */}
+        <div className="mt-12 rounded-xl border border-[var(--border)] bg-[var(--surface)]/40 p-4 text-[11px] opacity-70 leading-relaxed space-y-2">
+          <p>
+            <strong>※ 어필리에이트 안내</strong> &nbsp; 키키덜트는 Amazon.co.jp 어필리에이트(Amazon Associates JP)
+            프로그램의 참가자이며, 본 페이지의 모든 아마존 링크는 어필리에이트 링크입니다.
+            링크를 통해 발생한 자격 구매에 대해 Amazon 으로부터 일정 광고 수수료를 받을 수 있습니다.
+            (사용자 추가 부담 없음)
+          </p>
+          <p>
+            <strong>※ 책임 한계</strong> &nbsp; 본 페이지는 Amazon.co.jp 에 게시된 추첨판매(応募抽選販売)
+            정보를 한국 사용자가 쉽게 접근할 수 있도록 큐레이션해 안내합니다.
+            응모/당첨/결제/배송/환불 등 모든 거래는 Amazon.co.jp 의 약관과 정책을 따르며,
+            당첨 결과 · 재고 · 가격은 키키덜트가 보증하지 않습니다.
+            아마존 페이지로 이동 후 발생하는 모든 거래의 책임은 사용자 본인에게 있습니다.
+          </p>
+        </div>
       </section>
     </div>
   );
@@ -248,45 +184,45 @@ export default async function RafflePage({ searchParams }: PageProps) {
 // 컴포넌트
 // =========================================================
 
-function hrefFor(c: Category, f: Filter): string {
-  const params = new URLSearchParams();
-  if (c !== "all") params.set("category", c);
-  if (f !== "active") params.set("show", "all");
-  const q = params.toString();
-  return q ? `/raffle?${q}` : "/raffle";
+function hrefFor(c: Category): string {
+  if (c === "all") return "/raffle";
+  return `/raffle?category=${c}`;
 }
 
-function CategoryTab({ href, active, label }: { href: string; active: boolean; label: string }) {
+function CategoryTab({
+  href,
+  active,
+  label,
+  badge,
+}: {
+  href: string;
+  active: boolean;
+  label: string;
+  badge?: number;
+}) {
   return (
     <Link
       href={href}
-      className={`px-3.5 py-1.5 rounded-full text-xs font-semibold border transition whitespace-nowrap ${
+      className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold border transition whitespace-nowrap ${
         active
           ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-sm"
           : "border-[var(--border)] opacity-70 hover:opacity-100 hover:bg-[var(--surface)]"
       }`}
     >
       {label}
+      {typeof badge === "number" && (
+        <span className={`text-[10px] ${active ? "opacity-80" : "opacity-60"}`}>
+          {badge}
+        </span>
+      )}
     </Link>
   );
 }
 
 const INFO_TONES = {
-  emerald: {
-    border: "border-emerald-200",
-    bg: "bg-emerald-50/60",
-    chip: "bg-emerald-500",
-  },
-  amber: {
-    border: "border-amber-200",
-    bg: "bg-amber-50/60",
-    chip: "bg-amber-500",
-  },
-  sky: {
-    border: "border-sky-200",
-    bg: "bg-sky-50/60",
-    chip: "bg-sky-500",
-  },
+  emerald: { border: "border-emerald-200", bg: "bg-emerald-50/60", chip: "bg-emerald-500" },
+  amber:   { border: "border-amber-200",   bg: "bg-amber-50/60",   chip: "bg-amber-500" },
+  sky:     { border: "border-sky-200",     bg: "bg-sky-50/60",     chip: "bg-sky-500" },
 } as const;
 
 function InfoCard({
@@ -302,9 +238,7 @@ function InfoCard({
 }) {
   const t = INFO_TONES[tone];
   return (
-    <div
-      className={`rounded-2xl border ${t.border} ${t.bg} p-4 md:p-5 flex gap-3.5 items-start`}
-    >
+    <div className={`rounded-2xl border ${t.border} ${t.bg} p-4 md:p-5 flex gap-3.5 items-start`}>
       <div
         className={`shrink-0 w-10 h-10 rounded-full ${t.chip} text-white text-xl flex items-center justify-center shadow-sm`}
         aria-hidden
@@ -326,96 +260,13 @@ function InfoCard({
   );
 }
 
-function UrgentCard({
-  r,
-  hint,
-  isNew,
-}: {
-  r: Raffle;
-  hint: string | null;
-  isNew: boolean;
-}) {
+function RaffleCard({ r, isNew }: { r: Raffle; isNew: boolean }) {
   return (
     <a
       href={r.amazon_url}
       target="_blank"
       rel="noopener noreferrer sponsored"
-      className="snap-start shrink-0 w-[240px] sm:w-[260px] rounded-2xl border-2 border-rose-300 bg-white overflow-hidden hover:shadow-md transition group"
-    >
-      <div className="relative aspect-square bg-gray-50 overflow-hidden">
-        {r.image_url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={r.image_url}
-            alt={r.title}
-            loading="lazy"
-            className="absolute inset-0 w-full h-full object-contain p-3 group-hover:scale-[1.04] transition-transform duration-500"
-          />
-        ) : (
-          <div className="absolute inset-0 flex items-center justify-center text-xs opacity-30">
-            이미지 없음
-          </div>
-        )}
-        {hint && (
-          <span className="absolute top-2 left-2 px-2 py-1 rounded-full text-[10px] font-bold bg-rose-500 text-white shadow">
-            {hint}
-          </span>
-        )}
-        {isNew && (
-          <span className="absolute top-2 right-2 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500 text-white shadow">
-            NEW
-          </span>
-        )}
-      </div>
-      <div className="p-3">
-        <p className="text-[10px] opacity-60 font-semibold tracking-wide">
-          {RAFFLE_CATEGORY_LABEL[r.category]}
-          {r.price_jpy != null && ` · ${formatJPY(r.price_jpy)}`}
-        </p>
-        <p className="text-[13px] font-bold leading-snug line-clamp-2 mt-1 min-h-[2.5em]">
-          {r.title}
-        </p>
-      </div>
-    </a>
-  );
-}
-
-function RaffleCard({
-  r,
-  status,
-  statusLabel,
-  hint,
-  isNew,
-}: {
-  r: Raffle;
-  status: RaffleStatus;
-  statusLabel: string;
-  hint: string | null;
-  isNew: boolean;
-}) {
-  const badgeCls = {
-    open: "bg-emerald-500 text-white",
-    upcoming: "bg-sky-500 text-white",
-    awaiting_draw: "bg-amber-500 text-white",
-    closed: "bg-gray-400 text-white",
-  }[status];
-
-  const isClickable = status !== "closed";
-  const isUrgent = status === "open" && hint?.startsWith("마감 D-") && /D-(0|1|2|3)$/.test(hint);
-  const cta = {
-    open: "아마존 JP에서 응모하기",
-    upcoming: "응모 페이지 보기",
-    awaiting_draw: "응모 페이지 보기",
-    closed: "응모 종료",
-  }[status];
-
-  return (
-    <article
-      className={`group rounded-2xl border bg-[var(--card-bg)] overflow-hidden flex flex-col transition hover:shadow-md ${
-        isUrgent
-          ? "border-rose-300 ring-1 ring-rose-200"
-          : "border-[var(--border)]"
-      } ${status === "closed" ? "opacity-70" : ""}`}
+      className="group rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] overflow-hidden flex flex-col transition hover:shadow-md hover:border-[var(--primary)]/40"
     >
       {/* 이미지 */}
       <div className="relative aspect-[4/3] bg-gray-50 overflow-hidden">
@@ -432,80 +283,43 @@ function RaffleCard({
             이미지 없음
           </div>
         )}
-        <span
-          className={`absolute top-2 left-2 px-2 py-1 rounded-full text-[10px] font-bold shadow-sm ${badgeCls}`}
-        >
-          {statusLabel}
-        </span>
-        {hint && (
-          <span
-            className={`absolute top-2 right-2 px-2 py-1 rounded-full text-[10px] font-bold shadow-sm ${
-              isUrgent ? "bg-rose-500 text-white" : "bg-black/70 text-white"
-            }`}
-          >
-            {hint}
-          </span>
-        )}
         {isNew && (
-          <span className="absolute bottom-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500 text-white shadow">
+          <span className="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500 text-white shadow">
             NEW
           </span>
         )}
+        <span className="absolute top-2 right-2 px-2 py-1 rounded-full text-[10px] font-bold bg-black/60 text-white backdrop-blur-sm">
+          {RAFFLE_CATEGORY_LABEL[r.category]}
+        </span>
       </div>
 
       {/* 본문 */}
       <div className="p-4 flex flex-col gap-2 flex-1">
-        <div className="flex items-center gap-2 text-[10px] opacity-60">
-          <span className="font-semibold tracking-wide">{RAFFLE_CATEGORY_LABEL[r.category]}</span>
-          {r.price_jpy != null && <span>· {formatJPY(r.price_jpy)}</span>}
-        </div>
-        <h3 className="text-sm md:text-[15px] font-bold leading-snug line-clamp-2 min-h-[2.5em]">
+        <h3 className="text-sm md:text-[15px] font-bold leading-snug line-clamp-3 min-h-[3.6em]">
           {r.title}
         </h3>
         {r.title_ja && (
           <p className="text-[11px] opacity-50 line-clamp-1">{r.title_ja}</p>
         )}
 
-        <dl className="mt-1 grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-[11px]">
-          <dt className="opacity-50">응모 기간</dt>
-          <dd className="font-medium">
-            {formatKstDate(r.apply_start_at)} ~ {formatKstDate(r.apply_end_at)}
-          </dd>
-          <dt className="opacity-50">추첨일</dt>
-          <dd className="font-medium">{formatKstDate(r.draw_at)}</dd>
-          {r.ship_note && (
-            <>
-              <dt className="opacity-50">발송</dt>
-              <dd className="font-medium">{r.ship_note}</dd>
-            </>
-          )}
-        </dl>
+        {(r.price_jpy != null || r.ship_note) && (
+          <div className="text-[11px] opacity-70 space-y-0.5">
+            {r.price_jpy != null && <p>· 정가 {formatJPY(r.price_jpy)}</p>}
+            {r.ship_note && <p>· 발송 {r.ship_note}</p>}
+          </div>
+        )}
 
         {r.notes && (
           <p className="mt-1 text-[11px] opacity-60 line-clamp-2">{r.notes}</p>
         )}
 
         <div className="mt-auto pt-3">
-          <a
-            href={isClickable ? r.amazon_url : undefined}
-            target={isClickable ? "_blank" : undefined}
-            rel={isClickable ? "noopener noreferrer sponsored" : undefined}
-            aria-disabled={!isClickable}
-            className={`block text-center px-3 py-2.5 rounded-lg text-xs font-bold transition ${
-              isClickable
-                ? isUrgent
-                  ? "bg-rose-500 text-white hover:bg-rose-600"
-                  : "bg-[var(--primary)] text-white hover:opacity-90"
-                : "bg-gray-200 text-gray-500 cursor-not-allowed"
-            }`}
-          >
-            {cta}
-            {isClickable && (
-              <span className="ml-1 opacity-80" aria-hidden>↗</span>
-            )}
-          </a>
+          <span className="block text-center px-3 py-2.5 rounded-lg text-xs font-bold bg-[var(--primary)] text-white group-hover:opacity-90 transition">
+            아마존 JP에서 응모하기
+            <span className="ml-1 opacity-80" aria-hidden>↗</span>
+          </span>
         </div>
       </div>
-    </article>
+    </a>
   );
 }
