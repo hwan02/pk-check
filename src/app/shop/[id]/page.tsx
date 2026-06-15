@@ -163,15 +163,24 @@ export default async function ListingDetailPage({ params }: Props) {
 
           {/* 가격 박스 (KREAM 시그니처) */}
           <div className="mt-6 rounded-2xl border border-[var(--border)] bg-[var(--card-bg)] p-5">
-            <p className="text-xs opacity-60 mb-1">즉시 구매가</p>
-            <p className="text-3xl md:text-4xl font-extrabold tracking-tight">
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-xs opacity-60">즉시 구매가</p>
+              {item.stock <= 0 && (
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-black text-white font-extrabold tracking-widest uppercase">
+                  Sold Out
+                </span>
+              )}
+            </div>
+            <p className={`text-3xl md:text-4xl font-extrabold tracking-tight ${item.stock <= 0 ? "opacity-50 line-through" : ""}`}>
               {formatUSD(item.price_usd)}
             </p>
             <p className="text-xs opacity-60 mt-1">Worldwide shipping · PayPal</p>
 
             <dl className="grid grid-cols-2 gap-y-2 mt-5 pt-4 border-t border-[var(--border)] text-xs">
               <dt className="opacity-60">재고</dt>
-              <dd className="text-right font-medium">{item.stock}개</dd>
+              <dd className={`text-right font-medium ${item.stock <= 0 ? "text-rose-600" : ""}`}>
+                {item.stock <= 0 ? "품절" : `${item.stock}개`}
+              </dd>
 
               <dt className="opacity-60">카테고리</dt>
               <dd className="text-right font-medium">{CATEGORY_LABEL[item.category]}</dd>

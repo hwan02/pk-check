@@ -27,10 +27,11 @@ export default function ShopGrid({ listings, wishlistedIds, loggedIn = false, re
         const secondary = l.title_en && l.title !== l.title_en ? l.title : null;
         const meta = [CATEGORY_LABEL[l.category], l.language && LANGUAGE_LABEL[l.language]].filter(Boolean).join(" · ");
         const wishlisted = wishlistedIds?.has(l.id) ?? false;
+        const soldOut = l.stock <= 0;
         return (
           <Link key={l.id} href={`/shop/${l.short_id ?? l.id}`} className="block group">
             <div className="rounded-xl overflow-hidden bg-[var(--surface)] border border-[var(--border)] group-hover:border-[var(--border-strong)] transition-colors relative">
-              <div className="aspect-square relative bg-white">
+              <div className={`aspect-square relative bg-white ${soldOut ? "grayscale opacity-70" : ""}`}>
                 {l.image_url ? (
                   /* eslint-disable-next-line @next/next/no-img-element */
                   <img
@@ -43,6 +44,13 @@ export default function ShopGrid({ listings, wishlistedIds, loggedIn = false, re
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-xs opacity-40">
                     no image
+                  </div>
+                )}
+                {soldOut && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <span className="px-3 py-1.5 rounded-full bg-black/80 text-white text-[11px] font-extrabold tracking-widest uppercase shadow-lg">
+                      Sold Out
+                    </span>
                   </div>
                 )}
               </div>
@@ -74,11 +82,13 @@ export default function ShopGrid({ listings, wishlistedIds, loggedIn = false, re
                 </p>
               )}
               {/* 가격 */}
-              <p className="text-[15px] font-extrabold mt-1.5 tracking-tight">
+              <p className={`text-[15px] font-extrabold mt-1.5 tracking-tight ${soldOut ? "opacity-50 line-through" : ""}`}>
                 {formatUSD(l.price_usd)}
               </p>
               <div className="flex items-center gap-1.5 mt-0.5">
-                <p className="text-[10px] opacity-50">즉시 구매가</p>
+                <p className="text-[10px] opacity-50">
+                  {soldOut ? "Sold Out" : "즉시 구매가"}
+                </p>
                 {(() => {
                   const s = reviewStats?.get(l.id);
                   if (!s || s.review_count === 0) return null;

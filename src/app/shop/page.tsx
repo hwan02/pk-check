@@ -28,11 +28,11 @@ export default async function ShopPage({ searchParams }: Props) {
   const page = Math.max(1, parseInt(params.page ?? "1", 10));
 
   const supabase = await createSsrClient();
+  // stock=0 + is_active=true 는 'Sold Out' 으로 노출하기 위해 stock 필터 제거
   let query = supabase
     .from("listings")
     .select("*", { count: "exact" })
-    .eq("is_active", true)
-    .gt("stock", 0);
+    .eq("is_active", true);
 
   if (category === "pokemon" || category === "onepiece") {
     query = query.eq("category", category);

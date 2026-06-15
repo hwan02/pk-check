@@ -50,6 +50,28 @@ export default async function ReviewSection({ listingId, listingSlug }: Props) {
   const avg = Number(stats?.avg_rating ?? 0);
   const count = stats?.review_count ?? 0;
 
+  // 후기 0개:
+  // - 비로그인 → 섹션 전체 숨김
+  // - 로그인 → 컴팩트 작성 폼만 노출 (첫 후기 진입점 유지)
+  if (count === 0) {
+    if (!user) return null;
+    return (
+      <section className="mt-16">
+        <header className="mb-4 pb-3 border-b border-[var(--border)]">
+          <p className="text-[10px] tracking-[0.3em] uppercase opacity-50">REVIEWS</p>
+          <h2 className="text-lg md:text-xl font-bold tracking-tight mt-1">
+            첫 후기를 남겨주세요
+          </h2>
+        </header>
+        <ReviewForm
+          listingId={listingId}
+          listingSlug={listingSlug}
+          existing={null}
+        />
+      </section>
+    );
+  }
+
   return (
     <section className="mt-16">
       <header className="flex items-end justify-between gap-3 mb-6 pb-4 border-b border-[var(--border)]">
