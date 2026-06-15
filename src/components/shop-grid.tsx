@@ -48,8 +48,8 @@ export default function ShopGrid({ listings, wishlistedIds, loggedIn = false, re
                 )}
                 {soldOut && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <span className="px-3 py-1.5 rounded-full bg-black/80 text-white text-[11px] font-extrabold tracking-widest uppercase shadow-lg">
-                      Sold Out
+                    <span className="px-3 py-1.5 rounded-full bg-black/80 text-white text-[11px] font-extrabold tracking-widest shadow-lg">
+                      Sold out
                     </span>
                   </div>
                 )}
@@ -87,7 +87,7 @@ export default function ShopGrid({ listings, wishlistedIds, loggedIn = false, re
               </p>
               <div className="flex items-center gap-1.5 mt-0.5">
                 <p className="text-[10px] opacity-50">
-                  {soldOut ? "Sold Out" : "즉시 구매가"}
+                  {soldOut ? "Sold out" : "즉시 구매가"}
                 </p>
                 {(() => {
                   const s = reviewStats?.get(l.id);

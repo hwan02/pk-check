@@ -166,8 +166,8 @@ export default async function ListingDetailPage({ params }: Props) {
             <div className="flex items-center gap-2 mb-1">
               <p className="text-xs opacity-60">즉시 구매가</p>
               {item.stock <= 0 && (
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-black text-white font-extrabold tracking-widest uppercase">
-                  Sold Out
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-black text-white font-extrabold tracking-widest">
+                  Sold out
                 </span>
               )}
             </div>
